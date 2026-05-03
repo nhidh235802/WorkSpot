@@ -1,0 +1,80 @@
+==========================================================================
+HƯỚNG DẪN THIẾT LẬP MÔI TRƯỜNG PHÁT TRIỂN (LOCAL SETUP) - DỰ ÁN WORKSPOT
+==========================================================================
+
+Dự án: WorkSpot (Hệ thống tìm kiếm không gian làm việc cho người Nhật tại Hà Nội)
+Team: DEV
+Stack: NestJS (Backend) + Next.js (Frontend) + PostgreSQL + TypeORM
+
+--------------------------------------------------------------------------
+1. YÊU CẦU PHẦN MỀM BẮT BUỘC (PREREQUISITES)
+--------------------------------------------------------------------------
+Trước khi chạy code, hãy đảm bảo máy tính của bạn đã cài đặt:
+- Node.js: v18.x trở lên (LTS).
+- PostgreSQL: v14.x hoặc v15.x.
+- Git: Phiên bản mới nhất.
+- VS Code Extension đề nghị: ESLint, Prettier, Tailwind CSS IntelliSense, TypeORM.
+
+--------------------------------------------------------------------------
+2. SAO CHÉP MÃ NGUỒN (CLONE PROJECT)
+--------------------------------------------------------------------------
+Mở Terminal/PowerShell và chạy:
+git clone https://github.com/nhidh235802/WorkSpot.git
+cd WorkSpot
+
+--------------------------------------------------------------------------
+3. THIẾT LẬP BACKEND (NESTJS)
+--------------------------------------------------------------------------
+B1: Mở terminal tại thư mục backend:
+    cd backend
+
+B2: Cài đặt toàn bộ thư viện (Quan trọng):
+    npm install
+
+B3: Cấu hình Cơ sở dữ liệu:
+    - Mở pgAdmin hoặc công cụ SQL, tạo một Database trống tên là: workspot_db
+    - Copy file .env.example thành file .env (nếu chưa có)
+    - Cập nhật thông tin DB_USERNAME và DB_PASSWORD theo tài khoản PostgreSQL máy bạn.
+
+B4: Chạy server ở chế độ phát triển:
+    npm run start:dev
+    (Server thường chạy tại http://localhost:3000 hoặc 3001)
+
+--------------------------------------------------------------------------
+4. THIẾT LẬP FRONTEND (NEXT.JS)
+--------------------------------------------------------------------------
+B1: Mở terminal mới tại thư mục frontend:
+    cd frontend
+
+B2: Cài đặt toàn bộ thư viện:
+    npm install
+
+B3: Khởi chạy giao diện:
+    npm run dev
+
+B4: Truy cập tại trình duyệt: http://localhost:3000
+
+--------------------------------------------------------------------------
+5. LƯU Ý VỀ NPM VÀ NODE_MODULES (DÀNH CHO TEAM)
+--------------------------------------------------------------------------
+- Thư mục 'node_modules' không được đưa lên GitHub.
+- MỖI KHI BẠN PULL CODE MỚI VỀ: Hãy chạy lại 'npm install' ở cả 2 thư mục 
+  Frontend và Backend để cập nhật các thư viện mới nhất mà các thành viên 
+  khác vừa thêm vào file package.json.
+
+--------------------------------------------------------------------------
+6. QUY TRÌNH LÀM VIỆC NHÓM (GIT WORKFLOW)
+--------------------------------------------------------------------------
+- Nhánh chính: 'main' (Chỉ chứa code đã chạy ổn định).
+- Nhánh tính năng: Luôn tạo nhánh mới từ main để làm việc.
+  Lệnh: git checkout -b feature/ten-tinh-nang
+- Commit Message: Phải rõ ràng nội dung thay đổi.
+  Ví dụ: git commit -m "feat: add login form validation"
+
+--------------------------------------------------------------------------
+7. TIÊU CHUẨN UI/UX & CODE
+--------------------------------------------------------------------------
+- Backend: Tuân thủ cấu trúc Controller -> Service -> Entity.
+- Validation: Luôn kiểm tra dữ liệu đầu vào bằng DTO và class-validator.
+
+==========================================================================
