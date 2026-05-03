@@ -11,12 +11,12 @@ Stack: NestJS (Backend) + Next.js (Frontend) + PostgreSQL + TypeORM
 --------------------------------------------------------------------------
 Trước khi chạy code, hãy đảm bảo máy tính của bạn đã cài đặt:
 - Node.js: v18.x trở lên (LTS).
-- PostgreSQL: v14.x hoặc v15.x.
+- PostgreSQL: v14.x trở lên.
 - Git: Phiên bản mới nhất.
 - VS Code Extension đề nghị: ESLint, Prettier, Tailwind CSS IntelliSense, TypeORM.
 
 --------------------------------------------------------------------------
-2. SAO CHÉP MÃ NGUỒN (CLONE PROJECT)
+2. CLONE PROJECT
 --------------------------------------------------------------------------
 Mở Terminal/PowerShell và chạy:
 git clone https://github.com/nhidh235802/WorkSpot.git
