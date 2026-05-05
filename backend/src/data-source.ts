@@ -14,3 +14,7 @@ export const AppDataSource = new DataSource({
   migrations: ['src/migrations/*{.ts,.js}'],
   synchronize: false,
 });
+
+// Đây là file cấu hình kết nối đến cơ sở dữ liệu PostgreSQL bằng TypeORM, không phải file của NestJS.
+// Mục đích của file này là để tạo ra một DataSource (nguồn dữ liệu) mà sau này chúng ta sẽ dùng để chạy các lệnh Migration (di cư cơ sở dữ liệu) hoặc Seed (tạo dữ liệu mẫu) thông qua CLI của TypeORM.
+// Chúng ta sẽ không import file này vào bất kỳ đâu trong NestJS cả, nó chỉ dùng để chạy các lệnh Migration hoặc Seed mà thôi.

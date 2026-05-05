@@ -33,3 +33,9 @@ import { CafesModule } from './cafes/cafes.module';
   providers: [AppService],
 })
 export class AppModule {}
+
+// Đây là Root Module. NestJS sẽ nhìn vào đây để biết dự án này có bao nhiêu khu vực nhỏ hơn.
+// Mỗi khu vực nhỏ hơn sẽ được gọi là một Module. Ví dụ: AuthModule, UsersModule, CafesModule...
+// Sau này, khi tạo thêm các module mới (như UsersModule, CafesModule), chúng ta bắt buộc phải "khai báo" chúng vào mảng imports ở file này để hệ thống nhận diện.
+// Đại khái, ae có thể tưởng tượng Module Là nơi gom nhóm Bồi bàn và Đầu bếp lại với nhau.
+// Ví dụ khu vực đồ uống (CafesModule) sẽ có bồi bàn riêng (cafes.controller) và đầu bếp pha chế riêng (cafes.service).

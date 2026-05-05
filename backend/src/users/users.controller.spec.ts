@@ -1,8 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
+import { beforeEach, describe, expect, it } from '@jest/globals';
 
-describe('UsersController', () => {
+void describe('UsersController', () => {
   let controller: UsersController;
 
   beforeEach(async () => {
@@ -14,7 +15,7 @@ describe('UsersController', () => {
     controller = module.get<UsersController>(UsersController);
   });
 
-  it('should be defined', () => {
+  void it('should be defined', () => {
     expect(controller).toBeDefined();
   });
 });

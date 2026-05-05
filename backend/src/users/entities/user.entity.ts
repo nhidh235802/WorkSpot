@@ -1,1 +1,6 @@
+// Đây là file Entity (Thực thể) dùng để định nghĩa cấu trúc bảng trong cơ sở dữ liệu PostgreSQL thông qua TypeORM.
+// Hãy coi nó là một "Bản vẽ thiết kế" cho một bảng trong cơ sở dữ liệu, ví dụ: bảng users (người dùng), bảng cafes (quán cà phê)...
+// Trong file này, chúng ta sẽ định nghĩa các trường thông tin cần thiết cho bảng users, ví dụ: id, email, password, name...
+// File này sẽ được TypeORM sử dụng để tự động tạo ra bảng users trong cơ sở dữ liệu PostgreSQL khi chạy Migration (di cư cơ sở dữ liệu).
+
 export class User {}
