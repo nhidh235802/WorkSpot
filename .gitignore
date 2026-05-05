@@ -1,0 +1,43 @@
+# 1. Các file cấu hình của Editor
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.idea/
+
+# 2. Rác của Hệ điều hành
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+Thumbs.db
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+Desktop.ini
+$RECYCLE.BIN/
+
+# 3. Chặn tải nhầm thư viện hoặc biến môi trường ở Root
+node_modules/
+.env
+.env.*
+!.env.example
+
+# 4. Các file Log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
