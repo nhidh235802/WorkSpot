@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ReviewsController } from './reviews.controller';
-import { ReviewsService } from './reviews.service';
+import { ReviewsService } from '../services/reviews.service';
 import { beforeEach, describe, expect, it } from '@jest/globals';
 
 describe('ReviewsController', () => {

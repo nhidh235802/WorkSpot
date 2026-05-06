@@ -32,7 +32,7 @@ export enum FacilityType {
 @Entity('cafes')
 export class Cafe {
   @PrimaryGeneratedColumn('uuid')
-  id!: number;
+  id!: string;
 
   @Column({ type: 'varchar', length: 255 })
   name!: string;
