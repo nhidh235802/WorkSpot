@@ -6,4 +6,15 @@ DTO sẽ kiểm tra xem email có đúng định dạng @gmail.com không, passw
 Nếu sai, nó vứt cái phiếu đó đi luôn, báo lỗi về Frontend, không thèm gọi Đầu bếp.*/
 // File này code định nghĩa các trường dữ liệu và gắn "bùa" kiểm tra (Validator). Ví dụ: @IsEmail(), @IsNotEmpty(), @MinLength(8).
 
-export class CreateUserDto {}
+import { IsEmail, MinLength, IsString } from 'class-validator';
+
+export class CreateUserDto {
+  @IsString()
+  fullName!: string;
+
+  @IsEmail({}, { message: 'Email không đúng định dạng!' })
+  email!: string;
+
+  @MinLength(6, { message: 'Mật khẩu phải từ 6 ký tự' })
+  password!: string;
+}
