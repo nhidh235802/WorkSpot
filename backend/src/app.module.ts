@@ -3,9 +3,9 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { CafesModule } from './cafes/cafes.module';
+import { ReviewsModule } from './reviews/reviews.module';
 
 @Module({
   imports: [
@@ -25,9 +25,9 @@ import { CafesModule } from './cafes/cafes.module';
     }),
 
     // 3. Các module tính năng của web app
-    AuthModule,
     UsersModule,
     CafesModule,
+    ReviewsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
