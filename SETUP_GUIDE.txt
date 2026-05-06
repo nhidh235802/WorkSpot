@@ -38,6 +38,7 @@ PHẦN 3: CẤU HÌNH DATABASE VÀ BIẾN MÔI TRƯỜNG
 
     - Mở pgAdmin hoặc công cụ SQL, tạo một Database trống tên là: workspot_db 
         (Để trống nhé, không cần tạo bảng hay chạy file .sql gì cả, typeorm sẽ tự sửa dtb cho mình qua migration)
+        Chạy Query: 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp";' (Để tải extension cho phép dùng id dạng uuid cho bảo mật)
     - Copy file dev.env.example thành file .env (nếu chưa có) (cả 2 đều để trong backend, cùng cấp với .../src)
     - Cập nhật thông tin DB_USERNAME và DB_PASSWORD theo tài khoản PostgreSQL trên máy mọi người.
 
@@ -48,10 +49,7 @@ Vì mình không cần tự tạo bảng, nên giờ cta sẽ chạy TypeORM.
 Mọi người cần cd vào "backend" trong Terminal trước nhé:
 
 1. Chạy lệnh để đổ các bảng vào database:
-   npm run migration:run
-
-2. Chạy file seed (chèn mấy cái dữ liệu tạm bợ mình tạo í):
-   npm run seed
+   npm run m:run
 
 --------------------------------------------------------------------
 PHẦN 5: KHỞI ĐỘNG SERVER
@@ -98,7 +96,7 @@ NGAY SAU KHI PULL VỀ, BẮT BUỘC PHẢI LÀM 2 VIỆC SAU TRƯỚC KHI CODE 
 
 2. Đồng bộ lại Database: (Ví dụ có thể ai đó vừa thêm cột mới hoặc xóa bảng.)
    - Mở Terminal ở thư mục "backend".
-   - Chạy: npm run migration:run
+   - Chạy: npm run m:run
    (Nó sẽ tự chạy migration để sửa dtb trên máy mọi người khớp với dtb trên git, còn nếu không có gì thì nó sẽ báo "No migrations are pending".)
 
 ====================================================================
