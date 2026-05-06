@@ -39,3 +39,8 @@ export class OperatingHour {
   @JoinColumn({ name: 'cafe_id' })
   cafe!: Cafe;
 }
+
+/* [
+  { "day": "monday", "open": "08:00", "close": "22:00", "isOff": false },
+  { "day": "tuesday", "open": "08:00", "close": "22:00", "isOff": false }
+] */
