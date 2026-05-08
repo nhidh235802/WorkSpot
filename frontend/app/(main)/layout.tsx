@@ -1,13 +1,14 @@
-import React from 'react'
-
-export default function Layout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   return (
-    <section className="layout-container">
-      {}
-      
-      <main>{children}</main>
-
-      {}
-    </section>
+    <html lang="vi">
+      <body>
+        {}
+        {children}
+      </body>
+    </html>
   )
 }
