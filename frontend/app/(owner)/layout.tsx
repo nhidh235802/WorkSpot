@@ -1,13 +1,15 @@
-import React from 'react'
-
-export default function Layout({ children }: { children: React.ReactNode }) {
+export default function SubLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   return (
-    <section className="layout-container">
-      {}
+    <div className="sub-layout-container">
+      {/* Nơi chèn các linh kiện dùng chung. Ví dụ: <Navbar /> */}
       
-      <main>{children}</main>
-
-      {}
-    </section>
+      {children}
+      
+      {/* Nơi chèn các linh kiện dùng chung. Ví dụ: <Footer /> */}
+    </div>
   )
 }
