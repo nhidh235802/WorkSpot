@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import style from 'styled-jsx/style';
 
 const cafes = [
   {
@@ -142,6 +143,8 @@ export default function WorkSpotPage() {
   const [user, setUser] = useState<{ fullName: string; avatar: string | null } | null>(null)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
+  const [keyword, setKeyword] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('access_token')
@@ -170,6 +173,41 @@ export default function WorkSpotPage() {
     router.push('/')
   }
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Kịch bản 1: Người dùng CÓ gõ từ khóa
+    if (keyword.trim()) {
+      router.push(`/cafes/search?q=${encodeURIComponent(keyword)}`);
+      return;
+    }
+
+    // Kịch bản 2: Người dùng KHÔNG gõ gì -> Dùng GPS
+    if (!navigator.geolocation) {
+      // "Trình duyệt của bạn không hỗ trợ định vị GPS."
+      alert("お使いのブラウザはGPS位置情報をサポートしていません。");
+      return;
+    }
+
+    setIsSearching(true);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        
+        setIsSearching(false);
+        router.push(`/cafes/search?lat=${lat}&lng=${lng}&radius=5`);
+      },
+      (error) => {
+        setIsSearching(false);
+        // "Không thể lấy vị trí hiện tại. Vui lòng nhập tên khu vực vào ô tìm kiếm."
+        alert("現在地を取得できませんでした。検索ボックスにエリア名を入力してください。");
+      },
+      { timeout: 5000 }
+    );
+  };
+
   return (
     <div style={{ minHeight: "100vh", background: "#FAFAF5", fontFamily: "Manrope, sans-serif" }}>
 
@@ -191,7 +229,7 @@ export default function WorkSpotPage() {
           alignItems: "center",
           justifyContent: "space-between",
         }}>
-          <span style={{ fontSize: 24, fontWeight: 400, color: "#14422D", fontFamily: "Acme, sans-serif", lineHeight: "32px" }}>
+          <span style={{ fontSize: 24, fontWeight: 400, color: "#14422D", fontFamily: "Acme, sans-serif", lineHeight: "32px", letterSpacing: "-1.20px" }}>
             WorkSpot
           </span>
 
@@ -278,51 +316,38 @@ export default function WorkSpotPage() {
               リモートワークに最適な、ハノイで最も静かで集中できるカフェを厳選しました。
             </p>
 
-            {/* Search bar */}
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              background: "#fff",
-              borderRadius: 9999,
-              padding: "8px 8px 8px 20px",
-              boxShadow: "0 12px 40px 0 rgba(26,28,25,0.06)",
-              maxWidth: 576,
-            }}>
+            <form 
+              onSubmit={handleSearch}
+              style={{
+                display: "flex", alignItems: "center", gap: 8, background: "#fff",
+                borderRadius: 9999, padding: "8px 8px 8px 20px",
+                boxShadow: "0 12px 40px 0 rgba(26,28,25,0.06)", maxWidth: 576,
+              }}
+            >
               <svg width="16" height="20" viewBox="0 0 16 20" fill="none" style={{ flexShrink: 0 }}>
                 <path d="M8 10C8.55 10 9.02083 9.80417 9.4125 9.4125C9.80417 9.02083 10 8.55 10 8C10 7.45 9.80417 6.97917 9.4125 6.5875C9.02083 6.19583 8.55 6 8 6C7.45 6 6.97917 6.19583 6.5875 6.5875C6.19583 6.97917 6 7.45 6 8C6 8.55 6.19583 9.02083 6.5875 9.4125C6.97917 9.80417 7.45 10 8 10ZM8 17.35C10.0333 15.4833 11.5417 13.7875 12.525 12.2625C13.5083 10.7375 14 9.38333 14 8.2C14 6.38333 13.4208 4.89583 12.2625 3.7375C11.1042 2.57917 9.68333 2 8 2C6.31667 2 4.89583 2.57917 3.7375 3.7375C2.57917 4.89583 2 6.38333 2 8.2C2 9.38333 2.49167 10.7375 3.475 12.2625C4.45833 13.7875 5.96667 15.4833 8 17.35ZM8 20C5.31667 17.7167 3.3125 15.5958 1.9875 13.6375C0.6625 11.6792 0 9.86667 0 8.2C0 5.7 0.804167 3.70833 2.4125 2.225C4.02083 0.741667 5.88333 0 8 0C10.1167 0 11.9792 0.741667 13.5875 2.225C15.1958 3.70833 16 5.7 16 8.2C16 9.86667 15.3375 11.6792 14.0125 13.6375C12.6875 15.5958 10.6833 17.7167 8 20Z" fill="#717973" />
               </svg>
               <input
                 type="text"
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
                 placeholder="エリア名やカフェ名で検索..."
-                style={{
-                  flex: 1,
-                  border: "none",
-                  outline: "none",
-                  background: "transparent",
-                  fontSize: 16,
-                  color: "#414943",
-                  padding: "10px 0",
-                  fontFamily: "Manrope, sans-serif",
-                }}
+                style={{ flex: 1, border: "none", outline: "none", background: "transparent", fontSize: 16, color: "#414943", padding: "10px 0", fontFamily: "Manrope, sans-serif" }}
               />
-              <button style={{
-                flexShrink: 0,
-                padding: "16px 32px",
-                borderRadius: 9999,
-                border: "none",
-                background: "linear-gradient(135deg, #14422D 0%, #2D5A43 100%)",
-                color: "#fff",
-                fontSize: 14,
-                fontWeight: 500,
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-                letterSpacing: "0.35px",
-                fontFamily: "Manrope, sans-serif",
-              }}>
-                スポットを探す
+              <button 
+                type="submit" 
+                disabled={isSearching} // Khóa nút khi đang tìm GPS
+                style={{ 
+                  flexShrink: 0, padding: "16px 32px", borderRadius: 9999, border: "none", 
+                  background: isSearching ? "#9FCFB2" : "linear-gradient(135deg, #14422D 0%, #2D5A43 100%)", 
+                  color: "#fff", fontSize: 14, fontWeight: 500, 
+                  cursor: isSearching ? "not-allowed" : "pointer", 
+                  whiteSpace: "nowrap" 
+                }}
+              >
+                {isSearching ? "現在地を取得中..." : "スポットを探す"} {/* "Đang lấy vị trí..." : "Tìm quán" */}
               </button>
-            </div>
+            </form>
           </div>
 
           {/* Right: image */}
