@@ -9,6 +9,7 @@ import { AppService } from './app.service';
 import { UsersModule } from './users/module/users.module';
 import { CafesModule } from './cafes/module/cafes.module';
 import { ReviewsModule } from './reviews/module/reviews.module';
+import { AuthModule } from './auth/module/auth.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { ReviewsModule } from './reviews/module/reviews.module';
     }),
 
     // 3. Các module tính năng của web app
+    AuthModule,
     UsersModule,
     CafesModule,
     ReviewsModule,

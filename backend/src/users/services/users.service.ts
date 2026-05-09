@@ -84,9 +84,14 @@ export class UsersService {
     return { message: 'Đổi mật khẩu thành công.' };
   }
 
-  // ─── Helpers ─────────────────────────────────────────────────────────────────
-  private async findUserOrThrow(userId: string): Promise<User> {
-    const user = await this.userRepository.findOne({ where: { id: userId } });
+  async findByEmail(email: string): Promise<User | null> {
+    return this.usersRepository.findOne({
+      where: { email },
+    });
+  }
+
+  async findOne(id: string): Promise<User> {
+    const user = await this.usersRepository.findOne({ where: { id } });
     if (!user) {
       throw new NotFoundException('Người dùng không tồn tại.');
     }
