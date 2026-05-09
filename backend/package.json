@@ -21,7 +21,8 @@
     "typeorm": "ts-node -r dotenv/config ./node_modules/typeorm/cli",
     "m:gen": "npm run typeorm -- -d ./src/data-source.ts migration:generate ./src/migrations/InitSchema",
     "m:create": "npm run typeorm -- migration:create ./src/migrations/SeedMockData",
-    "m:run": "npm run typeorm -- -d ./src/data-source.ts migration:run"
+    "m:run": "npm run typeorm -- -d ./src/data-source.ts migration:run",
+    "m:revert": "npm run typeorm -- -d ./src/data-source.ts migration:revert"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

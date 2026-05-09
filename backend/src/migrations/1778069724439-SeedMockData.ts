@@ -5,8 +5,7 @@ export class SeedMockData1778069724439 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`);
 
-    // Hash passwords (all test accounts use '${hash}')
-    const hash = await bcrypt.hash('${hash}', 10);
+    const hash = await bcrypt.hash('123456', 10);
 
     // --- 1. ID CỐ ĐỊNH ---
     const adminId = '11111111-1111-1111-1111-111111111111';
