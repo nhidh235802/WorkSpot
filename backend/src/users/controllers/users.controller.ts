@@ -14,7 +14,7 @@ import { UsersService } from '../services/users.service';
 import { UpdateProfileDto } from '../dto/update-profile.dto';
 import { ChangePasswordDto } from '../dto/change-password.dto';
 import { ProfileResponseDto } from '../dto/profile-response.dto';
-import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 
 interface AuthenticatedRequest extends ExpressRequest {
   user?: {

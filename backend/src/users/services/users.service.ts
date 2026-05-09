@@ -21,27 +21,24 @@ export class UsersService {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  // ─── Lấy thông tin hồ sơ ────────────────────────────────────────────────────
   async getProfile(userId: string): Promise<ProfileResponseDto> {
     const user = await this.findUserOrThrow(userId);
     return this.toResponseDto(user);
   }
 
-  // ─── Cập nhật thông tin hồ sơ ───────────────────────────────────────────────
   async updateProfile(
     userId: string,
     dto: UpdateProfileDto,
   ): Promise<ProfileResponseDto> {
     const user = await this.findUserOrThrow(userId);
 
-    // Kiểm tra email trùng (nếu đổi email)
-    if ((dto as any).email && (dto as any).email !== user.email) {
+    if (dto.email && dto.email !== user.email) {
       const existing = await this.userRepository.findOne({
-        where: { email: (dto as any).email },
+        where: { email: dto.email },
       });
       if (existing) {
         throw new ConflictException(
-          'Email này đã được sử dụng bởi tài khoản khác.',
+          'このメールアドレスはすでに使用されています。',
         );
       }
     }
@@ -51,58 +48,52 @@ export class UsersService {
     return this.toResponseDto(saved);
   }
 
-  // ─── Đổi mật khẩu ───────────────────────────────────────────────────────────
   async changePassword(
     userId: string,
     dto: ChangePasswordDto,
   ): Promise<{ message: string }> {
     const user = await this.findUserOrThrow(userId);
 
-    // Kiểm tra xác nhận mật khẩu mới
-    if ((dto as any).newPassword !== (dto as any).confirmPassword) {
-      throw new BadRequestException('Xác nhận mật khẩu không khớp.');
-    }
-
-    const isMatch = await (bcrypt as any).compare(
-      (dto as any).currentPassword,
-      user.password,
-    );
+    const isMatch = await bcrypt.compare(dto.currentPassword, user.password);
     if (!isMatch) {
-      throw new BadRequestException('Mật khẩu hiện tại không chính xác.');
+      throw new BadRequestException('現在のパスワードが正しくありません。');
     }
 
-    if ((dto as any).currentPassword === (dto as any).newPassword) {
+    if (dto.currentPassword === dto.newPassword) {
       throw new BadRequestException(
-        'Mật khẩu mới không được trùng với mật khẩu hiện tại.',
+        '新しいパスワードは現在のパスワードと異なる必要があります。',
       );
     }
 
-    const hashed = await (bcrypt as any).hash((dto as any).newPassword, 10);
-    user.password = hashed;
+    user.password = await bcrypt.hash(dto.newPassword, 10);
     await this.userRepository.save(user);
 
-    return { message: 'Đổi mật khẩu thành công.' };
+    return { message: 'パスワードを変更しました。' };
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    return this.usersRepository.findOne({
-      where: { email },
-    });
+    return this.userRepository.findOne({ where: { email } });
   }
 
   async findOne(id: string): Promise<User> {
-    const user = await this.usersRepository.findOne({ where: { id } });
+    const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
-      throw new NotFoundException('Người dùng không tồn tại.');
+      throw new NotFoundException('ユーザーが見つかりません。');
+    }
+    return user;
+  }
+
+  private async findUserOrThrow(id: string): Promise<User> {
+    const user = await this.userRepository.findOne({ where: { id } });
+    if (!user) {
+      throw new NotFoundException('ユーザーが見つかりません。');
     }
     return user;
   }
 
   private toResponseDto(user: User): ProfileResponseDto {
-    return new (ProfileResponseDto as any)(
-      plainToInstance(ProfileResponseDto as any, user, {
-        excludeExtraneousValues: true,
-      }),
-    );
+    return plainToInstance(ProfileResponseDto, user, {
+      excludeExtraneousValues: true,
+    });
   }
 }
