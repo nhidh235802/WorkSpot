@@ -1,45 +1,62 @@
 import {
   Controller,
   Get,
-  Post,
-  Body,
   Patch,
-  Param,
-  Delete,
+  Put,
+  Body,
+  UseGuards,
   HttpCode,
   HttpStatus,
+  Request,
 } from '@nestjs/common';
+import { Request as ExpressRequest } from 'express';
 import { UsersService } from '../services/users.service';
-import { CreateUserDto } from '../dto/create-user.dto';
-import { UpdateUserDto } from '../dto/update-user.dto';
+import { UpdateProfileDto } from '../dto/update-profile.dto';
+import { ChangePasswordDto } from '../dto/change-password.dto';
+import { ProfileResponseDto } from '../dto/profile-response.dto';
+import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 
-@Controller('users')
+interface AuthenticatedRequest extends ExpressRequest {
+  user?: {
+    id: string;
+  };
+}
+
+/**
+ * Mọi route đều yêu cầu JWT.
+ * userId được lấy từ req.user.id (do JwtAuthGuard inject sau khi verify token).
+ */
+@UseGuards(JwtAuthGuard)
+@Controller('profile')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
-  }
-
+  // GET /profile
   @Get()
-  findAll() {
-    return this.usersService.findAll();
+  @HttpCode(HttpStatus.OK)
+  async getProfile(
+    @Request() req: AuthenticatedRequest,
+  ): Promise<ProfileResponseDto> {
+    return await this.usersService.getProfile(req.user!.id);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(id);
+  // PATCH /profile
+  @Patch()
+  @HttpCode(HttpStatus.OK)
+  async updateProfile(
+    @Request() req: AuthenticatedRequest,
+    @Body() dto: UpdateProfileDto,
+  ): Promise<ProfileResponseDto> {
+    return await this.usersService.updateProfile(req.user!.id, dto);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(id, updateUserDto);
-  }
-
-  @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(id);
+  // PUT /profile/change-password
+  @Put('change-password')
+  @HttpCode(HttpStatus.OK)
+  async changePassword(
+    @Request() req: AuthenticatedRequest,
+    @Body() dto: ChangePasswordDto,
+  ): Promise<{ message: string }> {
+    return await this.usersService.changePassword(req.user!.id, dto);
   }
 }
