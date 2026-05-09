@@ -1,5 +1,7 @@
 "use client";
 
+import Link from 'next/link'
+
 const cafes = [
   {
     id: 1,
@@ -159,29 +161,29 @@ export default function WorkSpotPage() {
             WorkSpot
           </span>
           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <button style={{
+            <Link href="/register" style={{
               padding: "14px 24px",
               borderRadius: 9999,
-              border: "none",
               background: "transparent",
               fontSize: 14,
               color: "#14422D",
-              cursor: "pointer",
+              textDecoration: "none",
+              fontWeight: 500,
             }}>
               サインアップ
-            </button>
-            <button style={{
+            </Link>
+            <Link href="/login" style={{
               padding: "14px 24px",
               borderRadius: 9999,
-              border: "none",
               background: "linear-gradient(135deg, #14422D 0%, #2D5A43 100%)",
               fontSize: 14,
               color: "#fff",
-              cursor: "pointer",
+              textDecoration: "none",
               letterSpacing: "0.35px",
+              fontWeight: 500,
             }}>
               サインイン
-            </button>
+            </Link>
           </div>
         </div>
       </nav>

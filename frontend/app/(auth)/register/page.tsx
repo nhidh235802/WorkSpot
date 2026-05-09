@@ -10,12 +10,11 @@ import { ArrowLeft, Eye, EyeOff, IdCard, Lock, Mail, Store, User } from 'lucide-
 import axios from 'axios'
 import { useRouter } from 'next/navigation'
 
-// ── Zod schema ────────────────────────────────────────────────
 const schema = z
   .object({
     role: z.enum(['customer', 'owner']),
     fullName: z.string().min(1, '氏名を入力してください'),
-    email: z.string().email('メールアドレスの形式が正しくありません'),
+    email: z.string().email(),
     password: z.string().min(6, 'パスワードは6文字以上で入力してください'),
     confirmPassword: z.string().min(1, 'パスワード（確認）を入力してください'),
   })
@@ -26,15 +25,36 @@ const schema = z
 
 type FormData = z.infer<typeof schema>
 
-// ── Shared input class ─────────────────────────────────────────
-const inputClass =
-  'w-full rounded-xl bg-[#E3E3DE] py-[18px] pl-12 pr-12 text-base text-[#1A1C19] outline-none ' +
-  'placeholder:text-[#C0C9C1] placeholder:font-normal focus:ring-2 focus:ring-[#14422D]'
+const inputBase: React.CSSProperties = {
+  width: '100%',
+  boxSizing: 'border-box',
+  paddingTop: 18,
+  paddingBottom: 18,
+  paddingLeft: 48,
+  paddingRight: 16,
+  background: '#E3E3DE',
+  borderRadius: 12,
+  border: 'none',
+  outline: 'none',
+  color: '#1A1C19',
+  fontSize: 16,
+  fontFamily: 'Be Vietnam Pro, sans-serif',
+  fontWeight: 400,
+}
 
-const labelClass =
-  'block text-[12px] font-semibold uppercase tracking-[0.6px] text-[#414943] font-[var(--font-be-vietnam-pro)]'
+const labelStyle: React.CSSProperties = {
+  display: 'block',
+  color: '#414943',
+  fontSize: 12,
+  fontFamily: 'Be Vietnam Pro, sans-serif',
+  fontWeight: 600,
+  textTransform: 'uppercase',
+  lineHeight: '16px',
+  letterSpacing: 0.60,
+  marginBottom: 6,
+  paddingLeft: 4,
+}
 
-// ── Page ──────────────────────────────────────────────────────
 export default function RegisterPage() {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
@@ -42,15 +62,8 @@ export default function RegisterPage() {
   const [selectedRole, setSelectedRole] = useState<'customer' | 'owner'>('customer')
   const [serverError, setServerError]   = useState('')
 
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    formState: { errors, isSubmitting },
-  } = useForm<FormData>({
-    resolver: zodResolver(schema),
-    defaultValues: { role: 'customer' },
-  })
+  const { register, handleSubmit, setValue, formState: { errors, isSubmitting } } =
+    useForm<FormData>({ resolver: zodResolver(schema), defaultValues: { role: 'customer' } })
 
   const pickRole = (role: 'customer' | 'owner') => {
     setSelectedRole(role)
@@ -60,7 +73,7 @@ export default function RegisterPage() {
   const onSubmit = async (data: FormData) => {
     setServerError('')
     try {
-      await axios.post('http://localhost:3000/auth/register', {
+      await axios.post('http://localhost:3001/auth/register', {
         fullName: data.fullName,
         email:    data.email,
         password: data.password,
@@ -77,110 +90,101 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="relative flex h-screen overflow-hidden">
+    <div style={{ width: '100%', minHeight: '100vh', position: 'relative', background: '#FAFAF5', display: 'flex' }}>
 
-      {/* ══════════════════════════════════════════════════════
-          左側：カフェ写真 + テキスト
-      ══════════════════════════════════════════════════════ */}
-      <div className="relative hidden w-1/2 lg:block bg-[#14422D]">
-        {/* 背景画像 */}
+      {/* ══ 左パネル ══ */}
+      <div
+        className="max-lg:hidden"
+        style={{ flex: '1 1 0', position: 'relative', background: '#14422D', overflow: 'hidden', display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}
+      >
         <Image
           src="/login_register_img/291cf934ac1b4d19a98f0b191a0efa2da4f4de86.png"
           alt="WorkSpot cafe"
           fill
-          className="object-cover opacity-60"
+          style={{ objectFit: 'cover', opacity: 0.60 }}
           priority
         />
-
-        {/* コンテンツ */}
-        <div className="relative z-10 flex h-full flex-col px-16 pt-[82px] pb-16 justify-between">
+        <div style={{
+          position: 'relative', zIndex: 1, flex: '1 1 0', height: '100%',
+          paddingTop: 82, paddingBottom: 64, paddingLeft: 64, paddingRight: 64,
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between', alignItems: 'flex-start',
+        }}>
           {/* ロゴ */}
-          <p
-            className="text-2xl text-white"
-            style={{ fontFamily: 'var(--font-acme)', lineHeight: '32px' }}
-          >
+          <div style={{ color: 'white', fontSize: 24, fontFamily: 'Acme, sans-serif', fontWeight: 400, lineHeight: '32px' }}>
             WorkSpot
-          </p>
-
-          {/* キャッチコピー */}
-          <div className="flex flex-col gap-6 max-w-[448px]">
-            <h1
-              className="text-[48px] font-extrabold text-white leading-[60px]"
-              style={{ fontFamily: 'var(--font-manrope)' }}
-            >
-              ハノイの中心で、あなたらしく働ける場所を。
-            </h1>
-            <p
-              className="text-[18px] font-medium text-[#BCEECF] leading-[29px]"
-              style={{ fontFamily: 'var(--font-be-vietnam-pro)' }}
-            >
-              WorkSpotは、リモートワーカーとカフェオーナーをつなぐサービスです。
-            </p>
           </div>
 
-          {/* ページドット */}
-          <div className="flex items-center gap-4">
-            <div className="h-1 w-12 rounded-full bg-white" />
-            <div className="h-1 w-4 rounded-full bg-white/40" />
+          {/* キャッチコピー */}
+          <div style={{ width: '100%', maxWidth: 448, display: 'flex', flexDirection: 'column', gap: 24 }}>
+            <div style={{ color: 'white', fontSize: 48, fontFamily: 'Manrope, sans-serif', fontWeight: 800, lineHeight: '60px' }}>
+              ハノイの中心で、あなたらしく働ける場所を。
+            </div>
+            <div style={{ color: '#BCEECF', fontSize: 18, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 500, lineHeight: '29.25px' }}>
+              WorkSpotは、リモートワーカーとカフェオーナーをつなぐサービスです。
+            </div>
+          </div>
+
+          {/* ドット */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ width: 48, height: 4, borderRadius: 9999, background: 'white' }} />
+            <div style={{ width: 16, height: 4, borderRadius: 9999, background: 'rgba(255,255,255,0.4)' }} />
           </div>
         </div>
       </div>
 
-      {/* ══════════════════════════════════════════════════════
-          右側：フォーム
-      ══════════════════════════════════════════════════════ */}
-      <div
-        className="flex w-full items-center justify-center overflow-y-auto bg-[#F4F4EF] px-8 lg:w-1/2"
-        style={{ fontFamily: 'var(--font-be-vietnam-pro)' }}
-      >
-        <div className="w-full max-w-[448px] py-10 pt-10 flex flex-col gap-10">
+      {/* ══ 右パネル ══ */}
+      <div style={{
+        flex: '1 1 0', padding: 96,
+        background: '#F4F4EF', overflowY: 'auto',
+        display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
+      }}>
+        <div style={{ width: '100%', maxWidth: 448, paddingTop: 40, display: 'flex', flexDirection: 'column', gap: 40 }}>
 
           {/* タイトル */}
-          <div className="flex flex-col gap-2">
-            <h2
-              className="text-[36px] font-medium text-[#1A1C19] leading-10"
-              style={{ fontFamily: 'var(--font-manrope)' }}
-            >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ color: '#1A1C19', fontSize: 36, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '40px' }}>
               アカウント作成
-            </h2>
-            <p className="text-[16px] font-medium text-[#414943] leading-6">
+            </div>
+            <div style={{ color: '#414943', fontSize: 16, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 500, lineHeight: '24px' }}>
               WorkSpotを今すぐ始めましょう。
-            </p>
+            </div>
           </div>
 
           {/* フォーム */}
-          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
+          <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
-            {/* ── アカウント種別 ── */}
-            <div className="flex flex-col gap-3">
-              <label
-                className="text-[14px] font-semibold uppercase text-[#1A1C19] tracking-[0.35px]"
-              >
+            {/* アカウント種別 */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ color: '#1A1C19', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 600, textTransform: 'uppercase', lineHeight: '20px', letterSpacing: 0.35 }}>
                 アカウント種別
-              </label>
-              <div className="grid grid-cols-2">
-                {/* リモートワーカー */}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <button
                   type="button"
                   onClick={() => pickRole('customer')}
-                  className={`flex items-center justify-center gap-2 rounded-xl h-[60px] px-4 text-[14px] font-semibold transition-all ${
-                    selectedRole === 'customer'
-                      ? 'bg-[#14422D] text-white'
-                      : 'bg-[#E3E3DE] text-[#414943]'
-                  }`}
+                  style={{
+                    height: 60, padding: 16,
+                    borderRadius: 12, border: 'none', cursor: 'pointer',
+                    background: selectedRole === 'customer' ? '#14422D' : '#E3E3DE',
+                    display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8,
+                    color: selectedRole === 'customer' ? 'white' : '#414943',
+                    fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 600,
+                  }}
                 >
                   <User size={16} />
                   リモートワーカー
                 </button>
-                {/* カフェオーナー */}
                 <button
                   type="button"
                   onClick={() => pickRole('owner')}
-                  className={`flex items-center justify-center gap-2 rounded-xl h-[60px] px-4 text-[14px] font-extrabold transition-all ${
-                    selectedRole === 'owner'
-                      ? 'bg-[#14422D] text-white'
-                      : 'bg-[#E3E3DE] text-[#414943]'
-                  }`}
+                  style={{
+                    height: 60, padding: 16,
+                    borderRadius: 12, border: 'none', cursor: 'pointer',
+                    background: selectedRole === 'owner' ? '#14422D' : '#E3E3DE',
+                    display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8,
+                    color: selectedRole === 'owner' ? 'white' : '#414943',
+                    fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 800,
+                  }}
                 >
                   <Store size={16} />
                   カフェオーナー
@@ -188,144 +192,116 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* ── フィールド群 ── */}
-            <div className="flex flex-col gap-4 pb-4">
+            {/* フィールド群 */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 16 }}>
 
               {/* 氏名 */}
-              <div className="flex flex-col gap-1.5">
-                <label className={labelClass}>氏名</label>
-                <div className="relative">
-                  <IdCard size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#C0C9C1]" />
-                  <input
-                    {...register('fullName')}
-                    type="text"
-                    placeholder="山田 太郎"
-                    className={inputClass}
-                  />
+              <div>
+                <label style={labelStyle}>氏名</label>
+                <div style={{ position: 'relative' }}>
+                  <IdCard size={20} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: '#C0C9C1' }} />
+                  <input {...register('fullName')} type="text" placeholder="山田 太郎" style={inputBase} />
                 </div>
-                {errors.fullName && (
-                  <p className="text-xs text-red-500">{errors.fullName.message}</p>
-                )}
+                {errors.fullName && <p style={{ color: '#EF4444', fontSize: 12, margin: '4px 0 0' }}>{errors.fullName.message}</p>}
               </div>
 
               {/* メールアドレス */}
-              <div className="flex flex-col gap-1.5">
-                <label className={labelClass}>メールアドレス</label>
-                <div className="relative">
-                  <Mail size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#C0C9C1]" />
-                  <input
-                    {...register('email')}
-                    type="email"
-                    placeholder="name@example.com"
-                    className={inputClass}
-                  />
+              <div>
+                <label style={labelStyle}>メールアドレス</label>
+                <div style={{ position: 'relative' }}>
+                  <Mail size={20} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: '#C0C9C1' }} />
+                  <input {...register('email')} type="email" placeholder="name@example.com" style={inputBase} />
                 </div>
-                {errors.email && (
-                  <p className="text-xs text-red-500">{errors.email.message}</p>
-                )}
+                {errors.email && <p style={{ color: '#EF4444', fontSize: 12, margin: '4px 0 0' }}>{errors.email.message}</p>}
               </div>
 
               {/* パスワード */}
-              <div className="flex flex-col gap-1.5">
-                <label className={labelClass}>パスワード</label>
-                <div className="relative">
-                  <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#C0C9C1]" />
-                  <input
-                    {...register('password')}
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
-                    className={inputClass}
-                  />
+              <div>
+                <label style={labelStyle}>パスワード</label>
+                <div style={{ position: 'relative' }}>
+                  <Lock size={16} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: '#C0C9C1' }} />
+                  <input {...register('password')} type={showPassword ? 'text' : 'password'} placeholder="••••••••" style={{ ...inputBase, paddingRight: 48 }} />
                   <button
                     type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#C0C9C1] hover:text-[#414943]"
+                    onClick={() => setShowPassword(v => !v)}
+                    style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', color: '#C0C9C1', background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}
                   >
                     {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
                   </button>
                 </div>
-                {errors.password && (
-                  <p className="text-xs text-red-500">{errors.password.message}</p>
-                )}
+                {errors.password && <p style={{ color: '#EF4444', fontSize: 12, margin: '4px 0 0' }}>{errors.password.message}</p>}
               </div>
 
               {/* パスワード（確認） */}
-              <div className="flex flex-col gap-1.5">
-                <label className={labelClass}>パスワード（確認）</label>
-                <div className="relative">
-                  <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#C0C9C1]" />
-                  <input
-                    {...register('confirmPassword')}
-                    type={showConfirm ? 'text' : 'password'}
-                    placeholder="••••••••"
-                    className={inputClass}
-                  />
+              <div>
+                <label style={labelStyle}>パスワード（確認）</label>
+                <div style={{ position: 'relative' }}>
+                  <Lock size={16} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: '#C0C9C1' }} />
+                  <input {...register('confirmPassword')} type={showConfirm ? 'text' : 'password'} placeholder="••••••••" style={{ ...inputBase, paddingRight: 48 }} />
                   <button
                     type="button"
-                    onClick={() => setShowConfirm((v) => !v)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#C0C9C1] hover:text-[#414943]"
+                    onClick={() => setShowConfirm(v => !v)}
+                    style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', color: '#C0C9C1', background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}
                   >
                     {showConfirm ? <EyeOff size={22} /> : <Eye size={22} />}
                   </button>
                 </div>
-                {errors.confirmPassword && (
-                  <p className="text-xs text-red-500">{errors.confirmPassword.message}</p>
-                )}
+                {errors.confirmPassword && <p style={{ color: '#EF4444', fontSize: 12, margin: '4px 0 0' }}>{errors.confirmPassword.message}</p>}
               </div>
             </div>
 
             {/* サーバーエラー */}
             {serverError && (
-              <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
+              <div style={{ background: '#FEF2F2', borderRadius: 12, padding: '12px 16px', color: '#DC2626', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif' }}>
                 {serverError}
-              </p>
+              </div>
             )}
 
             {/* 送信ボタン */}
             <button
               type="submit"
               disabled={isSubmitting}
-              className="relative flex w-full items-center justify-center gap-2 rounded-full py-5 text-[18px] font-semibold text-white disabled:opacity-60 transition-opacity"
               style={{
+                width: '100%', paddingTop: 20, paddingBottom: 20,
                 background: 'linear-gradient(90deg, #14422D 0%, #2D5A43 100%)',
-                boxShadow:
-                  '0px 8px 10px -6px rgba(20,66,45,0.10), 0px 20px 25px -5px rgba(20,66,45,0.10)',
+                borderRadius: 9999, border: 'none', cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8,
+                color: 'white', fontSize: 18, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 600, lineHeight: '28px',
+                opacity: isSubmitting ? 0.6 : 1,
+                boxShadow: '0px 8px 10px -6px rgba(20,66,45,0.10), 0px 20px 25px -5px rgba(20,66,45,0.10)',
               }}
             >
               {isSubmitting ? '処理中...' : (
-                <>
-                  アカウントを作成
-                  <ArrowLeft size={16} className="rotate-180" />
-                </>
+                <>アカウントを作成<ArrowLeft size={16} style={{ transform: 'rotate(180deg)' }} /></>
               )}
             </button>
           </form>
 
           {/* ログインリンク */}
-          <div className="flex items-center justify-center gap-1 pt-2">
-            <span className="text-[16px] font-medium text-[#414943]">
+          <div style={{ paddingTop: 8, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 4 }}>
+            <span style={{ color: '#414943', fontSize: 16, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 500, lineHeight: '24px' }}>
               すでにアカウントをお持ちの方
             </span>
-            <Link
-              href="/login"
-              className="text-[16px] font-semibold text-[#904C18] hover:underline"
-            >
+            <Link href="/login" style={{ color: '#904C18', fontSize: 16, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 600, lineHeight: '24px', textDecoration: 'none' }}>
               ログイン
             </Link>
           </div>
+
         </div>
       </div>
 
-      {/* ══════════════════════════════════════════════════════
-          ホームに戻る — 左上に浮いているボタン
-      ══════════════════════════════════════════════════════ */}
-      <div className="absolute left-8 top-8 z-20">
+      {/* ホームに戻る */}
+      <div style={{ position: 'absolute', left: 32, top: 32, zIndex: 20 }}>
         <Link
           href="/"
-          className="inline-flex items-center gap-2 rounded-full bg-[rgba(250,250,245,0.80)] px-4 py-2 text-[16px] font-medium text-[#14422D] backdrop-blur-[12px] transition hover:bg-[rgba(250,250,245,0.95)]"
           style={{
-            boxShadow:
-              '0px 4px 6px -4px rgba(0,0,0,0.05), 0px 10px 15px -3px rgba(0,0,0,0.05)',
+            paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8,
+            background: 'rgba(250,250,245,0.80)', borderRadius: 9999,
+            backdropFilter: 'blur(12px)',
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            color: '#14422D', fontSize: 16, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 500, lineHeight: '24px',
+            textDecoration: 'none',
+            boxShadow: '0px 4px 6px -4px rgba(0,0,0,0.05), 0px 10px 15px -3px rgba(0,0,0,0.05)',
           }}
         >
           <ArrowLeft size={16} />
