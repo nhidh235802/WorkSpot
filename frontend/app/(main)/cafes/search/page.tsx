@@ -261,6 +261,7 @@ export default function CafesSearchPage() {
                       </div>
                     </div>
                     <div className="pt-4 mt-4 border-t border-[#c0c9c1]/20 text-[#14422d] text-sm">
+                      {cafe.address}
                     </div>
                   </div>
                 </article>
