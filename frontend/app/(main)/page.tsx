@@ -174,6 +174,25 @@ export default function WorkSpotPage() {
       return () => { isMounted = false; };
     }, []);
 
+  useEffect(() => {
+    const token = localStorage.getItem('access_token')
+    const userStr = localStorage.getItem('user')
+    if (token && userStr) {
+      try { setUser(JSON.parse(userStr)) } catch { /* invalid JSON */ }
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!dropdownOpen) return
+    function handleClick(e: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [dropdownOpen])
+
   function handleLogout() {
     localStorage.removeItem('access_token')
     localStorage.removeItem('user')
