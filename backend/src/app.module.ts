@@ -29,10 +29,10 @@ import { AuthModule } from './auth/module/auth.module';
     }),
 
     // 3. Các module tính năng của web app
+    AuthModule,
     UsersModule,
     CafesModule,
     ReviewsModule,
-    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
