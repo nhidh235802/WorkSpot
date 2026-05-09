@@ -334,7 +334,7 @@ export default function WorkSpotPage() {
               aspectRatio: "4/5",
             }}>
               <img
-                src="https://picsum.photos/seed/hero/600/750"
+                src="./images/hero-cafe.png"
                 alt="Professional Cafe"
                 style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
               />
@@ -513,8 +513,8 @@ export default function WorkSpotPage() {
               background: "#E3E3DE",
             }}>
               <img
-                src="https://picsum.photos/seed/coupon/241/241"
-                alt="Special offers"
+                src="./images/hero-cafe.png"
+                alt="Hero Cafe"
                 style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
               />
             </div>
