@@ -17,6 +17,8 @@ import {
   Cigarette,
   Star
 } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { CafeService } from '@/services/cafe.service';
 
 const translateFacility = (facility: string) => {
   const mapping: Record<string, string> = {
@@ -43,9 +45,14 @@ const FILTERS = [
 ];
 
 export default function CafesSearchPage() {
+  const searchParams = useSearchParams();
+  
+  // 1. Khởi tạo state bằng cách ƯU TIÊN lấy dữ liệu từ URL (nếu có)
+  const initialKeyword = searchParams.get("q") || "";
+  const [keyword, setKeyword] = useState<string>(initialKeyword); 
+  
   const [cafes, setCafes] = useState<any[]>([]);
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
-  const [keyword, setKeyword] = useState<string>(""); 
   const [radius, setRadius] = useState<number>(10);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -65,36 +72,31 @@ export default function CafesSearchPage() {
 
   useEffect(() => {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000); // ✅ THÊM: Timeout 5 giây
+    const timeoutId = setTimeout(() => controller.abort(), 5000); 
     
     const fetchRealData = async () => {
       setIsLoading(true);
       setError(null);
 
       try {
-        const params = new URLSearchParams({ lat: '21.0285', lng: '105.8542', radius: radius.toString() });
-        
-        if (keyword.trim() !== "") {
-          params.append('keyword', keyword.trim());
-        }
-        
-        // Gắn các filter đang active vào query params
-        activeFilters.forEach(f => params.append(f, 'true'));
+        // 2. Lấy tọa độ từ URL (Nếu người dùng dùng GPS), nếu không có thì mới dùng mặc định
+        const lat = searchParams.get("lat") || '21.0285';
+        const lng = searchParams.get("lng") || '105.8542';
 
-        // Gọi Backend cổng 3001
-        const res = await fetch(`http://localhost:3001/cafes/search?${params.toString()}`, {
-          signal: controller.signal
-        });
+        // 3. Gọi qua Service
+        const data = await CafeService.searchCafes({
+          lat,
+          lng,
+          radius,
+          keyword,
+          filters: activeFilters
+        }, controller.signal);
         
-        if (!res.ok) throw new Error('サーバーエラーが発生しました');
-        
-        const data = await res.json();
         setCafes(data);
       } catch (err: any) {
         if (err.name === 'AbortError') {
           setError("接続時間が超過しました(5秒)。ネットワークを確認してください。");
         } else {
-          console.error("Lỗi fetch data:", err);
           setError("データの取得に失敗しました。サーバーの状態を確認してください。");
         }
       } finally {
@@ -103,7 +105,6 @@ export default function CafesSearchPage() {
       }
     };
 
-    // Debounce 500ms để tránh spam API khi người dùng gõ phím nhanh
     const debounceId = setTimeout(() => {
       fetchRealData();
     }, 500);
@@ -113,7 +114,7 @@ export default function CafesSearchPage() {
       clearTimeout(timeoutId);
       controller.abort();
     };
-  }, [activeFilters, keyword, radius]);
+  }, [activeFilters, keyword, radius, searchParams]);
 
   return (
     <main className="relative flex flex-col h-screen w-full bg-[#fafaf5] overflow-hidden">
@@ -134,7 +135,7 @@ export default function CafesSearchPage() {
       <div className="flex flex-1 overflow-hidden">
         
         {/* CỘT TRÁI: TÌM KIẾM & DANH SÁCH */}
-        <section className="relative flex flex-col w-[680px] h-full bg-[#fafaf5] border-r border-[#e3e3de] shadow-lg z-10 overflow-y-auto">
+        <section className="relative flex flex-col w-170 h-full bg-[#fafaf5] border-r border-[#e3e3de] shadow-lg z-10 overflow-y-auto">
           
           {/* THANH TÌM KIẾM VÀ BỘ LỌC CỐ ĐỊNH */}
           <div className="p-6 sticky top-0 bg-[#fafaf5] z-20 border-b border-[#e3e3de]/50 flex flex-col gap-4 shadow-sm">
@@ -202,7 +203,7 @@ export default function CafesSearchPage() {
               // RENDER THẺ QUÁN CAFE TỪ DATABASE
               cafes.map((cafe: any) => (
                 <article key={cafe.id} className="w-full bg-white rounded-xl overflow-hidden flex shadow-sm border border-[#e3e3de]/30 hover:shadow-md transition-shadow cursor-pointer">
-                  <div className="w-[224px] h-[192px] bg-gray-200 shrink-0">
+                  <div className="w-56 h-48 bg-gray-200 shrink-0">
                     <img 
                       src={cafe.avatar || "https://placehold.co/224x192"} 
                       alt={cafe.name} 
@@ -274,7 +275,7 @@ export default function CafesSearchPage() {
         {/* CỘT PHẢI: BẢN ĐỒ (STATIC PLACEHOLDER) */}
         <section className="flex-1 relative bg-[#E5E7EB] overflow-hidden">
           <img src="https://placehold.co/800x1024" alt="Map" className="w-full h-full object-cover mix-blend-multiply opacity-50" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[506px] h-[506px] bg-[#135899]/10 rounded-full border-2 border-[#135899]" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-126.5 h-126.5 bg-[#135899]/10 rounded-full border-2 border-[#135899]" />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-5 bg-white border-2 border-[#135899] rounded-full flex items-center justify-center">
             <div className="w-1.5 h-1.5 bg-[#135899] rounded-full" />
           </div>
