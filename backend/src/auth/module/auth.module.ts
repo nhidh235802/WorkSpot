@@ -25,3 +25,4 @@ import { User } from '../../users/entities/user.entity';
   providers: [AuthService, JwtStrategy],
 })
 export class AuthModule {}
+

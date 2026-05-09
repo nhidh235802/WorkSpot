@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Cafe } from '../entities/cafe.entity';
+import { Cafe, CafeStatus } from '../entities/cafe.entity';
 import { OperatingHour } from '../entities/operating-hour.entity';
 import { User } from '../../users/entities/user.entity';
 import { CreateCafeDto } from '../dto/create-cafe.dto';
@@ -19,10 +19,62 @@ export class CafesService {
     private readonly usersRepository: Repository<User>,
   ) {}
 
+  async getRecommended(userLat: number, userLng: number): Promise<any[]> {
+    const maxDist = 10; // Bán kính chuẩn hóa 10km
+
+    // Công thức Haversine tính khoảng cách (km)
+    const haversineExpr = [
+      '(6371 * acos(',
+      '  cos(radians(:lat)) * cos(radians(cafe.latitude))',
+      '  * cos(radians(cafe.longitude) - radians(:lng))',
+      '  + sin(radians(:lat)) * sin(radians(cafe.latitude))',
+      '))',
+    ].join('');
+
+    // Điểm đánh giá tính động: AVG từ bảng reviews, quán chưa có review = 0
+    const avgRatingExpr = 'COALESCE(AVG(review.rating), 0)';
+
+    // Công thức tổng điểm: 60% khoảng cách (đã chuẩn hóa) + 40% điểm đánh giá
+    const scoreExpr = [
+      '((GREATEST(0, :maxDist - ',
+      haversineExpr,
+      ') / :maxDist) * 60)',
+      ` + ((${avgRatingExpr} / 5) * 40)`,
+    ].join('');
+
+    const result: { entities: Cafe[]; raw: any[] } = await this.cafesRepository
+      .createQueryBuilder('cafe')
+      // JOIN với bảng reviews để tính AVG rating (LEFT JOIN để giữ quán chưa có review)
+      .leftJoin('cafe.reviews', 'review')
+      // Lọc trạng thái "Đang hiển thị" (approved)
+      .where('cafe.status = :status', { status: CafeStatus.APPROVED })
+      // GROUP BY để AVG hoạt động đúng
+      .groupBy('cafe.id')
+      // Gắn khoảng cách và điểm rating trung bình vào kết quả
+      .addSelect(haversineExpr, 'distance')
+      .addSelect(avgRatingExpr, 'avg_rating')
+      .addSelect(scoreExpr, 'total_score')
+      // Sắp xếp theo tổng điểm từ cao xuống thấp (dùng raw expr thay alias vì TypeORM không hỗ trợ alias trong orderBy)
+      .orderBy(scoreExpr, 'DESC')
+      // Chỉ lấy đúng 6 quán
+      .limit(6)
+      .setParameters({ lat: userLat, lng: userLng, maxDist })
+      .getRawAndEntities();
+
+    // Kết hợp dữ liệu quán, rating động và khoảng cách trả về cho Frontend
+    return result.entities.map((entity, index) => ({
+      ...entity,
+      rating: Math.round(result.raw[index].avg_rating * 10) / 10, // Làm tròn 1 chữ số thập phân
+      distance: Math.round(result.raw[index].distance * 10) / 10,
+    }));
+  }
+
   async create(createCafeDto: CreateCafeDto): Promise<Cafe> {
     const { ownerId, operatingHours, ...cafeData } = createCafeDto;
 
-    const owner = await this.usersRepository.findOne({ where: { id: ownerId } });
+    const owner = await this.usersRepository.findOne({
+      where: { id: ownerId },
+    });
     if (!owner) {
       throw new NotFoundException(`Người dùng #${ownerId} không tìm thấy`);
     }
@@ -62,7 +114,9 @@ export class CafesService {
     const { ownerId, operatingHours, ...cafeData } = updateCafeDto;
 
     if (ownerId) {
-      const owner = await this.usersRepository.findOne({ where: { id: ownerId } });
+      const owner = await this.usersRepository.findOne({
+        where: { id: ownerId },
+      });
       if (!owner) {
         throw new NotFoundException(`Người dùng #${ownerId} không tìm thấy`);
       }
@@ -94,14 +148,15 @@ export class CafesService {
 
     console.log('[SEARCH] Received query:', JSON.stringify(query, null, 2));
 
-    const queryBuilder = this.cafesRepository.createQueryBuilder('cafe')
+    const queryBuilder = this.cafesRepository
+      .createQueryBuilder('cafe')
       .where('cafe.status = :status', { status: 'approved' });
 
     // 1. Lọc theo Keyword (Tên/Địa chỉ)
     if (keyword) {
       queryBuilder.andWhere(
         '(cafe.name ILIKE :keyword OR cafe.address ILIKE :keyword)',
-        { keyword: `%${keyword}%` }
+        { keyword: `%${keyword}%` },
       );
     }
 
@@ -114,21 +169,23 @@ export class CafesService {
       isClean: 'cleanliness',
       isFocusFriendly: 'workspace',
       allowsSmoking: 'smoking_rule',
-      hasFlexibleHours: 'flexible_hours'
+      hasFlexibleHours: 'flexible_hours',
     };
 
     let filterIndex = 0;
     Object.keys(filterMapping).forEach((key) => {
       const filterValue = query[key as keyof SearchCafeDto];
-      console.log(`[FILTER] ${key} = ${filterValue} (type: ${typeof filterValue})`);
-      
+      console.log(
+        `[FILTER] ${key} = ${filterValue} (type: ${typeof filterValue})`,
+      );
+
       if (filterValue === true) {
         const enumValue = filterMapping[key];
         const paramName = `facility${filterIndex}`;
         console.log(`[APPLY] Adding filter: ${key} -> ${enumValue}`);
         queryBuilder.andWhere(
           `cafe.facilities @> ARRAY[:${paramName}]::public.cafes_facilities_enum[]`,
-          { [paramName]: enumValue }
+          { [paramName]: enumValue },
         );
         filterIndex++;
       }
@@ -146,7 +203,7 @@ export class CafesService {
 
     const results = await queryBuilder.getMany();
     console.log(`[RESULTS] Found ${results.length} cafes matching criteria`);
-    
+
     return results;
   }
 }

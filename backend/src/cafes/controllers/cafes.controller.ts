@@ -10,20 +10,27 @@ import {
   HttpStatus,
   Query,
   UseGuards,
-  Query,
+  ParseFloatPipe,
 } from '@nestjs/common';
 import { CafesService } from '../services/cafes.service';
 import { CreateCafeDto } from '../dto/create-cafe.dto';
 import { UpdateCafeDto } from '../dto/update-cafe.dto';
 import { SearchCafeDto } from '../dto/search-cafe.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { SearchCafeDto } from '../dto/search-cafe.dto';
 
 @Controller('cafes')
 export class CafesController {
   constructor(private readonly cafesService: CafesService) {}
 
-  @UseGuards(JwtAuthGuard)
+  // API Route: GET http://localhost:3001/cafes/recommended?lat=...&lng=...
+  @Get('recommended')
+  async getRecommended(
+    @Query('lat', ParseFloatPipe) lat: number,
+    @Query('lng', ParseFloatPipe) lng: number,
+  ) {
+    return this.cafesService.getRecommended(lat, lng);
+  }
+
   @Post()
   create(@Body() createCafeDto: CreateCafeDto) {
     return this.cafesService.create(createCafeDto);

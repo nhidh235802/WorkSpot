@@ -58,9 +58,9 @@ const labelStyle: React.CSSProperties = {
 export default function RegisterPage() {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
-  const [showConfirm, setShowConfirm]   = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
   const [selectedRole, setSelectedRole] = useState<'customer' | 'owner'>('customer')
-  const [serverError, setServerError]   = useState('')
+  const [serverError, setServerError] = useState('')
 
   const { register, handleSubmit, setValue, formState: { errors, isSubmitting } } =
     useForm<FormData>({ resolver: zodResolver(schema), defaultValues: { role: 'customer' } })
@@ -75,9 +75,9 @@ export default function RegisterPage() {
     try {
       await axios.post('http://localhost:3001/auth/register', {
         fullName: data.fullName,
-        email:    data.email,
+        email: data.email,
         password: data.password,
-        role:     data.role,
+        role: data.role,
       })
       router.push('/login')
     } catch (err: unknown) {
