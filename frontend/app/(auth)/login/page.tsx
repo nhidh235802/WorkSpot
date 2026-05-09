@@ -21,6 +21,7 @@ export default function LoginPage() {
     try {
       const res = await axios.post('http://localhost:3001/auth/login', data)
       localStorage.setItem('access_token', res.data.access_token)
+      localStorage.setItem('user', JSON.stringify(res.data.user))
       router.push('/')
     } catch (err: unknown) {
       if (axios.isAxiosError(err) && err.response?.status === 401) {
