@@ -9,9 +9,18 @@ import { ArrowLeft, Mail } from 'lucide-react'
 import axios from 'axios'
 
 const schema = z.object({
-  email: z.string().email(),
+  email: z.email(),
 })
 type FormData = z.infer<typeof schema>
+
+const errorBanner = (msg: string) => (
+  <div style={{ width: '100%', padding: 12, background: '#FFDAD6', borderRadius: 8, outline: '1px rgba(186,26,26,0.10) solid', outlineOffset: '-1px', display: 'flex', alignItems: 'center', gap: 8 }}>
+    <div style={{ width: 15, height: 15, flexShrink: 0, background: '#BA1A1A', borderRadius: 9999 }} />
+    <div style={{ color: '#BA1A1A', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '20px' }}>
+      {msg}
+    </div>
+  </div>
+)
 
 export default function ForgotPasswordPage() {
   const [serverError, setServerError] = useState('')
@@ -51,7 +60,6 @@ export default function ForgotPasswordPage() {
           borderRadius: 9999, filter: 'blur(32px)',
         }} />
 
-        {/* WorkSpot + ヘッドライン */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 48, position: 'relative', zIndex: 1, alignSelf: 'stretch' }}>
           <div style={{ color: 'white', fontSize: 30, fontFamily: 'Manrope, sans-serif', fontWeight: 800, lineHeight: '36px' }}>
             WorkSpot
@@ -64,12 +72,7 @@ export default function ForgotPasswordPage() {
           </div>
         </div>
 
-        {/* 説明文 */}
-        <div style={{
-          position: 'relative', zIndex: 1,
-          color: '#A1D1B4', fontSize: 18,
-          fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '29.25px',
-        }}>
+        <div style={{ position: 'relative', zIndex: 1, color: '#A1D1B4', fontSize: 18, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '29.25px' }}>
           ハノイの街に隠れた、<br />
           最高のカフェで見つける<br />
           インスピレーションに満ちたワークスペース。
@@ -78,8 +81,7 @@ export default function ForgotPasswordPage() {
 
       {/* ══ 右パネル ══ */}
       <div style={{
-        flex: 1,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
         paddingLeft: 96, paddingRight: 96, paddingTop: 48, paddingBottom: 48,
         background: '#FAFAF5',
       }}>
@@ -95,85 +97,55 @@ export default function ForgotPasswordPage() {
             </div>
           </div>
 
-          {sent ? (
-            /* 送信完了 */
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
-              <div style={{
-                background: '#F0FDF4', borderRadius: 8, padding: '16px',
-                display: 'flex', alignItems: 'center', gap: 12,
-              }}>
-                <Mail size={20} style={{ color: '#16A34A', flexShrink: 0 }} />
-                <div style={{ color: '#15803D', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '20px' }}>
-                  再設定リンクをメールに送信しました。受信箱をご確認ください。
-                </div>
-              </div>
-              <Link
-                href="/login"
+          {/* フォーム */}
+          <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+
+            {/* メールアドレス */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <label style={{ color: '#1A1C19', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '20px', paddingLeft: 4, paddingRight: 4 }}>
+                メールアドレス
+              </label>
+              <input
+                {...register('email')}
+                type="email"
+                placeholder="name@example.com"
                 style={{
-                  height: 56, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                  background: 'linear-gradient(170deg, #14422D 0%, #2D5A43 100%)',
-                  borderRadius: 9999, color: 'white',
-                  fontSize: 16, fontFamily: 'Manrope, sans-serif', fontWeight: 500,
-                  textDecoration: 'none',
-                  boxShadow: '0px 4px 6px -4px rgba(20,66,45,0.10), 0px 10px 15px -3px rgba(20,66,45,0.10)',
+                  height: 56, width: '100%', boxSizing: 'border-box',
+                  paddingLeft: 16, paddingRight: 16, paddingTop: 18, paddingBottom: 18,
+                  background: '#E3E3DE', borderRadius: 8, border: 'none', outline: 'none',
+                  color: '#1A1C19', fontSize: 16,
+                  fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 400,
                 }}
-              >
-                ログインへ戻る
-                <ArrowLeft size={14} style={{ transform: 'rotate(180deg)' }} />
-              </Link>
+              />
             </div>
-          ) : (
-            /* フォーム */
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 40 }}>
-              <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
 
-                {/* メールアドレス */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <label style={{ color: '#1A1C19', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '20px', paddingLeft: 4, paddingRight: 4 }}>
-                    メールアドレス
-                  </label>
-                  <input
-                    {...register('email')}
-                    type="email"
-                    placeholder="name@example.com"
-                    style={{
-                      height: 56, width: '100%', boxSizing: 'border-box',
-                      paddingLeft: 16, paddingRight: 16, paddingTop: 18, paddingBottom: 18,
-                      background: '#E3E3DE', borderRadius: 8, border: 'none', outline: 'none',
-                      color: '#1A1C19', fontSize: 16,
-                      fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 400,
-                    }}
-                  />
-                  {errors.email && <p style={{ color: '#EF4444', fontSize: 12, margin: 0 }}>{errors.email.message}</p>}
-                </div>
+            {/* バリデーションエラー */}
+            {errors.email && errorBanner('メールアドレスの形式が正しくありません')}
 
-                {serverError && (
-                  <p style={{ color: '#EF4444', fontSize: 14, margin: 0, fontFamily: 'Manrope, sans-serif' }}>{serverError}</p>
-                )}
+            {/* サーバーエラー */}
+            {serverError && errorBanner(serverError)}
 
-                {/* 送信ボタン */}
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  style={{
-                    marginTop: 32,
-                    height: 56, width: '100%',
-                    background: 'linear-gradient(170deg, #14422D 0%, #2D5A43 100%)',
-                    borderRadius: 9999, border: 'none', cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                    color: 'white', fontSize: 16,
-                    fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '24px',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                    opacity: isSubmitting ? 0.6 : 1,
-                    boxShadow: '0px 4px 6px -4px rgba(20,66,45,0.10), 0px 10px 15px -3px rgba(20,66,45,0.10)',
-                  }}
-                >
-                  {isSubmitting ? '送信中...' : (
-                    <>パスワード再設定メールを送信<ArrowLeft size={14} style={{ transform: 'rotate(180deg)' }} /></>
-                  )}
-                </button>
-              </form>
-            </div>
-          )}
+            {/* 送信ボタン */}
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              style={{
+                marginTop: 32,
+                height: 56, width: '100%',
+                background: 'linear-gradient(170deg, #14422D 0%, #2D5A43 100%)',
+                borderRadius: 9999, border: 'none', cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                color: 'white', fontSize: 16,
+                fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '24px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                opacity: isSubmitting ? 0.6 : 1,
+                boxShadow: '0px 4px 6px -4px rgba(20,66,45,0.10), 0px 10px 15px -3px rgba(20,66,45,0.10)',
+              }}
+            >
+              {isSubmitting ? '送信中...' : (
+                <>パスワード再設定メールを送信<ArrowLeft size={14} style={{ transform: 'rotate(180deg)' }} /></>
+              )}
+            </button>
+          </form>
 
         </div>
       </div>
@@ -185,17 +157,76 @@ export default function ForgotPasswordPage() {
           position: 'absolute', left: 24, top: 24,
           display: 'inline-flex', alignItems: 'center', gap: 8,
           paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8,
-          borderRadius: 9999,
-          color: 'white', fontSize: 14,
+          borderRadius: 9999, color: 'white', fontSize: 14,
           fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '20px',
           textDecoration: 'none',
-          background: 'rgba(0,0,0,0.15)',
-          backdropFilter: 'blur(8px)',
+          background: 'rgba(0,0,0,0.15)', backdropFilter: 'blur(8px)',
         }}
       >
         <ArrowLeft size={14} />
         ホームへ戻る
       </Link>
+
+      {/* ══ 送信完了モーダル ══ */}
+      {sent && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 50,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: 16,
+        }}>
+          {/* オーバーレイ */}
+          <div style={{
+            position: 'absolute', inset: 0,
+            background: 'rgba(26,28,25,0.40)',
+            backdropFilter: 'blur(2px)',
+          }} />
+
+          {/* カード */}
+          <div style={{
+            position: 'relative', zIndex: 1,
+            width: 384, maxWidth: '100%', padding: 32,
+            background: 'white', borderRadius: 8,
+            boxShadow: '0px 25px 50px -12px rgba(0,0,0,0.25)',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0,
+          }}>
+            {/* アイコン */}
+            <div style={{ paddingBottom: 24 }}>
+              <div style={{
+                width: 64, height: 64,
+                background: 'rgba(20,66,45,0.10)', borderRadius: 9999,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Mail size={20} style={{ color: '#14422D' }} />
+              </div>
+            </div>
+
+            {/* テキスト */}
+            <div style={{
+              textAlign: 'center', marginBottom: 32,
+              color: '#1A1C19', fontSize: 18,
+              fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '29.25px',
+            }}>
+              登録済みの場合、再設定リンクを送信<br />しました。<br />メールをご確認ください。
+            </div>
+
+            {/* ボタン */}
+            <Link
+              href="/login"
+              style={{
+                alignSelf: 'stretch', height: 48,
+                background: 'linear-gradient(171deg, #14422D 0%, #2D5A43 100%)',
+                borderRadius: 9999,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'white', fontSize: 16,
+                fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '24px',
+                textDecoration: 'none',
+              }}
+            >
+              ログイン画面へ戻る
+            </Link>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -3,24 +3,18 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { AlertCircle, ArrowLeft, Eye, EyeOff } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
 import axios from 'axios'
 import { useRouter } from 'next/navigation'
 
-const schema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6, 'パスワードは6文字以上で入力してください'),
-})
-type FormData = z.infer<typeof schema>
+type FormData = { email: string; password: string }
 
 export default function LoginPage() {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [serverError, setServerError] = useState('')
-  const { register, handleSubmit, formState: { errors, isSubmitting } } =
-    useForm<FormData>({ resolver: zodResolver(schema) })
+  const { register, handleSubmit, formState: { isSubmitting } } =
+    useForm<FormData>()
 
   const onSubmit = async (data: FormData) => {
     setServerError('')
@@ -118,14 +112,6 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* エラー */}
-          {serverError && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FEF2F2', borderRadius: 8, padding: '12px 16px', color: '#DC2626', fontSize: 14, fontFamily: 'Manrope, sans-serif' }}>
-              <AlertCircle size={16} style={{ flexShrink: 0 }} />
-              {serverError}
-            </div>
-          )}
-
           {/* フォーム */}
           <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
@@ -136,7 +122,7 @@ export default function LoginPage() {
               </label>
               <input
                 {...register('email')}
-                type="email"
+                type="text"
                 placeholder="name@example.com"
                 style={{
                   height: 56, width: '100%', boxSizing: 'border-box',
@@ -146,7 +132,6 @@ export default function LoginPage() {
                   fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 400,
                 }}
               />
-              {errors.email && <p style={{ color: '#EF4444', fontSize: 12, margin: 0 }}>{errors.email.message}</p>}
             </div>
 
             {/* パスワード */}
@@ -175,7 +160,6 @@ export default function LoginPage() {
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
-              {errors.password && <p style={{ color: '#EF4444', fontSize: 12, margin: 0 }}>{errors.password.message}</p>}
             </div>
 
             {/* パスワード忘れ */}
@@ -184,6 +168,16 @@ export default function LoginPage() {
                 パスワードをお忘れですか？
               </Link>
             </div>
+
+            {/* エラー */}
+            {serverError && (
+              <div style={{ width: '100%', padding: 12, background: '#FFDAD6', borderRadius: 8, outline: '1px rgba(186,26,26,0.10) solid', outlineOffset: '-1px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ width: 15, height: 15, flexShrink: 0, background: '#BA1A1A', borderRadius: 9999 }} />
+                <div style={{ color: '#BA1A1A', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '20px' }}>
+                  {serverError}
+                </div>
+              </div>
+            )}
 
             {/* ログインボタン */}
             <button

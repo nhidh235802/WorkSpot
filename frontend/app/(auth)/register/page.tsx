@@ -14,7 +14,7 @@ const schema = z
   .object({
     role: z.enum(['customer', 'owner']),
     fullName: z.string().min(1, '氏名を入力してください'),
-    email: z.string().email(),
+    email: z.email(),
     password: z.string().min(6, 'パスワードは6文字以上で入力してください'),
     confirmPassword: z.string().min(1, 'パスワード（確認）を入力してください'),
   })
