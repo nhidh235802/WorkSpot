@@ -9,6 +9,7 @@ import { AppService } from './app.service';
 import { UsersModule } from './users/module/users.module';
 import { CafesModule } from './cafes/module/cafes.module';
 import { ReviewsModule } from './reviews/module/reviews.module';
+import { AuthModule } from './auth/module/auth.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { ReviewsModule } from './reviews/module/reviews.module';
     UsersModule,
     CafesModule,
     ReviewsModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
