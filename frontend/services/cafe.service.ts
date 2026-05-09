@@ -1,3 +1,5 @@
+const API_URL = "http://localhost:3001";
+
 // Định nghĩa khuôn mẫu dữ liệu gửi đi (TypeScript Interface)
 export interface SearchCafeParams {
   lat: number | string;
@@ -36,6 +38,18 @@ export const CafeService = {
       throw new Error("サーバーエラーが発生しました"); // Lỗi máy chủ
     }
 
+    return res.json();
+  },
+  getTopRecommended: async (lat: number, lng: number) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+    const headers: HeadersInit = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const res = await fetch(`${API_URL}/cafes/recommended?lat=${lat}&lng=${lng}`, { headers });
+    if (!res.ok) {
+      throw new Error("Lỗi kết nối máy chủ");
+    }
     return res.json();
   }
 };

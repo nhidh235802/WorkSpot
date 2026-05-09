@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { getCoordinatesFromAddress } from '@/utils/geocode';
+import { CafeService } from '@/services/cafe.service';
 
 function StarIcon() {
   return (
@@ -109,75 +109,70 @@ export default function WorkSpotPage() {
   const [recommendError, setRecommendError] = useState<string | null>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token')
-    const userStr = localStorage.getItem('user')
-    if (token && userStr) {
-      try { setUser(JSON.parse(userStr)) } catch { /* invalid JSON */ }
-    }
-  }, [])
+      // Biến chặn gọi API nhiều lần khi re-render
+      let isMounted = true; 
 
-  useEffect(() => {
-    if (!dropdownOpen) return
-    function handleClick(e: MouseEvent) {
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
-        setDropdownOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [dropdownOpen])
+      const loadData = async (lat: number, lng: number) => {
+        try {
+          setIsLoadingRecommend(true);
+          // Gọi API qua Service
+          const data = await CafeService.getTopRecommended(lat, lng);
 
-    useEffect(() => {
-    const fetchRecommendations = async (lat: number, lng: number) => {
-      try {
-        setIsLoadingRecommend(true);
-        const res = await fetch(`http://localhost:3001/cafes/recommended?lat=${lat}&lng=${lng}`);
-        if (!res.ok) throw new Error();
-        const data = await res.json();
-        setRecommendedCafes(data);
-      } catch (error) {
-        setRecommendError("データを読み込めませんでした");
-      } finally {
-        setIsLoadingRecommend(false);
-      }
-    };
+          // Map dữ liệu backend sang CafeType của frontend
+          const facilityLabelMap: Record<string, string> = {
+            wifi: 'Wi-Fi',
+            socket: 'Ổ cắm',
+            workspace: 'Chỗ ngồi',
+            desk: 'Bàn riêng',
+            snack: 'Đồ ăn',
+            flexible_hours: 'Giờ linh hoạt',
+            cleanliness: 'Sạch sẽ',
+            smoking_rule: 'Cấm hút thuốc',
+          };
+          const tagColors = [
+            { background: '#D4E8DC', color: '#14422D' },
+            { background: '#FFF0E6', color: '#904C18' },
+            { background: '#E8F4FF', color: '#1A5FA6' },
+          ];
 
-    const fallbackToProfileOrHanoi = async () => {
-      // Tầng 2: Kiểm tra địa chỉ trong Profile
-      const userStr = localStorage.getItem('user');
-      if (userStr) {
-        const userData = JSON.parse(userStr);
-        if (userData.address) {
-          // Nếu có địa chỉ chữ, ta dùng hàm Geocode đã viết hôm trước để đổi ra tọa độ
-          const coords = await getCoordinatesFromAddress(userData.address);
-          if (coords) {
-            fetchRecommendations(coords.lat, coords.lng);
-            return;
-          }
+          const mapped: CafeType[] = (data as any[]).map((item: any) => ({
+            id: item.id,
+            name: item.name,
+            img: item.avatar || '/images/hero-cafe.png',
+            rating: item.rating ?? 0,
+            distance: `${item.distance ?? '?'} km`,
+            area: item.address ?? '',
+            tags: (item.facilities as string[] ?? []).slice(0, 3).map((f, i) => ({
+              label: facilityLabelMap[f] ?? f,
+              style: tagColors[i % tagColors.length],
+            })),
+          }));
+
+          if (isMounted) setRecommendedCafes(mapped);
+        } catch (error) {
+          // Hiển thị thông báo lỗi khi không tải được dữ liệu từ API
+          if (isMounted) setRecommendError("Không thể tải dữ liệu");
+        } finally {
+          if (isMounted) setIsLoadingRecommend(false);
         }
+      };
+
+      // Fallback: khi GPS bị từ chối hoặc timeout → dùng trung tâm Hà Nội
+      const fallbackToHanoi = () => loadData(21.0285, 105.8542);
+
+      if (!navigator.geolocation) {
+        // Trình duyệt không hỗ trợ GPS
+        fallbackToHanoi();
+      } else {
+        navigator.geolocation.getCurrentPosition(
+          (position) => loadData(position.coords.latitude, position.coords.longitude),
+          () => fallbackToHanoi(), // Từ chối hoặc timeout 5 giây
+          { timeout: 5000 }
+        );
       }
 
-      // Tầng 3: Mặc định hoàn toàn (Hồ Hoàn Kiếm) nếu 2 tầng trên thất bại
-      fetchRecommendations(21.0285, 105.8542);
-    };
-
-    // Tầng 1: Ưu tiên GPS
-    if (!navigator.geolocation) {
-      fallbackToProfileOrHanoi();
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        fetchRecommendations(position.coords.latitude, position.coords.longitude);
-      },
-      (error) => {
-        // Nếu từ chối GPS hoặc lỗi, nhảy xuống tầng 2
-        fallbackToProfileOrHanoi();
-      },
-      { timeout: 5000 }
-    );
-  }, []);
+      return () => { isMounted = false; };
+    }, []);
 
   function handleLogout() {
     localStorage.removeItem('access_token')
