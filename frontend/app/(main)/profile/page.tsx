@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 interface UserProfile {
   id: string
@@ -236,6 +237,12 @@ export default function ProfilePage() {
           <a href="/" style={{ color: '#14422D', fontSize: 24, fontFamily: 'Acme, sans-serif', fontWeight: 400, lineHeight: '32px', textDecoration: 'none' }}>
             WorkSpot
           </a>
+          <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, paddingLeft: 14, paddingRight: 14, paddingTop: 8, paddingBottom: 8, borderRadius: 9999, background: '#F0F4F1', color: '#14422D', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 500, textDecoration: 'none' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="#14422D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            ダッシュボード
+          </Link>
           <div>
             {profile?.avatar ? (
               <img
