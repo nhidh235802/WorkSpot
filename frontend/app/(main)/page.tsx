@@ -15,7 +15,7 @@ const cafes = [
       { label: "静かなゾーン", style: { background: "#FFDBC7", color: "#311300" } },
       { label: "高速WiFi", style: { background: "#BCEECF", color: "#002112" } },
     ],
-    img: "/images/cafe1.jpg",
+    img: "https://picsum.photos/seed/cafe1/320/224",
   },
   {
     id: 2,
@@ -27,7 +27,7 @@ const cafes = [
       { label: "エアコン完備", style: { background: "#FFDBC7", color: "#311300" } },
       { label: "電源あり", style: { background: "#BCEECF", color: "#002112" } },
     ],
-    img: "/images/cafe2.jpg",
+    img: "https://picsum.photos/seed/cafe2/320/224",
   },
   {
     id: 3,
@@ -39,7 +39,7 @@ const cafes = [
       { label: "レイクビュー", style: { background: "#FFDBC7", color: "#311300" } },
       { label: "会議室", style: { background: "#BCEECF", color: "#002112" } },
     ],
-    img: "/images/cafe3.jpg",
+    img: "https://picsum.photos/seed/cafe3/320/224",
   },
   {
     id: 4,
@@ -51,7 +51,7 @@ const cafes = [
       { label: "エルゴノミクス", style: { background: "#FFDBC7", color: "#311300" } },
       { label: "プリンター", style: { background: "#BCEECF", color: "#002112" } },
     ],
-    img: "/images/cafe4.jpg",
+    img: "https://picsum.photos/seed/cafe4/320/224",
   },
 ];
 
@@ -334,7 +334,7 @@ export default function WorkSpotPage() {
               aspectRatio: "4/5",
             }}>
               <img
-                src="/images/hero-cafe.png"
+                src="https://picsum.photos/seed/hero/600/750"
                 alt="Professional Cafe"
                 style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
               />
@@ -513,7 +513,7 @@ export default function WorkSpotPage() {
               background: "#E3E3DE",
             }}>
               <img
-                src="/images/coupon-cafe.png"
+                src="https://picsum.photos/seed/coupon/241/241"
                 alt="Special offers"
                 style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
               />

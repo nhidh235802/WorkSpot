@@ -238,7 +238,12 @@ export default function ProfilePage() {
           </a>
           <div>
             {profile?.avatar ? (
-              <img src={profile.avatar} alt="avatar" style={{ width: 36, height: 36, borderRadius: 9999, objectFit: 'cover' }} />
+              <img
+                src={profile.avatar}
+                alt="avatar"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).src = `https://picsum.photos/seed/${profile.id}/36/36` }}
+                style={{ width: 36, height: 36, borderRadius: 9999, objectFit: 'cover' }}
+              />
             ) : (
               <div style={{ width: 36, height: 36, borderRadius: 9999, background: '#14422D', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 700 }}>
                 {profile?.fullName?.[0]?.toUpperCase() ?? 'U'}
@@ -273,6 +278,7 @@ export default function ProfilePage() {
                   <img
                     src={profile.avatar}
                     alt="avatar"
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = `https://picsum.photos/seed/${profile.id}/128/128` }}
                     style={{ width: 128, height: 128, borderRadius: 9999, objectFit: 'cover', boxShadow: '0px 0px 0px 4px rgba(45,90,67,0.10)' }}
                   />
                 ) : (
