@@ -8,12 +8,14 @@ import {
   Delete,
   HttpCode,
   HttpStatus,
+  Query,
   UseGuards,
   Query,
 } from '@nestjs/common';
 import { CafesService } from '../services/cafes.service';
 import { CreateCafeDto } from '../dto/create-cafe.dto';
 import { UpdateCafeDto } from '../dto/update-cafe.dto';
+import { SearchCafeDto } from '../dto/search-cafe.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { SearchCafeDto } from '../dto/search-cafe.dto';
 
