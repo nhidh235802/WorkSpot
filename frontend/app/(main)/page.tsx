@@ -3,58 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import style from 'styled-jsx/style';
-
-const cafes = [
-  {
-    id: 1,
-    name: "Tranquil Books & Coffee",
-    rating: 4.9,
-    distance: "0.8 km",
-    area: "Hoan Kiem",
-    tags: [
-      { label: "静かなゾーン", style: { background: "#FFDBC7", color: "#311300" } },
-      { label: "高速WiFi", style: { background: "#BCEECF", color: "#002112" } },
-    ],
-    img: "https://picsum.photos/seed/cafe1/320/224",
-  },
-  {
-    id: 2,
-    name: "Hidden Gem Workshop",
-    rating: 4.7,
-    distance: "1.2 km",
-    area: "Hai Ba Trung",
-    tags: [
-      { label: "エアコン完備", style: { background: "#FFDBC7", color: "#311300" } },
-      { label: "電源あり", style: { background: "#BCEECF", color: "#002112" } },
-    ],
-    img: "https://picsum.photos/seed/cafe2/320/224",
-  },
-  {
-    id: 3,
-    name: "The Coffee House Lab",
-    rating: 4.8,
-    distance: "2.5 km",
-    area: "Tay Ho",
-    tags: [
-      { label: "レイクビュー", style: { background: "#FFDBC7", color: "#311300" } },
-      { label: "会議室", style: { background: "#BCEECF", color: "#002112" } },
-    ],
-    img: "https://picsum.photos/seed/cafe3/320/224",
-  },
-  {
-    id: 4,
-    name: "WorkFlow Space",
-    rating: 4.6,
-    distance: "3.1 km",
-    area: "Cau Giay",
-    tags: [
-      { label: "エルゴノミクス", style: { background: "#FFDBC7", color: "#311300" } },
-      { label: "プリンター", style: { background: "#BCEECF", color: "#002112" } },
-    ],
-    img: "https://picsum.photos/seed/cafe4/320/224",
-  },
-];
+import { getCoordinatesFromAddress } from '@/utils/geocode';
 
 function StarIcon() {
   return (
@@ -72,7 +21,17 @@ function LocationIcon() {
   );
 }
 
-function CafeCard({ cafe }: { cafe: (typeof cafes)[0] }) {
+export interface CafeType {
+  id: number | string;
+  name: string;
+  img: string;
+  rating: number | string;
+  distance: string;
+  area: string;
+  tags: { label: string; style?: React.CSSProperties }[];
+}
+
+function CafeCard({ cafe }: { cafe: CafeType }) {
   return (
     <div style={{
       display: "flex",
@@ -145,6 +104,9 @@ export default function WorkSpotPage() {
   const userMenuRef = useRef<HTMLDivElement>(null)
   const [keyword, setKeyword] = useState("");
   const [isSearching, setIsSearching] = useState(false);
+  const [recommendedCafes, setRecommendedCafes] = useState<CafeType[]>([]);
+  const [isLoadingRecommend, setIsLoadingRecommend] = useState(true);
+  const [recommendError, setRecommendError] = useState<string | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem('access_token')
@@ -164,6 +126,58 @@ export default function WorkSpotPage() {
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [dropdownOpen])
+
+    useEffect(() => {
+    const fetchRecommendations = async (lat: number, lng: number) => {
+      try {
+        setIsLoadingRecommend(true);
+        const res = await fetch(`http://localhost:3001/cafes/recommended?lat=${lat}&lng=${lng}`);
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        setRecommendedCafes(data);
+      } catch (error) {
+        setRecommendError("データを読み込めませんでした");
+      } finally {
+        setIsLoadingRecommend(false);
+      }
+    };
+
+    const fallbackToProfileOrHanoi = async () => {
+      // Tầng 2: Kiểm tra địa chỉ trong Profile
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        const userData = JSON.parse(userStr);
+        if (userData.address) {
+          // Nếu có địa chỉ chữ, ta dùng hàm Geocode đã viết hôm trước để đổi ra tọa độ
+          const coords = await getCoordinatesFromAddress(userData.address);
+          if (coords) {
+            fetchRecommendations(coords.lat, coords.lng);
+            return;
+          }
+        }
+      }
+
+      // Tầng 3: Mặc định hoàn toàn (Hồ Hoàn Kiếm) nếu 2 tầng trên thất bại
+      fetchRecommendations(21.0285, 105.8542);
+    };
+
+    // Tầng 1: Ưu tiên GPS
+    if (!navigator.geolocation) {
+      fallbackToProfileOrHanoi();
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        fetchRecommendations(position.coords.latitude, position.coords.longitude);
+      },
+      (error) => {
+        // Nếu từ chối GPS hoặc lỗi, nhảy xuống tầng 2
+        fallbackToProfileOrHanoi();
+      },
+      { timeout: 5000 }
+    );
+  }, []);
 
   function handleLogout() {
     localStorage.removeItem('access_token')
@@ -401,18 +415,34 @@ export default function WorkSpotPage() {
             </div>
           </div>
 
-          {/* Cards scroll */}
-          <div style={{
-            display: "flex",
-            gap: 24,
-            overflowX: "auto",
-            paddingBottom: 32,
-            scrollbarWidth: "none",
-          }}>
-            {cafes.map((cafe) => (
-              <CafeCard key={cafe.id} cafe={cafe} />
-            ))}
-          </div>
+          {/* Xử lý 3 trạng thái: Loading, Lỗi, và Có dữ liệu */}
+          {isLoadingRecommend ? (
+            <div style={{ padding: "40px 0", textAlign: "center", color: "#414943" }}>
+              おすすめのカフェを探しています... {/* Đang tìm quán... */}
+            </div>
+          ) : recommendError ? (
+            <div style={{ padding: "40px 0", textAlign: "center", color: "#BA1A1A", fontWeight: 500 }}>
+              {recommendError} {/* "データを読み込めませんでした" */}
+            </div>
+          ) : recommendedCafes.length === 0 ? (
+            <div style={{ padding: "40px 0", textAlign: "center", color: "#414943" }}>
+              近くにカフェが見つかりませんでした。 {/* Không tìm thấy quán ở gần */}
+            </div>
+          ) : (
+            /* Cards scroll (Cuộn ngang theo requirement) */
+            <div style={{
+              display: "flex",
+              gap: 24,
+              overflowX: "auto",
+              paddingBottom: 32,
+              scrollbarWidth: "none", // Ẩn thanh scroll trên Firefox
+            }}>
+              {/* Render số lượng thực tế lấy được (< 6 thì hiện bấy nhiêu, không hiện thẻ trống) */}
+              {recommendedCafes.map((cafe) => (
+                <CafeCard key={cafe.id} cafe={cafe} />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
