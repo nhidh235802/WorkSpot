@@ -18,7 +18,10 @@ import {
   Sparkles,
   Headphones,
   Cigarette,
-  Star
+  Star,
+  Phone,
+  Navigation,
+  ChevronUp
 } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { CafeService } from '@/services/cafe.service';
@@ -42,7 +45,8 @@ const translateFacility = (facility: string) => {
     'desk': '広いデスク',
     'snack': '軽食メニュー',
     'cleanliness': '清潔感',
-    'smoking_rule': '禁煙・喫煙'
+    'smoking_rule': '禁煙・喫煙',
+    'flexible_hours': '営業時間',
   };
   return mapping[facility] || facility;
 };
@@ -62,6 +66,7 @@ const DEFAULT_LAT = 21.0285;
 const DEFAULT_LNG = 105.8542;
 
 export default function CafesSearchPage() {
+  const [isExpanded, setIsExpanded] = useState(false);
   const searchParams = useSearchParams();
 
   const initialKeyword = searchParams.get("q") || "";
@@ -98,7 +103,9 @@ export default function CafesSearchPage() {
     );
   }, []);
 
-  const toggleFilter = (id: string) => {
+  const toggleFilter = (e: React.MouseEvent, id: string) => {
+    e.preventDefault();
+    e.stopPropagation();
     setActiveFilters((prev) => {
       const isExist = prev.includes(id);
       return isExist ? prev.filter((item) => item !== id) : [...prev, id];
@@ -173,7 +180,7 @@ export default function CafesSearchPage() {
 
   const handleSelectCafe = (id: string | number) => {
     setSelectedCafeId((prev) => (prev === id ? null : id));
-    // Scroll the card into view
+    setIsExpanded(false); // Reset về thu nhỏ khi đổi quán
     const el = document.getElementById(`cafe-card-${id}`);
     el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   };
@@ -209,7 +216,7 @@ export default function CafesSearchPage() {
                  return (
                    <button
                      key={filter.id}
-                     onClick={() => toggleFilter(filter.id)}
+                     onClick={(e) => toggleFilter(e, filter.id)}
                      className={`px-4 py-2 flex items-center gap-2 rounded-full text-sm font-medium transition-all duration-200 border ${
                        isActive
                           ? 'bg-[#ffdbc7] text-[#311300] border-[#ffdbc7] shadow-sm'
@@ -361,93 +368,103 @@ export default function CafesSearchPage() {
             <span className="text-[#14422d] font-bold text-sm w-10 text-right">{radius} km</span>
           </div>
 
-          {/* Selected cafe bottom panel */}
+          {/* Selected cafe bottom panel - CẬP NHẬT THEO MẪU ẢNH */}
           {selectedCafeId && (() => {
             const cafe = cafes.find((c: any) => c.id === selectedCafeId);
             if (!cafe) return null;
+
             return (
               <div
-                className="absolute bottom-2 left-1/2 -translate-x-1/2 z-[1000] bg-white rounded-2xl shadow-2xl border border-[#e3e3de] overflow-hidden"
-                style={{ width: 420, maxWidth: 'calc(100% - 32px)' }}
+                className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] bg-white rounded-[32px] shadow-2xl border border-[#e3e3de] transition-all duration-500 ease-in-out flex flex-col overflow-hidden`}
+                style={{ 
+                  width: 400, 
+                  height: isExpanded ? '720px' : '235px', 
+                  maxWidth: 'calc(100% - 32px)',
+                }}
               >
-                {/* Drag handle */}
-                <div className="flex justify-center pt-3 pb-1">
-                  <div className="w-10 h-1 bg-[#d0d0c8] rounded-full" />
-                </div>
-
-                <div className="flex gap-4 px-5 pb-2">
-                  {/* Thumbnail */}
-                  <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-gray-100">
-                    <img
-                      src={resolveCafeImage(cafe.name, cafe.avatar)}
-                      alt={cafe.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-[#14422d] font-bold text-lg leading-snug truncate">
-                      {cafe.name}
-                    </h3>
-                    <div className="flex items-center gap-1 mt-0.5">
-                      <Star size={14} fill="#904C18" color="#904C18" />
-                      <span className="text-[#904C18] font-bold text-sm">{cafe.rating || '—'}</span>
-                      {cafe.reviewCount && (
-                        <span className="text-[#717973] text-xs">({cafe.reviewCount}+ レビュー)</span>
-                      )}
-                    </div>
-                    {cafe.distance !== undefined && (
-                      <div className="flex items-center gap-1 mt-0.5">
-                        <MapPin className="w-3 h-3 text-[#717973]" />
-                        <span className="text-[#717973] text-xs">{cafe.distance} km</span>
-                      </div>
-                    )}
-                    {/* Facility tags */}
-                    <div className="flex gap-1.5 mt-2 flex-wrap">
-                      {(cafe.facilities as string[] ?? []).slice(0, 3).map((f: string) => (
-                        <span key={f} className="px-2 py-0.5 bg-[#e8e8e3] text-[#414943] text-[10px] font-medium rounded-full">
-                          {translateFacility(f)}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Action buttons */}
-                <div className="flex gap-3 px-5 pb-5 pt-3 border-t border-[#e3e3de]/60 mt-1">
-                  <a
-                    href={`/cafes/${cafe.id}`}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border border-[#e3e3de] text-[#14422d] font-semibold text-sm hover:bg-[#f5f5f0] transition-colors"
-                  >
-                    詳細を見る
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <circle cx="8" cy="8" r="7" stroke="#14422D" strokeWidth="1.5"/>
-                      <path d="M8 5v3l2 2" stroke="#14422D" strokeWidth="1.5" strokeLinecap="round"/>
-                    </svg>
-                  </a>
-                  <a
-                    href={`https://www.google.com/maps/dir/?api=1&destination=${cafe.latitude},${cafe.longitude}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-[#14422D] text-white font-semibold text-sm hover:bg-[#1a5236] transition-colors"
-                  >
-                    経路
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <path d="M8 2L8 14M8 2L5 5M8 2L11 5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      <circle cx="8" cy="14" r="1.5" fill="white"/>
-                    </svg>
-                  </a>
-                </div>
-
-                {/* Close button */}
-                <button
-                  onClick={() => setSelectedCafeId(null)}
-                  className="absolute top-3 right-4 text-[#717973] hover:text-[#14422d] text-lg font-light leading-none"
-                  aria-label="閉じる"
+                {/* 1. THANH KÉO (Drag Handle) */}
+                <div 
+                  className="flex justify-center pt-3 pb-2 cursor-pointer shrink-0"
+                  onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
                 >
-                  ×
-                </button>
+                  <div className="w-12 h-1.5 bg-[#d0d0c8] rounded-full" />
+                </div>
+
+                {/* 2. VÙNG NỘI DUNG (Cuộn được khi mở rộng) */}
+                <div className="px-6 flex-1 overflow-y-auto no-scrollbar">
+                  {/* Header luôn hiện */}
+                  <div 
+                    className="flex gap-4 items-start mb-4 cursor-pointer"
+                    onClick={() => !isExpanded && setIsExpanded(true)}
+                  >
+                    <div className="w-16 h-16 rounded-2xl overflow-hidden shrink-0">
+                      <img src={resolveCafeImage(cafe.name, cafe.avatar)} className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1">
+                      <h2 className="text-[#14422d] font-bold text-xl leading-tight">{cafe.name}</h2>
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <Star size={14} fill="#904C18" color="#904C18" />
+                        <span className="text-[#904C18] font-bold text-sm">{cafe.rating || '4.9'}</span>
+                        <span className="text-[#717973] text-xs ml-1">(120+ レビュー)</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Tags nhỏ luôn hiện */}
+                  <div className="flex gap-2 mb-4 overflow-hidden">
+                    <span className="px-3 py-1 bg-[#FDF2F0] text-[#904C18] text-[10px] font-bold rounded-md whitespace-nowrap">サイレントゾーン</span>
+                    <span className="px-3 py-1 bg-[#F4F4F1] text-[#717973] text-[10px] font-bold rounded-md whitespace-nowrap">ガーデンビュー</span>
+                    <span className="px-3 py-1 bg-[#F4F4F1] text-[#717973] text-[10px] font-bold rounded-md whitespace-nowrap">居心地が良い</span>
+                  </div>
+
+                  {/* PHẦN CHI TIẾT (Ẩn khi thu nhỏ, Hiện khi mở rộng) */}
+                  <div className={`transition-all duration-500 origin-top ${isExpanded ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0 h-0'}`}>
+                    <p className="text-[#414943] text-sm leading-relaxed mb-4">
+                      {cafe.description || "静かな路地裏に位置し, 図書館のような静寂が守られているスポット. 読書や執筆に理想的です."}
+                    </p>
+
+                    {/* Grid ảnh */}
+                    <div className="grid grid-cols-2 gap-2 mb-4">
+                      <img src={resolveCafeImage(cafe.name, cafe.avatar)} className="rounded-2xl h-36 w-full object-cover shadow-sm" />
+                      <img src={cafe.images?.[0] || "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400"} className="rounded-2xl h-36 w-full object-cover shadow-sm" />
+                    </div>
+
+                    {/* Thông tin liên hệ */}
+                    <div className="space-y-2 mb-6">
+                      <div className="flex items-center gap-4 p-3 bg-[#F4F4F1] rounded-2xl">
+                        <Clock className="w-5 h-5 text-[#14422d]" />
+                        <span className="text-[#14422d] text-sm font-medium">営業時間 10:00-22:30</span>
+                      </div>
+                      <div className="flex items-center gap-4 p-3 bg-[#F4F4F1] rounded-2xl">
+                        <MapPin className="w-5 h-5 text-[#14422d]" />
+                        <span className="text-[#14422d] text-sm font-medium truncate">{cafe.address}</span>
+                      </div>
+                      <div className="flex items-center gap-4 p-3 bg-[#F4F4F1] rounded-2xl">
+                        <Phone className="w-5 h-5 text-[#14422d]" />
+                        <span className="text-[#14422d] text-sm font-medium">1900 8888</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. NÚT BẤM (Cố định ở dưới cùng của Card) */}
+                <div className="px-6 pb-6 pt-2 bg-white shrink-0">
+                  <div className="flex gap-3">
+                    <Link
+                      href={`/cafes/${cafe.id}`}
+                      className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl border-2 border-[#14422d] text-[#14422d] font-bold text-sm hover:bg-gray-50 transition-all"
+                    >
+                      詳細を見る <span className="opacity-60 text-lg">ⓘ</span>
+                    </Link>
+                    <a
+                      href={`https://www.google.com/maps/dir/?api=1&destination=${cafe.latitude},${cafe.longitude}`}
+                      target="_blank"
+                      className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-[#14422D] text-white font-bold text-sm shadow-lg hover:bg-[#0d2e1f] transition-all"
+                    >
+                      経路 <Navigation size={16} />
+                    </a>
+                  </div>
+                </div>
               </div>
             );
           })()}

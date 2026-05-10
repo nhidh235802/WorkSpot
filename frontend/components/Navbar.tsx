@@ -10,7 +10,7 @@ interface NavUser {
 }
 
 interface NavbarProps {
-  /** Extra content rendered in the center slot (e.g. a back button) */
+  /** Nội dung hiển thị ở giữa (ví dụ: nút back hoặc thanh search nhỏ) */
   center?: React.ReactNode;
 }
 
@@ -20,16 +20,20 @@ export default function Navbar({ center }: NavbarProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Load user from localStorage on mount
+  // Load user từ localStorage
   useEffect(() => {
     const token = localStorage.getItem('access_token');
     const userStr = localStorage.getItem('user');
     if (token && userStr) {
-      try { setUser(JSON.parse(userStr)); } catch { /* invalid JSON */ }
+      try {
+        setUser(JSON.parse(userStr));
+      } catch {
+        console.error("Invalid user data");
+      }
     }
   }, []);
 
-  // Close dropdown on outside click
+  // Đóng dropdown khi click ra ngoài
   useEffect(() => {
     if (!dropdownOpen) return;
     function handleClick(e: MouseEvent) {
@@ -53,97 +57,162 @@ export default function Navbar({ center }: NavbarProps) {
     <nav style={{
       position: 'sticky',
       top: 0,
-      zIndex: 1500,
+      zIndex: 1500, // Cao hơn Sidebar (thường 1000) và Map (400)
+      width: '100%',
       background: 'rgba(250,250,245,0.85)',
       backdropFilter: 'blur(12px)',
       boxShadow: '0 8px 30px 0 rgba(0,0,0,0.04)',
+      borderBottom: '1px solid rgba(20,66,45,0.05)',
       flexShrink: 0,
     }}>
       <div style={{
         maxWidth: 1536,
         margin: '0 auto',
         padding: '0 32px',
-        height: 80,
+        height: 80, // Chiều cao cố định
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         gap: 16,
       }}>
-        {/* Logo */}
-        <Link href="/" style={{width: 111, height: 32, justifyContent: 'center', display: 'flex', flexDirection: 'column', color: '#14422D', fontSize: 24, fontFamily: 'Acme', fontWeight: '400', lineHeight: 32, wordWrap: 'break-word'}}>
-          WorkSpot
-        </Link>
+        
+        {/* --- LEFT: LOGO --- */}
+        <div style={{ display: 'flex', alignItems: 'center', width: 150 }}>
+          <Link 
+            href="/" 
+            style={{
+              display: 'inline-block', // Chặn Link dãn nở hết chiều cao div cha
+              color: '#14422D',
+              fontSize: 24,
+              fontFamily: 'Acme',
+              fontWeight: '400',
+              textDecoration: 'none',
+              lineHeight: '32px'
+            }}
+          >
+            WorkSpot
+          </Link>
+        </div>
 
-        {/* Optional center slot */}
-        {center && <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>{center}</div>}
+        {/* --- CENTER SLOT --- */}
+        <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+          {center && center}
+        </div>
 
-        {/* Auth area */}
-        {user ? (
-          <div ref={menuRef} style={{ position: 'relative', flexShrink: 0 }}>
-            <button
-              onClick={() => setDropdownOpen(v => !v)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 8 }}
-            >
-              {user.avatar ? (
-                <img
-                  src={user.avatar}
-                  alt="avatar"
-                  style={{ width: 36, height: 36, borderRadius: 9999, objectFit: 'cover', boxShadow: '0 0 0 2px rgba(20,66,45,0.15)' }}
-                />
-              ) : (
-                <div style={{
-                  width: 36, height: 36, borderRadius: 9999, background: '#14422D',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: 'white', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 700,
+        {/* --- RIGHT: AUTH AREA --- */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', width: 200 }}>
+          {user ? (
+            <div ref={menuRef} style={{ position: 'relative' }}>
+              <button
+                onClick={() => setDropdownOpen(v => !v)}
+                style={{ 
+                  background: 'none', 
+                  border: 'none', 
+                  cursor: 'pointer', 
+                  padding: 0, 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 10 
+                }}
+              >
+                {user.avatar ? (
+                  <img
+                    src={user.avatar}
+                    alt="avatar"
+                    style={{ 
+                      width: 40, 
+                      height: 40, 
+                      borderRadius: '50%', 
+                      objectFit: 'cover', 
+                      border: '2px solid rgba(20,66,45,0.1)' 
+                    }}
+                  />
+                ) : (
+                  <div style={{
+                    width: 40, height: 40, borderRadius: '50%', background: '#14422D',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: 'white', fontSize: 16, fontWeight: 700,
+                  }}>
+                    {user.fullName?.[0]?.toUpperCase() ?? 'U'}
+                  </div>
+                )}
+                <span style={{ 
+                  fontSize: 14, 
+                  fontWeight: 600, 
+                  color: '#14422D',
+                  fontFamily: 'Manrope, sans-serif'
                 }}>
-                  {user.fullName?.[0]?.toUpperCase() ?? 'U'}
+                  {user.fullName?.split(' ')[0]}
+                </span>
+              </button>
+
+              {/* Dropdown Menu */}
+              {dropdownOpen && (
+                <div style={{
+                  position: 'absolute', 
+                  top: 'calc(100% + 12px)', 
+                  right: 0,
+                  background: 'white', 
+                  borderRadius: 12, 
+                  boxShadow: '0 12px 32px rgba(0,0,0,0.15)',
+                  overflow: 'hidden', 
+                  minWidth: 180, 
+                  zIndex: 1600,
+                  border: '1px solid rgba(0,0,0,0.05)'
+                }}>
+                  <Link
+                    href="/profile"
+                    onClick={() => setDropdownOpen(false)}
+                    style={{ 
+                      display: 'block', 
+                      padding: '14px 20px', 
+                      fontSize: 14, 
+                      color: '#14422D', 
+                      textDecoration: 'none',
+                      transition: 'background 0.2s'
+                    }}
+                  >
+                    プロフィール
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    style={{ 
+                      display: 'block', 
+                      width: '100%', 
+                      padding: '14px 20px', 
+                      fontSize: 14, 
+                      color: '#BA1A1A', 
+                      background: 'none', 
+                      border: 'none', 
+                      borderTop: '1px solid #f0f0eb', 
+                      cursor: 'pointer', 
+                      textAlign: 'left',
+                      fontWeight: 600
+                    }}
+                  >
+                    ログアウト
+                  </button>
                 </div>
               )}
-              <span style={{ fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 500, color: '#14422D' }}>
-                {user.fullName?.split(' ')[0]}
-              </span>
-            </button>
-
-            {dropdownOpen && (
-              <div style={{
-                position: 'absolute', top: 'calc(100% + 10px)', right: 0,
-                background: 'white', borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                overflow: 'hidden', minWidth: 160, zIndex: 1600,
+            </div>
+          ) : (
+            /* Guest Buttons */
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <Link href="/register" style={{
+                padding: '12px 20px', borderRadius: 9999, fontSize: 14, color: '#14422D', textDecoration: 'none', fontWeight: 600
               }}>
-                <Link
-                  href="/profile"
-                  onClick={() => setDropdownOpen(false)}
-                  style={{ display: 'block', padding: '12px 16px', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 500, color: '#14422D', textDecoration: 'none' }}
-                >
-                  プロフィール
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  style={{ display: 'block', width: '100%', padding: '12px 16px', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 500, color: '#BA1A1A', background: 'none', border: 'none', borderTop: '1px solid #f0f0eb', cursor: 'pointer', textAlign: 'left' }}
-                >
-                  ログアウト
-                </button>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-            <Link href="/register" style={{
-              padding: '14px 24px', borderRadius: 9999, background: 'transparent',
-              fontSize: 14, color: '#14422D', textDecoration: 'none', fontWeight: 500,
-            }}>
-              サインアップ
-            </Link>
-            <Link href="/login" style={{
-              padding: '14px 24px', borderRadius: 9999,
-              background: 'linear-gradient(135deg, #14422D 0%, #2D5A43 100%)',
-              fontSize: 14, color: '#fff', textDecoration: 'none',
-              letterSpacing: '0.35px', fontWeight: 500,
-            }}>
-              サインイン
-            </Link>
-          </div>
-        )}
+                サインアップ
+              </Link>
+              <Link href="/login" style={{
+                padding: '12px 24px', borderRadius: 9999,
+                background: 'linear-gradient(135deg, #14422D 0%, #2D5A43 100%)',
+                fontSize: 14, color: '#fff', textDecoration: 'none', fontWeight: 600
+              }}>
+                サインイン
+              </Link>
+            </div>
+          )}
+        </div>
       </div>
     </nav>
   );

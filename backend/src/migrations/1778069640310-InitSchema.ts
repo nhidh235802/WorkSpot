@@ -14,7 +14,7 @@ export class InitSchema1778069640310 implements MigrationInterface {
       `CREATE TABLE "reviews" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "rating" smallint NOT NULL, "comment" text, "images" text array NOT NULL DEFAULT '{}', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "user_id" uuid, "cafe_id" uuid, CONSTRAINT "PK_231ae565c273ee700b283f15c1d" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
-      `CREATE TYPE "public"."cafes_facilities_enum" AS ENUM('wifi', 'socket', 'workspace', 'desk', 'snack', 'cleanliness', 'smoking_rule')`,
+      `CREATE TYPE "public"."cafes_facilities_enum" AS ENUM('wifi', 'socket', 'workspace', 'desk', 'snack', 'cleanliness', 'smoking_rule','flexible_hours')`,
     );
     await queryRunner.query(
       `CREATE TYPE "public"."cafes_status_enum" AS ENUM('pending', 'approved', 'rejected')`,
