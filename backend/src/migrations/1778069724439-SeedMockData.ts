@@ -60,24 +60,59 @@ export class SeedMockData1778069724439 implements MigrationInterface {
     await queryRunner.query(`
         INSERT INTO "cafes" ("id", "name", "description", "address", "latitude", "longitude", "avatar", "images", "facilities", "status", "owner_id") VALUES
         -- Của Chủ quán 1 (Nguyễn Văn An)
-        ('${cafeIds[0]}', 'The Coffee House - Cầu Giấy', 'Không gian hiện đại, thích hợp làm việc nhóm.', 'Số 2 Khúc Thừa Dụ, Cầu Giấy, Hà Nội', 21.033333, 105.790580, 'https://placehold.co/600x400?text=TCH+Cau+Giay', '{"https://placehold.co/800x600?text=Khong+gian+1", "https://placehold.co/800x600?text=Menu"}', '{wifi,socket,workspace,desk}', 'approved', '${o1}'),
-        ('${cafeIds[1]}', 'Highlands Coffee - Cột Cờ', 'Góc view lịch sử siêu đẹp, đồ uống đậm đà.', '28A Điện Biên Phủ, Ba Đình, Hà Nội', 21.032220, 105.838880, 'https://placehold.co/600x400?text=Highlands+Cot+Co', '{}', '{wifi,cleanliness,snack}', 'approved', '${o1}'),
+        ('${cafeIds[0]}', 'The Coffee House - Cầu Giấy', 'Không gian hiện đại, thích hợp làm việc nhóm.', 'Số 2 Khúc Thừa Dụ, Cầu Giấy, Hà Nội', 21.033333, 105.790580, 
+        'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=800&q=80', 
+        '{"https://images.unsplash.com/photo-1497935586351-b67a49e012bf?auto=format&fit=crop&w=800&q=80", "https://images.unsplash.com/photo-1525610553991-2bede1a236e2?auto=format&fit=crop&w=800&q=80"}', 
+        '{wifi,socket,workspace,desk}', 'approved', '${o1}'),
+        
+        ('${cafeIds[1]}', 'Highlands Coffee - Cột Cờ', 'Góc view lịch sử siêu đẹp, đồ uống đậm đà.', '28A Điện Biên Phủ, Ba Đình, Hà Nội', 21.032220, 105.838880, 
+        'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=800&q=80', 
+        '{"https://images.unsplash.com/photo-1453614512568-c4024d13c247?auto=format&fit=crop&w=800&q=80"}', 
+        '{wifi,cleanliness,snack}', 'approved', '${o1}'),
         
         -- Của Chủ quán 2 (Trần Thị Bích)
-        ('${cafeIds[2]}', 'Cộng Cà Phê - Tràng Tiền', 'Phong cách bao cấp độc đáo ngay trung tâm.', '46 Tràng Tiền, Hoàn Kiếm, Hà Nội', 21.025550, 105.852220, 'https://placehold.co/600x400?text=Cong+Trang+Tien', '{}', '{wifi,cleanliness,smoking_rule}', 'approved', '${o2}'),
-        ('${cafeIds[3]}', 'Aha Cafe - Tôn Đức Thắng', 'Cafe vỉa hè rộng rãi, thoáng mát.', '212 Tôn Đức Thắng, Đống Đa, Hà Nội', 21.023330, 105.831110, 'https://placehold.co/600x400?text=Aha+Ton+Duc+Thang', '{}', '{wifi,smoking_rule}', 'approved', '${o2}'),
+        ('${cafeIds[2]}', 'Cộng Cà Phê - Tràng Tiền', 'Phong cách bao cấp độc đáo ngay trung tâm.', '46 Tràng Tiền, Hoàn Kiếm, Hà Nội', 21.025550, 105.852220, 
+        'https://images.unsplash.com/photo-1501339817309-1d41e50156af?auto=format&fit=crop&w=800&q=80', 
+        '{"https://images.unsplash.com/photo-1511920170033-f8396924c348?auto=format&fit=crop&w=800&q=80"}', 
+        '{wifi,cleanliness,smoking_rule}', 'approved', '${o2}'),
+        
+        ('${cafeIds[3]}', 'Aha Cafe - Tôn Đức Thắng', 'Cafe vỉa hè rộng rãi, thoáng mát.', '212 Tôn Đức Thắng, Đống Đa, Hà Nội', 21.023330, 105.831110, 
+        'https://images.unsplash.com/photo-1521017432531-fbd92d768814?auto=format&fit=crop&w=800&q=80', 
+        '{"https://images.unsplash.com/photo-1481833761820-0509d3217039?auto=format&fit=crop&w=800&q=80"}', 
+        '{wifi,smoking_rule}', 'approved', '${o2}'),
         
         -- Của Chủ quán 3 (Lê Hoàng Hải)
-        ('${cafeIds[4]}', 'All Day Coffee - Quang Trung', 'Cà phê rang xay thủ công, không gian Âu Châu.', '37 Quang Trung, Hoàn Kiếm, Hà Nội', 21.024440, 105.848880, 'https://placehold.co/600x400?text=All+Day+Coffee', '{}', '{wifi,socket,workspace,cleanliness}', 'approved', '${o3}'),
-        ('${cafeIds[5]}', 'Phúc Long - Vincom Bà Triệu', 'Trà đậm vị, không gian trung tâm thương mại.', '191 Bà Triệu, Hai Bà Trưng, Hà Nội', 21.011110, 105.848880, 'https://placehold.co/600x400?text=Phuc+Long', '{}', '{wifi,snack}', 'approved', '${o3}'),
+        ('${cafeIds[4]}', 'All Day Coffee - Quang Trung', 'Cà phê rang xay thủ công, không gian Âu Châu.', '37 Quang Trung, Hoàn Kiếm, Hà Nội', 21.024440, 105.848880, 
+        'https://images.unsplash.com/photo-1600093463592-8e36ae95ef56?auto=format&fit=crop&w=800&q=80', 
+        '{"https://images.unsplash.com/photo-1445116572660-236099ec97a0?auto=format&fit=crop&w=800&q=80"}', 
+        '{wifi,socket,workspace,cleanliness}', 'approved', '${o3}'),
+        
+        ('${cafeIds[5]}', 'Phúc Long - Vincom Bà Triệu', 'Trà đậm vị, không gian trung tâm thương mại.', '191 Bà Triệu, Hai Bà Trưng, Hà Nội', 21.011110, 105.848880, 
+        'https://images.unsplash.com/photo-1495474472205-16284618a54e?auto=format&fit=crop&w=800&q=80', 
+        '{"https://images.unsplash.com/photo-1498804103079-a6351b050096?auto=format&fit=crop&w=800&q=80"}', 
+        '{wifi,snack}', 'approved', '${o3}'),
         
         -- Của Chủ quán 4 (Phạm Thị Mai)
-        ('${cafeIds[6]}', 'Kafa Café - Thợ Nhuộm', 'Cafe đường phố mang đậm chất Hà Nội.', '212 Thợ Nhuộm, Hoàn Kiếm, Hà Nội', 21.027770, 105.845550, 'https://placehold.co/600x400?text=Kafa+Tho+Nhuom', '{}', '{wifi,smoking_rule}', 'approved', '${o4}'),
-        ('${cafeIds[7]}', 'Tranquil Books & Coffee', 'Cực kỳ yên tĩnh, lý tưởng để đọc sách và code.', '5 Nguyễn Quang Bích, Hoàn Kiếm, Hà Nội', 21.028880, 105.843330, 'https://placehold.co/600x400?text=Tranquil+Books', '{}', '{wifi,socket,workspace,desk,cleanliness}', 'approved', '${o4}'),
+        ('${cafeIds[6]}', 'Kafa Café - Thợ Nhuộm', 'Cafe đường phố mang đậm chất Hà Nội.', '212 Thợ Nhuộm, Hoàn Kiếm, Hà Nội', 21.027770, 105.845550, 
+        'https://images.unsplash.com/photo-1463797221720-6b07e6426c24?auto=format&fit=crop&w=800&q=80', 
+        '{"https://images.unsplash.com/photo-1507133750070-4cb655bf51c6?auto=format&fit=crop&w=800&q=80"}', 
+        '{wifi,smoking_rule}', 'approved', '${o4}'),
+        
+        ('${cafeIds[7]}', 'Tranquil Books & Coffee', 'Cực kỳ yên tĩnh, lý tưởng để đọc sách và code.', '5 Nguyễn Quang Bích, Hoàn Kiếm, Hà Nội', 21.028880, 105.843330, 
+        'https://images.unsplash.com/photo-1481437156560-3205f6a55735?auto=format&fit=crop&w=800&q=80', 
+        '{"https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80"}', 
+        '{wifi,socket,workspace,desk,cleanliness}', 'approved', '${o4}'),
         
         -- Của Chủ quán 5 (Vũ Đức Thắng)
-        ('${cafeIds[8]}', 'The Note Coffee', 'Quán cafe ngập tràn giấy note dễ thương.', '64 Lương Văn Can, Hoàn Kiếm, Hà Nội', 21.031110, 105.851110, 'https://placehold.co/600x400?text=The+Note+Coffee', '{}', '{wifi,cleanliness}', 'approved', '${o5}'),
-        ('${cafeIds[9]}', 'NeoCafe - Lê Đại Hành', 'Ứng dụng công nghệ AI vào pha chế, không gian mở.', '33 Lê Đại Hành, Hai Bà Trưng, Hà Nội', 21.008880, 105.847770, 'https://placehold.co/600x400?text=NeoCafe', '{}', '{wifi,socket,workspace,desk}', 'approved', '${o5}');
+        ('${cafeIds[8]}', 'The Note Coffee', 'Quán cafe ngập tràn giấy note dễ thương.', '64 Lương Văn Can, Hoàn Kiếm, Hà Nội', 21.031110, 105.851110, 
+        'https://images.unsplash.com/photo-1559925313-8a5664d6db87?auto=format&fit=crop&w=800&q=80', 
+        '{"https://images.unsplash.com/photo-1529606132049-555e71dd6ee5?auto=format&fit=crop&w=800&q=80"}', 
+        '{wifi,cleanliness}', 'approved', '${o5}'),
+        
+        ('${cafeIds[9]}', 'NeoCafe - Lê Đại Hành', 'Ứng dụng công nghệ AI vào pha chế, không gian mở.', '33 Lê Đại Hành, Hai Bà Trưng, Hà Nội', 21.008880, 105.847770, 
+        'https://images.unsplash.com/photo-1508424757105-b6d5efd3a414?auto=format&fit=crop&w=800&q=80', 
+        '{"https://images.unsplash.com/photo-1600093463592-8e36ae95ef56?auto=format&fit=crop&w=800&q=80"}', 
+        '{wifi,socket,workspace,desk}', 'approved', '${o5}');
     `);
 
     // =====================================================================
