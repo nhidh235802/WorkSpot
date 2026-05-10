@@ -76,6 +76,26 @@ export default function CafesSearchPage() {
   const centerLng = parseFloat(searchParams.get("lng") || String(DEFAULT_LNG));
   const mapCenter: [number, number] = [centerLat, centerLng];
 
+  // userPosition tracks where the blue dot actually is — can move independently
+  // of mapCenter when the user clicks "locate me"
+  const [userPosition, setUserPosition] = useState<[number, number]>(mapCenter);
+
+  // Keep userPosition in sync when URL params change (e.g. new GPS search)
+  useEffect(() => {
+    setUserPosition(mapCenter);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [centerLat, centerLng]);
+
+  // On mount: try to get real GPS so the dot shows the user's actual location
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setUserPosition([pos.coords.latitude, pos.coords.longitude]),
+      () => {}, // silently fall back to mapCenter
+      { timeout: 6000, maximumAge: 30000 },
+    );
+  }, []);
+
   const toggleFilter = (id: string) => {
     setActiveFilters((prev) => {
       const isExist = prev.includes(id);
@@ -320,9 +340,11 @@ export default function CafesSearchPage() {
           <CafeMap
             cafes={mapCafes}
             center={mapCenter}
+            userPosition={userPosition}
             radius={radius}
             onSelectCafe={handleSelectCafe}
             selectedId={selectedCafeId}
+            onLocate={(pos) => setUserPosition(pos)}
           />
 
           {/* Status badge – top left */}
@@ -333,8 +355,8 @@ export default function CafesSearchPage() {
             </span>
           </div>
 
-          {/* Radius selector – bottom center (above zoom controls) */}
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[1000] px-5 py-3 bg-white/95 backdrop-blur-md rounded-2xl shadow-lg border border-[#e3e3de] flex items-center gap-3">
+          {/* Radius selector – top right */}
+          <div className="absolute top-4 right-4 z-[1000] px-4 py-2.5 bg-white/95 backdrop-blur-md rounded-2xl shadow-lg border border-[#e3e3de] flex items-center gap-3">
             <MapPin className="w-4 h-4 text-[#14422d] shrink-0" />
             <span className="text-[#14422d] text-sm font-medium whitespace-nowrap">検索範囲</span>
             <input
@@ -343,9 +365,9 @@ export default function CafesSearchPage() {
               max={30}
               value={radius}
               onChange={(e) => setRadius(Number(e.target.value))}
-              className="w-28 accent-[#14422d]"
+              className="w-24 accent-[#14422d]"
             />
-            <span className="text-[#14422d] font-bold text-sm w-12 text-right">{radius} km</span>
+            <span className="text-[#14422d] font-bold text-sm w-10 text-right">{radius} km</span>
           </div>
 
           {/* Selected cafe bottom panel */}
@@ -354,7 +376,7 @@ export default function CafesSearchPage() {
             if (!cafe) return null;
             return (
               <div
-                className="absolute bottom-20 left-1/2 -translate-x-1/2 z-[1000] bg-white rounded-2xl shadow-2xl border border-[#e3e3de] overflow-hidden"
+                className="absolute bottom-2 left-1/2 -translate-x-1/2 z-[1000] bg-white rounded-2xl shadow-2xl border border-[#e3e3de] overflow-hidden"
                 style={{ width: 420, maxWidth: 'calc(100% - 32px)' }}
               >
                 {/* Drag handle */}

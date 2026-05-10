@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, ZoomControl, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -23,53 +23,161 @@ const cafeIcon = new L.Icon({
   shadowSize: [32, 32],
 });
 
-function makeSelectedIcon() {
+const selectedIcon = new L.DivIcon({
+  html: `<div style="
+    width: 40px; height: 40px;
+    background: #14422D;
+    border: 3px solid white;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    box-shadow: 0 4px 16px rgba(20,66,45,0.55);
+  "></div>`,
+  iconSize: [40, 40],
+  iconAnchor: [20, 40],
+  popupAnchor: [0, -44],
+  className: '',
+});
+
+function makeUserDotIcon(locating: boolean) {
   return new L.DivIcon({
     html: `<div style="
-      width: 40px; height: 40px;
-      background: #14422D;
+      width: 16px; height: 16px;
+      background: ${locating ? '#6b8cff' : '#1350E0'};
       border: 3px solid white;
-      border-radius: 50% 50% 50% 0;
-      transform: rotate(-45deg);
-      box-shadow: 0 4px 16px rgba(20,66,45,0.55);
+      border-radius: 50%;
+      box-shadow: 0 0 0 5px rgba(19,80,224,0.20);
+      transition: background 0.3s;
     "></div>`,
-    iconSize: [40, 40],
-    iconAnchor: [20, 40],
-    popupAnchor: [0, -44],
+    iconSize: [16, 16],
+    iconAnchor: [8, 8],
     className: '',
   });
 }
 
-const userDotIcon = new L.DivIcon({
-  html: `<div style="
-    width: 16px; height: 16px;
-    background: #1350E0;
-    border: 3px solid white;
-    border-radius: 50%;
-    box-shadow: 0 0 0 5px rgba(19,80,224,0.20);
-  "></div>`,
-  iconSize: [16, 16],
-  iconAnchor: [8, 8],
-  className: '',
-});
-
 /** Smoothly re-center the map when `center` prop changes */
 function FlyToCenter({ center }: { center: [number, number] }) {
   const map = useMap();
+  const prevCenter = useRef(center);
   useEffect(() => {
-    map.flyTo(center, map.getZoom(), { duration: 1 });
+    // Only fly if center actually changed (avoids flying on every render)
+    if (prevCenter.current[0] !== center[0] || prevCenter.current[1] !== center[1]) {
+      map.flyTo(center, map.getZoom(), { duration: 1 });
+      prevCenter.current = center;
+    }
   }, [center, map]);
   return null;
 }
 
-/** Zoom into a selected cafe's position */
-function FlyToCafe({ position }: { position: [number, number] | null }) {
+/**
+ * Flies to the user's GPS dot when it changes (e.g. after "locate me").
+ * Skips the very first render so the map doesn't double-fly on load.
+ */
+function FlyToUserPosition({ position }: { position: [number, number] }) {
   const map = useMap();
+  const prevPos = useRef<[number, number] | null>(null);
   useEffect(() => {
-    if (position) {
-      map.flyTo(position, 17, { duration: 0.9 });
+    if (prevPos.current === null) {
+      prevPos.current = position;
+      return; // skip initial render
+    }
+    if (prevPos.current[0] !== position[0] || prevPos.current[1] !== position[1]) {
+      map.flyTo(position, 15, { duration: 1 });
+      prevPos.current = position;
     }
   }, [position, map]);
+  return null;
+}
+
+/** Zoom to selected cafe at zoom-17 */
+function FlyToCafe({ position }: { position: [number, number] | null }) {
+  const map = useMap();
+  const prevPos = useRef<[number, number] | null>(null);
+  useEffect(() => {
+    if (!position) return;
+    if (
+      prevPos.current &&
+      prevPos.current[0] === position[0] &&
+      prevPos.current[1] === position[1]
+    ) return;
+    map.flyTo(position, 17, { duration: 0.9 });
+    prevPos.current = position;
+  }, [position, map]);
+  return null;
+}
+
+const LOCATE_SVG = `
+<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+  fill="none" stroke="#14422D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <circle cx="12" cy="12" r="8"/>
+  <circle cx="12" cy="12" r="3" fill="#14422D" stroke="none"/>
+  <line x1="12" y1="2"  x2="12" y2="5"/>
+  <line x1="12" y1="19" x2="12" y2="22"/>
+  <line x1="2"  y1="12" x2="5"  y2="12"/>
+  <line x1="19" y1="12" x2="22" y2="12"/>
+</svg>`;
+
+const LOCATE_SVG_SPIN = `
+<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+  fill="none" stroke="#14422D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+  style="animation:leaflet-spin 1s linear infinite">
+  <circle cx="12" cy="12" r="9" stroke-dasharray="40" stroke-dashoffset="15"/>
+</svg>
+<style>@keyframes leaflet-spin{to{transform:rotate(360deg)}}</style>`;
+
+/**
+ * "Go to my location" Leaflet control.
+ * Uses a ref so the callback is always fresh even though the effect runs once.
+ */
+function LocateControl({ onLocate }: { onLocate?: (pos: [number, number]) => void }) {
+  const map = useMap();
+  const onLocateRef = useRef(onLocate);
+  useEffect(() => { onLocateRef.current = onLocate; }, [onLocate]);
+
+  useEffect(() => {
+    const btn = L.DomUtil.create('a') as HTMLAnchorElement;
+    btn.href = '#';
+    btn.title = '現在地へ移動';
+    btn.setAttribute('role', 'button');
+    btn.innerHTML = LOCATE_SVG;
+    Object.assign(btn.style, {
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      width: '34px', height: '34px', background: 'white',
+      cursor: 'pointer', borderRadius: '2px', textDecoration: 'none',
+    });
+
+    L.DomEvent.on(btn, 'click', (e) => {
+      L.DomEvent.preventDefault(e);
+      L.DomEvent.stopPropagation(e);
+      if (!navigator.geolocation) return;
+
+      btn.innerHTML = LOCATE_SVG_SPIN;
+      btn.style.opacity = '0.7';
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const position: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+          onLocateRef.current?.(position); // FlyToUserPosition handles the map fly
+          btn.innerHTML = LOCATE_SVG;
+          btn.style.opacity = '1';
+        },
+        () => { btn.innerHTML = LOCATE_SVG; btn.style.opacity = '1'; },
+        { timeout: 8000 },
+      );
+    });
+
+    const LocateControlClass = L.Control.extend({
+      onAdd() {
+        const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+        container.appendChild(btn);
+        return container;
+      },
+    });
+
+    const ctrl = new LocateControlClass({ position: 'bottomright' });
+    ctrl.addTo(map);
+    return () => { ctrl.remove(); };
+  }, [map]);
+
   return null;
 }
 
@@ -86,13 +194,22 @@ export interface CafeMapItem {
 interface CafeMapProps {
   cafes: CafeMapItem[];
   center: [number, number];
+  /** Actual GPS position for the blue dot — can differ from center after "locate me" */
+  userPosition?: [number, number];
   radius?: number;
   onSelectCafe?: (id: string | number) => void;
   selectedId?: string | number | null;
+  onLocate?: (pos: [number, number]) => void;
 }
 
-export default function CafeMap({ cafes, center, radius, onSelectCafe, selectedId }: CafeMapProps) {
+/** Radius of the blue circle drawn around the selected cafe (metres) */
+const SELECTED_CAFE_RADIUS_M = 250;
+
+export default function CafeMap({
+  cafes, center, userPosition, radius, onSelectCafe, selectedId, onLocate,
+}: CafeMapProps) {
   const radiusMeters = (radius ?? 10) * 1000;
+  const dotPosition = userPosition ?? center;
 
   const selectedCafe = cafes.find((c) => c.id === selectedId);
   const selectedPosition: [number, number] | null =
@@ -110,27 +227,40 @@ export default function CafeMap({ cafes, center, radius, onSelectCafe, selectedI
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
 
-      {/* Zoom controls – bottom right so they don't overlap info */}
+      {/* LocateControl before ZoomControl → appears below +/- in bottomright stack */}
+      <LocateControl onLocate={onLocate} />
       <ZoomControl position="bottomright" />
 
       <FlyToCenter center={center} />
+      <FlyToUserPosition position={dotPosition} />
       <FlyToCafe position={selectedPosition} />
 
-      {/* Search radius circle */}
+      {/* Search radius circle around USER position */}
       <Circle
-        center={center}
+        center={dotPosition}
         radius={radiusMeters}
         pathOptions={{
-          color: '#14422D',
-          fillColor: '#14422D',
-          fillOpacity: 0.06,
-          weight: 1.5,
-          dashArray: '6 4',
+          color: '#14422D', fillColor: '#14422D',
+          fillOpacity: 0.06, weight: 1.5, dashArray: '6 4',
         }}
       />
 
-      {/* User location dot */}
-      <Marker position={center} icon={userDotIcon}>
+      {/* Blue area circle around SELECTED cafe (5 km) */}
+      {selectedCafe && (
+        <Circle
+          center={[selectedCafe.latitude, selectedCafe.longitude]}
+          radius={SELECTED_CAFE_RADIUS_M}
+          pathOptions={{
+            color: '#135899',
+            fillColor: '#135899',
+            fillOpacity: 0.20,
+            weight: 2,
+          }}
+        />
+      )}
+
+      {/* User location dot — moves when "locate me" is pressed */}
+      <Marker position={dotPosition} icon={makeUserDotIcon(false)}>
         <Popup>
           <span style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 600, color: '#1350E0' }}>
             現在地
@@ -146,7 +276,7 @@ export default function CafeMap({ cafes, center, radius, onSelectCafe, selectedI
           <Marker
             key={cafe.id}
             position={[cafe.latitude, cafe.longitude]}
-            icon={isSelected ? makeSelectedIcon() : cafeIcon}
+            icon={isSelected ? selectedIcon : cafeIcon}
             eventHandlers={{ click: () => onSelectCafe?.(cafe.id) }}
           >
             {!isSelected && (
