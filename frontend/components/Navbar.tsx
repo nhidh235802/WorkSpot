@@ -60,7 +60,7 @@ export default function Navbar({ center }: NavbarProps) {
       flexShrink: 0,
     }}>
       <div style={{
-        maxWidth: 1280,
+        maxWidth: 1536,
         margin: '0 auto',
         padding: '0 32px',
         height: 80,
@@ -70,11 +70,7 @@ export default function Navbar({ center }: NavbarProps) {
         gap: 16,
       }}>
         {/* Logo */}
-        <Link href="/" style={{
-          fontSize: 24, fontWeight: 400, color: '#14422D',
-          fontFamily: 'Acme, sans-serif', lineHeight: '32px',
-          letterSpacing: '-1.20px', textDecoration: 'none', flexShrink: 0,
-        }}>
+        <Link href="/" style={{width: 111, height: 32, justifyContent: 'center', display: 'flex', flexDirection: 'column', color: '#14422D', fontSize: 24, fontFamily: 'Acme', fontWeight: '400', lineHeight: 32, wordWrap: 'break-word'}}>
           WorkSpot
         </Link>
 

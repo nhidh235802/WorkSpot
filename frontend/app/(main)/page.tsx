@@ -228,7 +228,7 @@ export default function WorkSpotPage() {
       <Navbar />
 
       {/* ── Hero ── */}
-      <section style={{ padding: "96px 32px", maxWidth: 1280, margin: "0 auto" }}>
+      <section style={{ padding: "96px 32px", maxWidth: 1536, margin: "0 auto" }}>
         <div style={{
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
@@ -319,9 +319,9 @@ export default function WorkSpotPage() {
 
       {/* ── Recommended Cafes ── */}
       <section style={{ background: "#F4F4EF", padding: "48px 0" }}>
-        <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 32px" }}>
+        <div style={{ maxWidth: 1536, margin: "0 auto" }}>
           {/* Header */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32, padding: "0 32px" }}>
             <div>
               <p style={{ margin: 0, fontSize: 12, fontWeight: 500, color: "#904C18", textTransform: "uppercase", letterSpacing: "1.2px", lineHeight: "16px" }}>
                 あなたへの一押し
@@ -354,6 +354,8 @@ export default function WorkSpotPage() {
                   overflowX: "auto",
                   paddingBottom: 32,
                   scrollbarWidth: "none",
+                  paddingLeft: 32,
+                  paddingRight: 32,
                 }}
               >
                 {recommendedCafes.map((cafe) => (
@@ -367,8 +369,8 @@ export default function WorkSpotPage() {
                     onClick={() => scroll('left')}
                     style={{
                       position: "absolute",
-                      left: -28,
-                      top: 112,
+                      left: 16,
+                      top: 177.5,
                       transform: "translateY(-50%)",
                       width: 56,
                       height: 56,
@@ -392,8 +394,8 @@ export default function WorkSpotPage() {
                     onClick={() => scroll('right')}
                     style={{
                       position: "absolute",
-                      right: -28,
-                      top: 112,
+                      right: 16,
+                      top: 177.5,
                       transform: "translateY(-50%)",
                       width: 56,
                       height: 56,
@@ -421,7 +423,7 @@ export default function WorkSpotPage() {
       </section>
 
       {/* ── Features Bento Grid ── */}
-      <section style={{ maxWidth: 1280, margin: "0 auto", padding: "80px 32px" }}>
+      <section style={{ maxWidth: 1536, margin: "0 auto", padding: "80px 32px" }}>
         <h2 style={{
           margin: "0 0 48px",
           fontSize: 36,
