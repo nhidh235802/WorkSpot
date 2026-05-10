@@ -58,6 +58,12 @@ export class User {
   @OneToMany(() => Review, (review) => review.user)
   reviews!: Review[];
 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  resetPasswordToken!: string | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  resetPasswordExpiry!: Date | null;
+
   // Thông tin về thời gian tạo và cập nhật tài khoản
   @CreateDateColumn()
   createdAt!: Date;
