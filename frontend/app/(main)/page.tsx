@@ -372,19 +372,20 @@ export default function WorkSpotPage() {
                       width: 56,
                       height: 56,
                       borderRadius: "50%",
-                      background: "rgba(65, 73, 67, 0.8)",
+                      background: "rgba(0, 0, 0, 0.4)",
                       border: "3px solid #fff",
+                      boxShadow: "0 0 0 5px rgba(0, 0, 0, 0.4)",
                       color: "#fff",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       cursor: "pointer",
                       zIndex: 10,
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                      backgroundClip: "padding-box",
                     }}
                     aria-label="Scroll left"
                   >
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
                   </button>
                   <button
                     onClick={() => scroll('right')}
@@ -396,19 +397,20 @@ export default function WorkSpotPage() {
                       width: 56,
                       height: 56,
                       borderRadius: "50%",
-                      background: "rgba(65, 73, 67, 0.8)",
+                      background: "rgba(0, 0, 0, 0.4)",
                       border: "3px solid #fff",
+                      boxShadow: "0 0 0 5px rgba(0, 0, 0, 0.4)",
                       color: "#fff",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       cursor: "pointer",
                       zIndex: 10,
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                      backgroundClip: "padding-box",
                     }}
                     aria-label="Scroll right"
                   >
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
                   </button>
                 </>
               )}

@@ -16,6 +16,7 @@ export class SeedMockData1778069724439 implements MigrationInterface {
     const o3 = '22222222-2222-2222-2222-222222222223';
     const o4 = '22222222-2222-2222-2222-222222222224';
     const o5 = '22222222-2222-2222-2222-222222222225';
+    const o6 = '22222222-2222-2222-2222-222222222226';
 
     // 5 Khách hàng
     const c1 = '33333333-3333-3333-3333-333333333331';
@@ -26,7 +27,7 @@ export class SeedMockData1778069724439 implements MigrationInterface {
 
     // 10 Quán Cafe
     const cafeIds = Array.from(
-      { length: 10 },
+      { length: 11 },
       (_, i) =>
         `44444444-4444-4444-4444-4444444444${(i + 1).toString().padStart(2, '0')}`,
     );
@@ -45,7 +46,9 @@ export class SeedMockData1778069724439 implements MigrationInterface {
         ('${o3}', 'Lê Hoàng Hải', 'hai.le@owner.vn', '0903333333', '${hash}', 'https://ui-avatars.com/api/?name=Le+Hoang+Hai&background=random', 'Đống Đa, Hà Nội', 'Chuyên gia pha chế, muốn tạo ra văn hóa thưởng thức cà phê mới.', 'owner'),
         ('${o4}', 'Phạm Thị Mai', 'mai.pham@owner.vn', '0904444444', '${hash}', 'https://ui-avatars.com/api/?name=Pham+Thi+Mai&background=random', 'Hai Bà Trưng, Hà Nội', 'Khởi nghiệp với mô hình cafe kết hợp thư viện sách.', 'owner'),
         ('${o5}', 'Vũ Đức Thắng', 'thang.vu@owner.vn', '0905555555', '${hash}', 'https://ui-avatars.com/api/?name=Vu+Duc+Thang&background=random', 'Ba Đình, Hà Nội', 'Mong muốn kết nối cộng đồng Freelancer qua không gian cafe.', 'owner'),
-        
+        -- Chủ quán Test (Vĩnh Yên)
+        ('${o6}', 'Vĩnh Yên Tester', 'vinhyen@owner.vn', '0906666666', '${hash}', 'https://ui-avatars.com/api/?name=Vinh+Yen&background=random', 'Vĩnh Yên, Vĩnh Phúc', 'Tạo tài khoản để test GPS ở quê.', 'owner'),
+
         -- 5 Khách hàng
         ('${c1}', 'Đinh Tùng Lâm', 'lam.dinh@gmail.com', '0911111111', '${hash}', 'https://ui-avatars.com/api/?name=Dinh+Tung+Lam&background=random', 'Thanh Xuân, Hà Nội', 'Sinh viên IT đam mê code dạo, chuyên vác laptop ra quán cafe chạy deadline.', 'customer'),
         ('${c2}', 'Hồ Thu Hương', 'huong.ho@gmail.com', '0912222222', '${hash}', 'https://ui-avatars.com/api/?name=Ho+Thu+Huong&background=random', 'Tây Hồ, Hà Nội', 'Freelancer thiết kế đồ họa. Tìm kiếm nguồn cảm hứng từ không gian đẹp.', 'customer'),
@@ -112,7 +115,13 @@ export class SeedMockData1778069724439 implements MigrationInterface {
         ('${cafeIds[9]}', 'NeoCafe - Lê Đại Hành', 'Ứng dụng công nghệ AI vào pha chế, không gian mở.', '33 Lê Đại Hành, Hai Bà Trưng, Hà Nội', 21.008880, 105.847770, 
         'https://images.unsplash.com/photo-1508424757105-b6d5efd3a414?auto=format&fit=crop&w=800&q=80', 
         '{"https://images.unsplash.com/photo-1600093463592-8e36ae95ef56?auto=format&fit=crop&w=800&q=80"}', 
-        '{wifi,socket,workspace,desk}', 'approved', '${o5}');
+        '{wifi,socket,workspace,desk}', 'approved', '${o5}'),
+        
+        -- Quán Test GPS Vĩnh Yên
+        ('${cafeIds[10]}', 'WorkSpot Vĩnh Yên (Test GPS)', 'Quán cafe yên tĩnh ngay trung tâm thành phố Vĩnh Yên, mạng cực mạnh để test code.', 'Ngô Quyền, Ngô Quyền, Vĩnh Yên, Vĩnh Phúc', 21.315540, 105.626900, 
+        'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=800&q=80', 
+        '{"https://images.unsplash.com/photo-1497935586351-b67a49e012bf?auto=format&fit=crop&w=800&q=80"}', 
+        '{wifi,socket,workspace,desk,cleanliness}', 'approved', '${o6}');
     `);
 
     // =====================================================================
@@ -169,7 +178,10 @@ export class SeedMockData1778069724439 implements MigrationInterface {
         
         -- Khách 5 (Huy - Remote Worker) đánh giá Quán 9 & 10
         (uuid_generate_v4(), 4, 'Đọc các tờ note của khách hàng trước để lại rất thú vị. Nhân viên thân thiện.', '${c5}', '${cafeIds[8]}'),
-        (uuid_generate_v4(), 5, 'Công nghệ đặt món qua app xịn. Bàn làm việc tiêu chuẩn, ghế ngồi rất êm, wifi căng đét!', '${c5}', '${cafeIds[9]}');
+        (uuid_generate_v4(), 5, 'Công nghệ đặt món qua app xịn. Bàn làm việc tiêu chuẩn, ghế ngồi rất êm, wifi căng đét!', '${c5}', '${cafeIds[9]}'),
+
+        -- Review cho quán Vĩnh Yên
+        (uuid_generate_v4(), 5, 'Vùng quê xa xôi hẻo lánh chỉ có 1 quán, tuyệt quá', '${c1}', '${cafeIds[10]}');
     `);
   }
 

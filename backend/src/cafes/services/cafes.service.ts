@@ -32,9 +32,9 @@ export class CafesService {
     // Công thức Haversine tính khoảng cách (km)
     const haversineExpr = [
       '(6371 * acos(',
-      '  cos(radians(:lat)) * cos(radians(cafe.latitude))',
+      '  LEAST(1, cos(radians(:lat)) * cos(radians(cafe.latitude))',
       '  * cos(radians(cafe.longitude) - radians(:lng))',
-      '  + sin(radians(:lat)) * sin(radians(cafe.latitude))',
+      '  + sin(radians(:lat)) * sin(radians(cafe.latitude)))',
       '))',
     ].join('');
 
