@@ -16,6 +16,7 @@ export class SeedMockData1778069724439 implements MigrationInterface {
     const o3 = '22222222-2222-2222-2222-222222222223';
     const o4 = '22222222-2222-2222-2222-222222222224';
     const o5 = '22222222-2222-2222-2222-222222222225';
+    const o6 = '22222222-2222-2222-2222-222222222226';
 
     // 5 Khách hàng
     const c1 = '33333333-3333-3333-3333-333333333331';
@@ -26,7 +27,7 @@ export class SeedMockData1778069724439 implements MigrationInterface {
 
     // 10 Quán Cafe
     const cafeIds = Array.from(
-      { length: 10 },
+      { length: 11 },
       (_, i) =>
         `44444444-4444-4444-4444-4444444444${(i + 1).toString().padStart(2, '0')}`,
     );
@@ -45,7 +46,9 @@ export class SeedMockData1778069724439 implements MigrationInterface {
         ('${o3}', 'Lê Hoàng Hải', 'hai.le@owner.vn', '0903333333', '${hash}', 'https://ui-avatars.com/api/?name=Le+Hoang+Hai&background=random', 'Đống Đa, Hà Nội', 'Chuyên gia pha chế, muốn tạo ra văn hóa thưởng thức cà phê mới.', 'owner'),
         ('${o4}', 'Phạm Thị Mai', 'mai.pham@owner.vn', '0904444444', '${hash}', 'https://ui-avatars.com/api/?name=Pham+Thi+Mai&background=random', 'Hai Bà Trưng, Hà Nội', 'Khởi nghiệp với mô hình cafe kết hợp thư viện sách.', 'owner'),
         ('${o5}', 'Vũ Đức Thắng', 'thang.vu@owner.vn', '0905555555', '${hash}', 'https://ui-avatars.com/api/?name=Vu+Duc+Thang&background=random', 'Ba Đình, Hà Nội', 'Mong muốn kết nối cộng đồng Freelancer qua không gian cafe.', 'owner'),
-        
+        -- Chủ quán Test (Vĩnh Yên)
+        ('${o6}', 'Vĩnh Yên Tester', 'vinhyen@owner.vn', '0906666666', '${hash}', 'https://ui-avatars.com/api/?name=Vinh+Yen&background=random', 'Vĩnh Yên, Vĩnh Phúc', 'Tạo tài khoản để test GPS ở quê.', 'owner'),
+
         -- 5 Khách hàng
         ('${c1}', 'Đinh Tùng Lâm', 'lam.dinh@gmail.com', '0911111111', '${hash}', 'https://ui-avatars.com/api/?name=Dinh+Tung+Lam&background=random', 'Thanh Xuân, Hà Nội', 'Sinh viên IT đam mê code dạo, chuyên vác laptop ra quán cafe chạy deadline.', 'customer'),
         ('${c2}', 'Hồ Thu Hương', 'huong.ho@gmail.com', '0912222222', '${hash}', 'https://ui-avatars.com/api/?name=Ho+Thu+Huong&background=random', 'Tây Hồ, Hà Nội', 'Freelancer thiết kế đồ họa. Tìm kiếm nguồn cảm hứng từ không gian đẹp.', 'customer'),
@@ -54,31 +57,77 @@ export class SeedMockData1778069724439 implements MigrationInterface {
         ('${c5}', 'Đỗ Quang Huy', 'huy.do@gmail.com', '0915555555', '${hash}', 'https://ui-avatars.com/api/?name=Do+Quang+Huy&background=random', 'Hoàng Mai, Hà Nội', 'Remote worker toàn thời gian. Ưu tiên quán có wifi xịn và ghế êm.', 'customer');
     `);
 
-    // =====================================================================
-    // 2. THÊM 10 QUÁN CAFE (Avatar quán lấy ảnh placeholder có chứa tên)
-    // =====================================================================
-    await queryRunner.query(`
-        INSERT INTO "cafes" ("id", "name", "description", "address", "latitude", "longitude", "avatar", "images", "facilities", "status", "owner_id") VALUES
-        -- Của Chủ quán 1 (Nguyễn Văn An)
-        ('${cafeIds[0]}', 'The Coffee House - Cầu Giấy', 'Không gian hiện đại, thích hợp làm việc nhóm.', 'Số 2 Khúc Thừa Dụ, Cầu Giấy, Hà Nội', 21.033333, 105.790580, 'https://placehold.co/600x400?text=TCH+Cau+Giay', '{"https://placehold.co/800x600?text=Khong+gian+1", "https://placehold.co/800x600?text=Menu"}', '{wifi,socket,workspace,desk}', 'approved', '${o1}'),
-        ('${cafeIds[1]}', 'Highlands Coffee - Cột Cờ', 'Góc view lịch sử siêu đẹp, đồ uống đậm đà.', '28A Điện Biên Phủ, Ba Đình, Hà Nội', 21.032220, 105.838880, 'https://placehold.co/600x400?text=Highlands+Cot+Co', '{}', '{wifi,cleanliness,snack}', 'approved', '${o1}'),
-        
-        -- Của Chủ quán 2 (Trần Thị Bích)
-        ('${cafeIds[2]}', 'Cộng Cà Phê - Tràng Tiền', 'Phong cách bao cấp độc đáo ngay trung tâm.', '46 Tràng Tiền, Hoàn Kiếm, Hà Nội', 21.025550, 105.852220, 'https://placehold.co/600x400?text=Cong+Trang+Tien', '{}', '{wifi,cleanliness,smoking_rule}', 'approved', '${o2}'),
-        ('${cafeIds[3]}', 'Aha Cafe - Tôn Đức Thắng', 'Cafe vỉa hè rộng rãi, thoáng mát.', '212 Tôn Đức Thắng, Đống Đa, Hà Nội', 21.023330, 105.831110, 'https://placehold.co/600x400?text=Aha+Ton+Duc+Thang', '{}', '{wifi,smoking_rule}', 'approved', '${o2}'),
-        
-        -- Của Chủ quán 3 (Lê Hoàng Hải)
-        ('${cafeIds[4]}', 'All Day Coffee - Quang Trung', 'Cà phê rang xay thủ công, không gian Âu Châu.', '37 Quang Trung, Hoàn Kiếm, Hà Nội', 21.024440, 105.848880, 'https://placehold.co/600x400?text=All+Day+Coffee', '{}', '{wifi,socket,workspace,cleanliness}', 'approved', '${o3}'),
-        ('${cafeIds[5]}', 'Phúc Long - Vincom Bà Triệu', 'Trà đậm vị, không gian trung tâm thương mại.', '191 Bà Triệu, Hai Bà Trưng, Hà Nội', 21.011110, 105.848880, 'https://placehold.co/600x400?text=Phuc+Long', '{}', '{wifi,snack}', 'approved', '${o3}'),
-        
-        -- Của Chủ quán 4 (Phạm Thị Mai)
-        ('${cafeIds[6]}', 'Kafa Café - Thợ Nhuộm', 'Cafe đường phố mang đậm chất Hà Nội.', '212 Thợ Nhuộm, Hoàn Kiếm, Hà Nội', 21.027770, 105.845550, 'https://placehold.co/600x400?text=Kafa+Tho+Nhuom', '{}', '{wifi,smoking_rule}', 'approved', '${o4}'),
-        ('${cafeIds[7]}', 'Tranquil Books & Coffee', 'Cực kỳ yên tĩnh, lý tưởng để đọc sách và code.', '5 Nguyễn Quang Bích, Hoàn Kiếm, Hà Nội', 21.028880, 105.843330, 'https://placehold.co/600x400?text=Tranquil+Books', '{}', '{wifi,socket,workspace,desk,cleanliness}', 'approved', '${o4}'),
-        
-        -- Của Chủ quán 5 (Vũ Đức Thắng)
-        ('${cafeIds[8]}', 'The Note Coffee', 'Quán cafe ngập tràn giấy note dễ thương.', '64 Lương Văn Can, Hoàn Kiếm, Hà Nội', 21.031110, 105.851110, 'https://placehold.co/600x400?text=The+Note+Coffee', '{}', '{wifi,cleanliness}', 'approved', '${o5}'),
-        ('${cafeIds[9]}', 'NeoCafe - Lê Đại Hành', 'Ứng dụng công nghệ AI vào pha chế, không gian mở.', '33 Lê Đại Hành, Hai Bà Trưng, Hà Nội', 21.008880, 105.847770, 'https://placehold.co/600x400?text=NeoCafe', '{}', '{wifi,socket,workspace,desk}', 'approved', '${o5}');
-    `);
+    // 2. THÊM 10 QUÁN CAFE - MỖI QUÁN 3 ẢNH THẬT TỪ UNSPLASH
+        // =====================================================================
+        await queryRunner.query(`
+            INSERT INTO "cafes" ("id", "name", "description", "address", "latitude", "longitude", "avatar", "images", "facilities", "status", "owner_id") VALUES
+
+            -- Quán 1: The Coffee House - Cầu Giấy
+            ('${cafeIds[0]}', 'The Coffee House - Cầu Giấy', 'Không gian hiện đại, thích hợp làm việc nhóm.', 'Số 2 Khúc Thừa Dụ, Cầu Giấy, Hà Nội', 21.033333, 105.790580,
+            'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=800&q=80',
+            '{"https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=800&q=80","https://images.unsplash.com/photo-1497935586351-b67a49e012bf?auto=format&fit=crop&w=800&q=80","https://images.unsplash.com/photo-1525610553991-2bede1a236e2?auto=format&fit=crop&w=800&q=80"}',
+            '{wifi,socket,workspace,desk}', 'approved', '${o1}'),
+
+            -- Quán 2: Highlands Coffee - Cột Cờ
+            ('${cafeIds[1]}', 'Highlands Coffee - Cột Cờ', 'Góc view lịch sử siêu đẹp, đồ uống đậm đà.', '28A Điện Biên Phủ, Ba Đình, Hà Nội', 21.032220, 105.838880,
+            'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=800&q=80',
+            '{"https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=800&q=80","https://images.unsplash.com/photo-1453614512568-c4024d13c247?auto=format&fit=crop&w=800&q=80","https://images.unsplash.com/photo-1463797221720-6b07e6426c24?auto=format&fit=crop&w=800&q=80"}',
+            '{wifi,cleanliness,snack}', 'approved', '${o1}'),
+
+            -- Quán 3: Cộng Cà Phê - Tràng Tiền
+            ('${cafeIds[2]}', 'Cộng Cà Phê - Tràng Tiền', 'Phong cách bao cấp độc đáo ngay trung tâm.', '46 Tràng Tiền, Hoàn Kiếm, Hà Nội', 21.025550, 105.852220,
+            'https://images.unsplash.com/photo-1501339817309-1d41e50156af?auto=format&fit=crop&w=800&q=80',
+            '{"https://images.unsplash.com/photo-1501339817309-1d41e50156af?auto=format&fit=crop&w=800&q=80","https://images.unsplash.com/photo-1511920170033-f8396924c348?auto=format&fit=crop&w=800&q=80","https://images.unsplash.com/photo-1559925313-8a5664d6db87?auto=format&fit=crop&w=800&q=80"}',
+            '{wifi,cleanliness,smoking_rule}', 'approved', '${o2}'),
+
+            -- Quán 4: Aha Cafe - Tôn Đức Thắng
+            ('${cafeIds[3]}', 'Aha Cafe - Tôn Đức Thắng', 'Cafe vỉa hè rộng rãi, thoáng mát.', '212 Tôn Đức Thắng, Đống Đa, Hà Nội', 21.023330, 105.831110,
+            'https://images.unsplash.com/photo-1521017432531-fbd92d768814?auto=format&fit=crop&w=800&q=80',
+            '{"https://images.unsplash.com/photo-1521017432531-fbd92d768814?auto=format&fit=crop&w=800&q=80","https://images.unsplash.com/photo-1481833761820-0509d3217039?auto=format&fit=crop&w=800&q=80","https://images.unsplash.com/photo-1445116572660-236099ec97a0?auto=format&fit=crop&w=800&q=80"}',
+            '{wifi,smoking_rule}', 'approved', '${o2}'),
+
+            -- Quán 5: All Day Coffee - Quang Trung
+            ('${cafeIds[4]}', 'All Day Coffee - Quang Trung', 'Cà phê rang xay thủ công, không gian Âu Châu.', '37 Quang Trung, Hoàn Kiếm, Hà Nội', 21.024440, 105.848880,
+            'https://images.unsplash.com/photo-1600093463592-8e36ae95ef56?auto=format&fit=crop&w=800&q=80',
+            '{"https://images.unsplash.com/photo-1600093463592-8e36ae95ef56?auto=format&fit=crop&w=800&q=80","https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=800&q=80","https://images.unsplash.com/photo-1507133750070-4cb655bf51c6?auto=format&fit=crop&w=800&q=80"}',
+            '{wifi,socket,workspace,cleanliness}', 'approved', '${o3}'),
+
+            -- Quán 6: Phúc Long - Vincom Bà Triệu
+            ('${cafeIds[5]}', 'Phúc Long - Vincom Bà Triệu', 'Trà đậm vị, không gian trung tâm thương mại.', '191 Bà Triệu, Hai Bà Trưng, Hà Nội', 21.011110, 105.848880,
+            'https://images.unsplash.com/photo-1495474472205-16284618a54e?auto=format&fit=crop&w=800&q=80',
+            '{"https://images.unsplash.com/photo-1495474472205-16284618a54e?auto=format&fit=crop&w=800&q=80","https://images.unsplash.com/photo-1498804103079-a6351b050096?auto=format&fit=crop&w=800&q=80","https://images.unsplash.com/photo-1529606132049-555e71dd6ee5?auto=format&fit=crop&w=800&q=80"}',
+            '{wifi,snack}', 'approved', '${o3}'),
+
+            -- Quán 7: Kafa Café - Thợ Nhuộm
+            ('${cafeIds[6]}', 'Kafa Café - Thợ Nhuộm', 'Cafe đường phố mang đậm chất Hà Nội.', '212 Thợ Nhuộm, Hoàn Kiếm, Hà Nội', 21.027770, 105.845550,
+            'https://images.unsplash.com/photo-1463797221720-6b07e6426c24?auto=format&fit=crop&w=800&q=80',
+            '{"https://images.unsplash.com/photo-1463797221720-6b07e6426c24?auto=format&fit=crop&w=800&q=80","https://images.unsplash.com/photo-1481437156560-3205f6a55735?auto=format&fit=crop&w=800&q=80","https://images.unsplash.com/photo-1508424757105-b6d5efd3a414?auto=format&fit=crop&w=800&q=80"}',
+            '{wifi,smoking_rule}', 'approved', '${o4}'),
+
+            -- Quán 8: Tranquil Books & Coffee
+            ('${cafeIds[7]}', 'Tranquil Books & Coffee', 'Cực kỳ yên tĩnh, lý tưởng để đọc sách và code.', '5 Nguyễn Quang Bích, Hoàn Kiếm, Hà Nội', 21.028880, 105.843330,
+            'https://images.unsplash.com/photo-1481437156560-3205f6a55735?auto=format&fit=crop&w=800&q=80',
+            '{"https://images.unsplash.com/photo-1481437156560-3205f6a55735?auto=format&fit=crop&w=800&q=80","https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80","https://images.unsplash.com/photo-1453614512568-c4024d13c247?auto=format&fit=crop&w=800&q=80"}',
+            '{wifi,socket,workspace,desk,cleanliness}', 'approved', '${o4}'),
+
+            -- Quán 9: The Note Coffee
+            ('${cafeIds[8]}', 'The Note Coffee', 'Quán cafe ngập tràn giấy note dễ thương.', '64 Lương Văn Can, Hoàn Kiếm, Hà Nội', 21.031110, 105.851110,
+            'https://images.unsplash.com/photo-1559925313-8a5664d6db87?auto=format&fit=crop&w=800&q=80',
+            '{"https://images.unsplash.com/photo-1559925313-8a5664d6db87?auto=format&fit=crop&w=800&q=80","https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=800&q=80","https://images.unsplash.com/photo-1525610553991-2bede1a236e2?auto=format&fit=crop&w=800&q=80"}',
+            '{wifi,cleanliness}', 'approved', '${o5}'),
+
+            -- Quán 10: NeoCafe - Lê Đại Hành
+            ('${cafeIds[9]}', 'NeoCafe - Lê Đại Hành', 'Ứng dụng công nghệ AI vào pha chế, không gian mở.', '33 Lê Đại Hành, Hai Bà Trưng, Hà Nội', 21.008880, 105.847770,
+            'https://images.unsplash.com/photo-1508424757105-b6d5efd3a414?auto=format&fit=crop&w=800&q=80',
+            '{"https://images.unsplash.com/photo-1508424757105-b6d5efd3a414?auto=format&fit=crop&w=800&q=80","https://images.unsplash.com/photo-1600093463592-8e36ae95ef56?auto=format&fit=crop&w=800&q=80","https://images.unsplash.com/photo-1501339817309-1d41e50156af?auto=format&fit=crop&w=800&q=80"}',
+            '{wifi,socket,workspace,desk}', 'approved', '${o5}'),
+
+            -- Quán 11: WorkSpot Vĩnh Yên (Test GPS)
+            ('${cafeIds[10]}', 'WorkSpot Vĩnh Yên (Test GPS)', 'Quán cafe yên tĩnh ngay trung tâm thành phố Vĩnh Yên, mạng cực mạnh để test code.', 'Ngô Quyền, Ngô Quyền, Vĩnh Yên, Vĩnh Phúc', 21.315540, 105.626900,
+            'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=800&q=80',
+            '{"https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=800&q=80","https://images.unsplash.com/photo-1497935586351-b67a49e012bf?auto=format&fit=crop&w=800&q=80","https://images.unsplash.com/photo-1511920170033-f8396924c348?auto=format&fit=crop&w=800&q=80"}',
+            '{wifi,socket,workspace,desk,cleanliness}', 'approved', '${o6}');
+        `);
 
     // =====================================================================
     // 3. THÊM LỊCH HOẠT ĐỘNG (10 quán x 7 ngày = 70 dòng)
@@ -134,7 +183,10 @@ export class SeedMockData1778069724439 implements MigrationInterface {
         
         -- Khách 5 (Huy - Remote Worker) đánh giá Quán 9 & 10
         (uuid_generate_v4(), 4, 'Đọc các tờ note của khách hàng trước để lại rất thú vị. Nhân viên thân thiện.', '${c5}', '${cafeIds[8]}'),
-        (uuid_generate_v4(), 5, 'Công nghệ đặt món qua app xịn. Bàn làm việc tiêu chuẩn, ghế ngồi rất êm, wifi căng đét!', '${c5}', '${cafeIds[9]}');
+        (uuid_generate_v4(), 5, 'Công nghệ đặt món qua app xịn. Bàn làm việc tiêu chuẩn, ghế ngồi rất êm, wifi căng đét!', '${c5}', '${cafeIds[9]}'),
+
+        -- Review cho quán Vĩnh Yên
+        (uuid_generate_v4(), 5, 'Vùng quê xa xôi hẻo lánh chỉ có 1 quán, tuyệt quá', '${c1}', '${cafeIds[10]}');
     `);
   }
 
