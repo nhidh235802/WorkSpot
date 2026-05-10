@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import Navbar from '@/components/Navbar';
 import {
   Search,
   Loader2,
@@ -179,18 +180,7 @@ export default function CafesSearchPage() {
   return (
     <main className="relative flex flex-col h-screen w-full bg-[#fafaf5] overflow-hidden">
 
-      {/* HEADER */}
-      <header className="flex w-full items-center justify-between px-8 h-20 bg-[#fafaf5cc] shadow-[0px_8px_30px_#0000000a] backdrop-blur-md z-50 shrink-0">
-        <Link href="/" className="font-extrabold text-[#14422d] text-2xl tracking-[-1.20px]">
-          WorkSpot
-        </Link>
-        <div className="flex items-center gap-3 cursor-pointer p-2 hover:bg-[#e3e3de] rounded-full transition-colors">
-          <div className="w-10 h-10 bg-[#14422d] rounded-full flex justify-center items-center text-white font-bold">
-            U
-          </div>
-          <span className="text-[#14422d] font-medium hidden sm:block">マイページ</span>
-        </div>
-      </header>
+      <Navbar />
 
       <div className="flex flex-1 overflow-hidden">
 
