@@ -106,37 +106,61 @@ function FlyToCafe({ position }: { position: [number, number] | null }) {
 }
 
 /**
- * Fetches a driving route from OSRM (free, no API key) and draws it on the map.
- * Clears automatically when either endpoint changes.
+ * Draws a driving route from OSRM on the map.
+ * Shows a straight dashed line immediately as placeholder, then upgrades to the
+ * real road-following route when OSRM responds. Falls back to the dashed line on error.
  */
 function RoutePolyline({ from, to }: { from: [number, number]; to: [number, number] }) {
-  const [positions, setPositions] = useState<[number, number][]>([]);
+  const [roadPositions, setRoadPositions] = useState<[number, number][] | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    const url =
-      `https://router.project-osrm.org/route/v1/driving/` +
-      `${from[1]},${from[0]};${to[1]},${to[0]}?overview=full&geometries=geojson`;
+    setRoadPositions(null);
 
-    fetch(url)
-      .then((r) => r.json())
-      .then((data) => {
-        if (cancelled) return;
-        const coords = data.routes?.[0]?.geometry?.coordinates as [number, number][] | undefined;
-        if (coords) setPositions(coords.map(([lng, lat]) => [lat, lng]));
-      })
-      .catch(() => {});
+    const controllers = [
+      'https://router.project-osrm.org',
+      'https://routing.openstreetmap.de/routed-car',
+    ];
 
-    return () => { cancelled = true; setPositions([]); };
+    const tryFetch = async () => {
+      for (const base of controllers) {
+        try {
+          const url = `${base}/route/v1/driving/${from[1]},${from[0]};${to[1]},${to[0]}?overview=full&geometries=geojson`;
+          const r = await fetch(url, { signal: AbortSignal.timeout(6000) });
+          const data = await r.json();
+          if (cancelled) return;
+          const coords = data.routes?.[0]?.geometry?.coordinates as [number, number][] | undefined;
+          if (coords?.length) {
+            setRoadPositions(coords.map(([lng, lat]) => [lat, lng]));
+            return;
+          }
+        } catch {
+          // try next server
+        }
+      }
+    };
+
+    tryFetch();
+    return () => { cancelled = true; };
   }, [from[0], from[1], to[0], to[1]]);
 
-  if (!positions.length) return null;
-
   return (
-    <Polyline
-      positions={positions}
-      pathOptions={{ color: '#1350E0', weight: 5, opacity: 0.75 }}
-    />
+    <>
+      {/* Always show a straight dashed line as immediate fallback */}
+      {!roadPositions && (
+        <Polyline
+          positions={[from, to]}
+          pathOptions={{ color: '#1350E0', weight: 3, opacity: 0.55, dashArray: '10 7' }}
+        />
+      )}
+      {/* Upgrade to real road-following route when OSRM responds */}
+      {roadPositions && (
+        <Polyline
+          positions={roadPositions}
+          pathOptions={{ color: '#1350E0', weight: 5, opacity: 0.8 }}
+        />
+      )}
+    </>
   );
 }
 
@@ -216,6 +240,16 @@ function LocateControl({ onLocate }: { onLocate?: (pos: [number, number]) => voi
   return null;
 }
 
+/** Zooms the map to fit [userPos, cafePos] when `trigger` increments */
+function FitRouteBounds({ from, to, trigger }: { from: [number, number]; to: [number, number]; trigger: number }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!trigger) return;
+    map.fitBounds([from, to], { padding: [60, 60], maxZoom: 16, animate: true });
+  }, [trigger]);
+  return null;
+}
+
 export interface CafeMapItem {
   id: string | number;
   name: string;
@@ -235,13 +269,17 @@ interface CafeMapProps {
   onSelectCafe?: (id: string | number) => void;
   selectedId?: string | number | null;
   onLocate?: (pos: [number, number]) => void;
+  /** Increment to trigger fitBounds on the route */
+  fitRouteTrigger?: number;
+  /** Only draw the route when true (triggered by 経路 button) */
+  showRoute?: boolean;
 }
 
 /** Radius of the blue circle drawn around the selected cafe (metres) */
 const SELECTED_CAFE_RADIUS_M = 250;
 
 export default function CafeMap({
-  cafes, center, userPosition, radius, onSelectCafe, selectedId, onLocate,
+  cafes, center, userPosition, radius, onSelectCafe, selectedId, onLocate, fitRouteTrigger = 0, showRoute = false,
 }: CafeMapProps) {
   const radiusMeters = (radius ?? 10) * 1000;
   const dotPosition = userPosition ?? center;
@@ -294,9 +332,12 @@ export default function CafeMap({
         />
       )}
 
-      {/* Driving route from user position → selected cafe */}
-      {selectedPosition && (
-        <RoutePolyline from={dotPosition} to={selectedPosition} />
+      {/* Driving route — only shown after clicking 経路 button */}
+      {showRoute && selectedPosition && (
+        <>
+          <RoutePolyline from={dotPosition} to={selectedPosition} />
+          <FitRouteBounds from={dotPosition} to={selectedPosition} trigger={fitRouteTrigger} />
+        </>
       )}
 
       {/* User location dot — moves when "locate me" is pressed */}

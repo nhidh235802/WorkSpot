@@ -78,6 +78,8 @@ export default function CafesSearchPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedCafeId, setSelectedCafeId] = useState<string | number | null>(null);
+  const [fitRouteTrigger, setFitRouteTrigger] = useState(0);
+  const [showRoute, setShowRoute] = useState(false);
 
   const centerLat = parseFloat(searchParams.get("lat") || String(DEFAULT_LAT));
   const centerLng = parseFloat(searchParams.get("lng") || String(DEFAULT_LNG));
@@ -180,7 +182,8 @@ export default function CafesSearchPage() {
 
   const handleSelectCafe = (id: string | number) => {
     setSelectedCafeId((prev) => (prev === id ? null : id));
-    setIsExpanded(false); // Reset về thu nhỏ khi đổi quán
+    setIsExpanded(false);
+    setShowRoute(false);
     const el = document.getElementById(`cafe-card-${id}`);
     el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   };
@@ -343,6 +346,8 @@ export default function CafesSearchPage() {
             onSelectCafe={handleSelectCafe}
             selectedId={selectedCafeId}
             onLocate={(pos) => setUserPosition(pos)}
+            fitRouteTrigger={fitRouteTrigger}
+            showRoute={showRoute}
           />
 
           {/* Status badge – top left */}
@@ -456,13 +461,12 @@ export default function CafesSearchPage() {
                     >
                       詳細を見る <span className="opacity-60 text-lg">ⓘ</span>
                     </Link>
-                    <a
-                      href={`https://www.google.com/maps/dir/?api=1&destination=${cafe.latitude},${cafe.longitude}`}
-                      target="_blank"
+                    <button
+                      onClick={() => { setShowRoute(true); setFitRouteTrigger((n) => n + 1); }}
                       className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-[#14422D] text-white font-bold text-sm shadow-lg hover:bg-[#0d2e1f] transition-all"
                     >
                       経路 <Navigation size={16} />
-                    </a>
+                    </button>
                   </div>
                 </div>
               </div>
