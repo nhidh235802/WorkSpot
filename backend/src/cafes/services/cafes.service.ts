@@ -149,14 +149,28 @@ export class CafesService {
   }
 
   // TÌM KIẾM VÀ LỌC QUÁN CAFE
-  async searchCafes(query: SearchCafeDto): Promise<Cafe[]> {
+  async searchCafes(query: SearchCafeDto): Promise<any[]> {
     const { lat, lng, radius, keyword } = query;
 
-    console.log('[SEARCH] Received query:', JSON.stringify(query, null, 2));
+    // Haversine distance expression – uses named params (no interpolation → no SQL injection)
+    const distanceSql = [
+      '(6371 * acos(',
+      '  LEAST(1, cos(radians(:searchLat)) * cos(radians(cafe.latitude))',
+      '  * cos(radians(cafe.longitude) - radians(:searchLng))',
+      '  + sin(radians(:searchLat)) * sin(radians(cafe.latitude)))',
+      '))',
+    ].join('');
+
+    const avgRatingExpr = 'COALESCE(AVG(review.rating), 0)';
 
     const queryBuilder = this.cafesRepository
       .createQueryBuilder('cafe')
-      .where('cafe.status = :status', { status: 'approved' });
+      .leftJoin('cafe.reviews', 'review')
+      .where('cafe.status = :status', { status: 'approved' })
+      .groupBy('cafe.id')
+      .addSelect(distanceSql, 'distance')
+      .addSelect(avgRatingExpr, 'avg_rating')
+      .setParameters({ searchLat: lat, searchLng: lng });
 
     // 1. Lọc theo Keyword (Tên/Địa chỉ)
     if (keyword) {
@@ -166,7 +180,7 @@ export class CafesService {
       );
     }
 
-    // 2. XỬ LÝ FILTER FACILITIES (Lặp qua từng filter và apply AND logic)
+    // 2. XỬ LÝ FILTER FACILITIES (AND logic – tất cả filter được chọn phải khớp)
     const filterMapping: Record<string, string> = {
       hasWifi: 'wifi',
       hasPower: 'socket',
@@ -179,37 +193,28 @@ export class CafesService {
     };
 
     let filterIndex = 0;
-    Object.keys(filterMapping).forEach((key) => {
-      const filterValue = query[key as keyof SearchCafeDto];
-      console.log(
-        `[FILTER] ${key} = ${filterValue} (type: ${typeof filterValue})`,
-      );
-
-      if (filterValue === true) {
-        const enumValue = filterMapping[key];
-        const paramName = `facility${filterIndex}`;
-        console.log(`[APPLY] Adding filter: ${key} -> ${enumValue}`);
+    for (const key of Object.keys(filterMapping)) {
+      if (query[key as keyof SearchCafeDto] === true) {
+        const paramName = `facility${filterIndex++}`;
         queryBuilder.andWhere(
           `cafe.facilities @> ARRAY[:${paramName}]::public.cafes_facilities_enum[]`,
-          { [paramName]: enumValue },
+          { [paramName]: filterMapping[key] },
         );
-        filterIndex++;
       }
-    });
+    }
 
-    // 3. Tính toán khoảng cách và lọc bán kính
-    const distanceSql = `( 6371 * acos( cos( radians(${lat}) ) * cos( radians( cafe.latitude ) ) * cos( radians( cafe.longitude ) - radians(${lng}) ) + sin( radians(${lat}) ) * sin( radians( cafe.latitude ) ) ) )`;
+    // 3. Lọc bán kính (HAVING vì dùng GROUP BY)
+    const effectiveRadius = radius ?? 5;
+    queryBuilder
+      .having(`${distanceSql} <= :radius`, { radius: effectiveRadius })
+      .orderBy(distanceSql, 'ASC');
 
-    queryBuilder.addSelect(distanceSql, 'distance');
-    queryBuilder.andWhere(`${distanceSql} <= :radius`, { radius });
-    queryBuilder.orderBy('distance', 'ASC');
+    const { entities, raw } = await queryBuilder.getRawAndEntities();
 
-    console.log('[SQL] Generated Query:', queryBuilder.getSql());
-    console.log('[PARAMS] Query Parameters:', queryBuilder.getParameters());
-
-    const results = await queryBuilder.getMany();
-    console.log(`[RESULTS] Found ${results.length} cafes matching criteria`);
-
-    return results;
+    return entities.map((entity, i) => ({
+      ...entity,
+      distance: Math.round(raw[i].distance * 10) / 10,
+      rating: Math.round(raw[i].avg_rating * 10) / 10,
+    }));
   }
 }
