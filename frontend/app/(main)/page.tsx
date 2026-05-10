@@ -73,12 +73,31 @@ function CafeCard({ cafe }: { cafe: CafeType }) {
 
         {/* Info */}
         <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 4 }}>
-          <h3 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: "#14422D", lineHeight: "28px" }}>
+          <h3 style={{
+            margin: 0,
+            fontSize: 20,
+            fontWeight: 700,
+            color: "#14422D",
+            lineHeight: "28px",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}>
             {cafe.name}
           </h3>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <LocationIcon />
-            <span style={{ fontSize: 14, color: "#414943" }}>{cafe.distance} • {cafe.area}</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, overflow: "hidden" }}>
+            <div style={{ flexShrink: 0, display: "flex" }}>
+              <LocationIcon />
+            </div>
+            <span style={{
+              fontSize: 14,
+              color: "#414943",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}>
+              {cafe.distance} • {cafe.area}
+            </span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, paddingTop: 12 }}>
             {cafe.tags.map((tag) => (
