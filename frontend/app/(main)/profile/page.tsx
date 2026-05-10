@@ -332,67 +332,72 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Fields */}
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  {/* 氏名 */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <div style={fieldLabelStyle}>氏名</div>
-                    {isEditing ? (
-                      <input
-                        value={editForm.fullName}
-                        onChange={e => setEditForm(f => ({ ...f, fullName: e.target.value }))}
-                        style={inputStyle}
-                      />
-                    ) : (
-                      <div style={readOnlyBoxStyle}>{profile?.fullName}</div>
-                    )}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+
+                  {/* Row 1: 氏名 + メールアドレス */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
+                    {/* 氏名 */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <div style={fieldLabelStyle}>氏名</div>
+                      {isEditing ? (
+                        <input
+                          value={editForm.fullName}
+                          onChange={e => setEditForm(f => ({ ...f, fullName: e.target.value }))}
+                          style={inputStyle}
+                        />
+                      ) : (
+                        <div style={readOnlyBoxStyle}>{profile?.fullName}</div>
+                      )}
+                    </div>
+                    {/* メールアドレス */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <div style={fieldLabelStyle}>メールアドレス</div>
+                      {isEditing ? (
+                        <input
+                          type="email"
+                          value={editForm.email}
+                          onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))}
+                          style={inputStyle}
+                        />
+                      ) : (
+                        <div style={readOnlyBoxStyle}>{profile?.email}</div>
+                      )}
+                    </div>
                   </div>
 
-                  {/* メールアドレス */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <div style={fieldLabelStyle}>メールアドレス</div>
-                    {isEditing ? (
-                      <input
-                        type="email"
-                        value={editForm.email}
-                        onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))}
-                        style={inputStyle}
-                      />
-                    ) : (
-                      <div style={readOnlyBoxStyle}>{profile?.email}</div>
-                    )}
+                  {/* Row 2: 電話番号 + 所在地 */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
+                    {/* 電話番号 */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <div style={fieldLabelStyle}>電話番号</div>
+                      {isEditing ? (
+                        <input
+                          type="tel"
+                          value={editForm.phone}
+                          onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))}
+                          style={inputStyle}
+                        />
+                      ) : (
+                        <div style={readOnlyBoxStyle}>{profile?.phone || <span style={{ color: '#78716C' }}>—</span>}</div>
+                      )}
+                    </div>
+                    {/* 所在地 */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <div style={fieldLabelStyle}>所在地</div>
+                      {isEditing ? (
+                        <input
+                          value={editForm.address}
+                          onChange={e => setEditForm(f => ({ ...f, address: e.target.value }))}
+                          style={inputStyle}
+                        />
+                      ) : (
+                        <div style={readOnlyBoxStyle}>{profile?.address || <span style={{ color: '#78716C' }}>—</span>}</div>
+                      )}
+                    </div>
                   </div>
 
-                  {/* 電話番号 */}
+                  {/* Row 3: 自己紹介 (full width) */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <div style={fieldLabelStyle}>電話番号</div>
-                    {isEditing ? (
-                      <input
-                        type="tel"
-                        value={editForm.phone}
-                        onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))}
-                        style={inputStyle}
-                      />
-                    ) : (
-                      <div style={readOnlyBoxStyle}>{profile?.phone || <span style={{ color: '#78716C' }}>—</span>}</div>
-                    )}
-                  </div>
-
-                  {/* 所在地 */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <div style={fieldLabelStyle}>所在地</div>
-                    {isEditing ? (
-                      <input
-                        value={editForm.address}
-                        onChange={e => setEditForm(f => ({ ...f, address: e.target.value }))}
-                        style={inputStyle}
-                      />
-                    ) : (
-                      <div style={readOnlyBoxStyle}>{profile?.address || <span style={{ color: '#78716C' }}>—</span>}</div>
-                    )}
-                  </div>
-
-                  {/* 自己紹介 */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 16 }}>
                     <div style={fieldLabelStyle}>自己紹介</div>
                     {isEditing ? (
                       <textarea
@@ -407,6 +412,7 @@ export default function ProfilePage() {
                       </div>
                     )}
                   </div>
+
                 </div>
 
                 {/* Profile error */}
