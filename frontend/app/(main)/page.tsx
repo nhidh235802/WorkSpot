@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { CafeService } from '@/services/cafe.service';
 import Navbar from '@/components/Navbar';
+import { resolveCafeImage } from '@/lib/cafeImages';
 
 function StarIcon() {
   return (
@@ -157,7 +158,7 @@ export default function WorkSpotPage() {
         const mapped: CafeType[] = (data as any[]).map((item: any) => ({
           id: item.id,
           name: item.name,
-          img: item.avatar || '/images/hero-cafe.png',
+          img: resolveCafeImage(item.name, item.avatar),
           rating: item.rating ?? 0,
           distance: `${item.distance ?? '?'} km`,
           area: formatAddress(item.address ?? ''),
