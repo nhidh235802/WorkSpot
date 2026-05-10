@@ -7,6 +7,7 @@ import Navbar from '@/components/Navbar';
 import { CafeService } from '@/services/cafe.service';
 import { facilityConfig } from '@/utils/facilityConfig';
 
+
 // ── Icon components (inline SVG đơn giản) ──────────────────────────
 const icons: Record<string, JSX.Element> = {
   wifi:      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>,
@@ -30,12 +31,84 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
+function PhotoGalleryModal({ images, initialIndex, onClose }: {
+  images: string[];
+  initialIndex: number;
+  onClose: () => void;
+}) {
+  const [activeIndex, setActiveIndex] = useState(initialIndex);
+
+  const goToPrev = () => setActiveIndex(i => i === 0 ? images.length - 1 : i - 1);
+  const goToNext = () => setActiveIndex(i => i === images.length - 1 ? 0 : i + 1);
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') goToPrev();
+      if (e.key === 'ArrowRight') goToNext();
+      if (e.key === 'Escape') onClose();
+    };
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleKey);
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', handleKey);
+    };
+  }, [images.length]);
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: '#1a1a1a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
+      onClick={onClose}>
+
+      {/* Nút đóng */}
+      <button
+        onClick={(e) => { e.stopPropagation(); onClose(); }}
+        style={{ position: 'absolute', top: 20, right: 20, width: 44, height: 44, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', fontSize: 22, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000 }}
+      >×</button>
+
+      {/* Counter */}
+      <div style={{ position: 'absolute', top: 28, left: '50%', transform: 'translateX(-50%)', color: 'rgba(255,255,255,0.6)', fontSize: 13, fontFamily: 'Manrope, sans-serif' }}>
+        {activeIndex + 1} / {images.length}
+      </div>
+
+      {/* Main image + prev/next */}
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '60px 100px 20px', position: 'relative' }}
+        onClick={e => e.stopPropagation()}>
+
+        <button onClick={goToPrev} style={{ position: 'absolute', left: 24, top: '50%', transform: 'translateY(-50%)', width: 48, height: 48, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', fontSize: 28, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>‹</button>
+
+        <img src={images[activeIndex]} alt={`Photo ${activeIndex + 1}`}
+          style={{ maxHeight: 'calc(100vh - 180px)', maxWidth: '100%', objectFit: 'contain', borderRadius: 12, boxShadow: '0 24px 80px rgba(0,0,0,0.6)' }} />
+
+        <button onClick={goToNext} style={{ position: 'absolute', right: 24, top: '50%', transform: 'translateY(-50%)', width: 48, height: 48, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', fontSize: 28, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>›</button>
+      </div>
+
+      {/* Thumbnail strip */}
+      <div style={{ width: '100%', padding: '12px 24px 28px', display: 'flex', justifyContent: 'center', gap: 10, overflowX: 'auto' }}
+        onClick={e => e.stopPropagation()}>
+        {images.map((img, i) => (
+          <button key={i} onClick={() => setActiveIndex(i)}
+            style={{ width: 70, height: 50, flexShrink: 0, borderRadius: 6, overflow: 'hidden', border: i === activeIndex ? '2px solid white' : '2px solid transparent', opacity: i === activeIndex ? 1 : 0.45, cursor: 'pointer', padding: 0, background: 'none' }}>
+            <img src={img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── Main Page ──────────────────────────────────────────────────────
 export default function CafeDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [cafe, setCafe] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalStartIndex, setModalStartIndex] = useState(0);
+
+  const openModal = (index: number) => {
+    setModalStartIndex(index);
+    setModalOpen(true);
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -78,7 +151,14 @@ export default function CafeDetailPage() {
 
   return (
     <>
-      <Navbar />
+      {!modalOpen && <Navbar />}
+      {modalOpen && images.length > 0 && (
+        <PhotoGalleryModal
+          images={images}
+          initialIndex={modalStartIndex}
+          onClose={() => setModalOpen(false)}
+        />
+        )}
 
       <div style={{
         background: '#FAFAF5',
@@ -104,7 +184,7 @@ export default function CafeDetailPage() {
             overflow: 'hidden',
           }}>
             {/* Ảnh lớn bên trái – chiếm 2 hàng */}
-            <div style={{ gridRow: '1 / 3', overflow: 'hidden' }}>
+            <div style={{ gridRow: '1 / 3', overflow: 'hidden', cursor: 'pointer' }} onClick={() => openModal(0)}>
               <img
                 src={images[0] || '/placeholder.jpg'}
                 alt={cafe.name}
@@ -113,7 +193,7 @@ export default function CafeDetailPage() {
             </div>
 
             {/* Ảnh nhỏ trên phải */}
-            <div style={{ overflow: 'hidden' }}>
+            <div style={{ overflow: 'hidden', cursor: 'pointer' }} onClick={() => openModal(1)}>
               <img
                 src={images[1] || '/placeholder.jpg'}
                 alt=""
@@ -122,15 +202,17 @@ export default function CafeDetailPage() {
             </div>
 
             {/* Ảnh nhỏ dưới phải + overlay button */}
-            <div style={{ position: 'relative', overflow: 'hidden' }}>
+            <div style={{ position: 'relative', overflow: 'hidden', cursor: 'pointer' }}  onClick={() => openModal(2)}>
               <img
                 src={images[2] || '/placeholder.jpg'}
                 alt=""
                 style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block',
-                  filter: images.length > 3 ? 'brightness(0.6)' : 'none' }}
+                  filter: images.length > 2 ? 'brightness(0.5)' : 'none' }}
               />
               {images.length > 2 && (
-                <button style={{
+                <button
+                  onClick={() => openModal(0)}
+                  style={{
                   position: 'absolute', top: '50%', left: '50%',
                   transform: 'translate(-50%, -50%)',
                   background: 'rgba(255,255,255,0.18)',
