@@ -1,70 +1,99 @@
 import {
-  ConflictException,
   Injectable,
   NotFoundException,
+  BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { User, UserRole } from '../entities/user.entity';
-import { CreateUserDto } from '../dto/create-user.dto';
-import { UpdateUserDto } from '../dto/update-user.dto';
+import { plainToInstance } from 'class-transformer';
+
+import { User } from '../entities/user.entity';
+import { UpdateProfileDto } from '../dto/update-profile.dto';
+import { ChangePasswordDto } from '../dto/change-password.dto';
+import { ProfileResponseDto } from '../dto/profile-response.dto';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
-    private readonly usersRepository: Repository<User>,
+    private readonly userRepository: Repository<User>,
   ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<User> {
-    const existing = await this.usersRepository.findOne({
-      where: { email: createUserDto.email },
-    });
-    if (existing) {
-      throw new ConflictException('Email đã được sử dụng');
-    }
-
-    const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
-    const user = this.usersRepository.create({
-      ...createUserDto,
-      password: hashedPassword,
-      role: createUserDto.role ?? UserRole.CUSTOMER,
-    });
-    return this.usersRepository.save(user);
+  async getProfile(userId: string): Promise<ProfileResponseDto> {
+    const user = await this.findUserOrThrow(userId);
+    return this.toResponseDto(user);
   }
 
-  findAll(): Promise<User[]> {
-    return this.usersRepository.find();
+  async updateProfile(
+    userId: string,
+    dto: UpdateProfileDto,
+  ): Promise<ProfileResponseDto> {
+    const user = await this.findUserOrThrow(userId);
+
+    if (dto.email && dto.email !== user.email) {
+      const existing = await this.userRepository.findOne({
+        where: { email: dto.email },
+      });
+      if (existing) {
+        throw new ConflictException(
+          'このメールアドレスはすでに使用されています。',
+        );
+      }
+    }
+
+    Object.assign(user, dto);
+    const saved = await this.userRepository.save(user);
+    return this.toResponseDto(saved);
+  }
+
+  async changePassword(
+    userId: string,
+    dto: ChangePasswordDto,
+  ): Promise<{ message: string }> {
+    const user = await this.findUserOrThrow(userId);
+
+    const isMatch = await bcrypt.compare(dto.currentPassword, user.password);
+    if (!isMatch) {
+      throw new BadRequestException('現在のパスワードが正しくありません。');
+    }
+
+    if (dto.currentPassword === dto.newPassword) {
+      throw new BadRequestException(
+        '新しいパスワードは現在のパスワードと異なる必要があります。',
+      );
+    }
+
+    user.password = await bcrypt.hash(dto.newPassword, 10);
+    await this.userRepository.save(user);
+
+    return { message: 'パスワードを変更しました。' };
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    return this.usersRepository.findOne({
-      where: { email },
-    });
+    return this.userRepository.findOne({ where: { email } });
   }
 
   async findOne(id: string): Promise<User> {
-    const user = await this.usersRepository.findOne({ where: { id } });
+    const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
-      throw new NotFoundException(`Người dùng #${id} không tìm thấy`);
+      throw new NotFoundException('ユーザーが見つかりません。');
     }
     return user;
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
-    const user = await this.findOne(id);
-
-    if (updateUserDto.password) {
-      updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
+  private async findUserOrThrow(id: string): Promise<User> {
+    const user = await this.userRepository.findOne({ where: { id } });
+    if (!user) {
+      throw new NotFoundException('ユーザーが見つかりません。');
     }
-
-    Object.assign(user, updateUserDto);
-    return this.usersRepository.save(user);
+    return user;
   }
 
-  async remove(id: string): Promise<void> {
-    const user = await this.findOne(id);
-    await this.usersRepository.remove(user);
+  private toResponseDto(user: User): ProfileResponseDto {
+    return plainToInstance(ProfileResponseDto, user, {
+      excludeExtraneousValues: true,
+    });
   }
 }

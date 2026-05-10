@@ -1,57 +1,11 @@
 "use client";
 
+import { useState, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-
-const cafes = [
-  {
-    id: 1,
-    name: "Tranquil Books & Coffee",
-    rating: 4.9,
-    distance: "0.8 km",
-    area: "Hoan Kiem",
-    tags: [
-      { label: "静かなゾーン", style: { background: "#FFDBC7", color: "#311300" } },
-      { label: "高速WiFi", style: { background: "#BCEECF", color: "#002112" } },
-    ],
-    img: "/images/cafe1.jpg",
-  },
-  {
-    id: 2,
-    name: "Hidden Gem Workshop",
-    rating: 4.7,
-    distance: "1.2 km",
-    area: "Hai Ba Trung",
-    tags: [
-      { label: "エアコン完備", style: { background: "#FFDBC7", color: "#311300" } },
-      { label: "電源あり", style: { background: "#BCEECF", color: "#002112" } },
-    ],
-    img: "/images/cafe2.jpg",
-  },
-  {
-    id: 3,
-    name: "The Coffee House Lab",
-    rating: 4.8,
-    distance: "2.5 km",
-    area: "Tay Ho",
-    tags: [
-      { label: "レイクビュー", style: { background: "#FFDBC7", color: "#311300" } },
-      { label: "会議室", style: { background: "#BCEECF", color: "#002112" } },
-    ],
-    img: "/images/cafe3.jpg",
-  },
-  {
-    id: 4,
-    name: "WorkFlow Space",
-    rating: 4.6,
-    distance: "3.1 km",
-    area: "Cau Giay",
-    tags: [
-      { label: "エルゴノミクス", style: { background: "#FFDBC7", color: "#311300" } },
-      { label: "プリンター", style: { background: "#BCEECF", color: "#002112" } },
-    ],
-    img: "/images/cafe4.jpg",
-  },
-];
+import { CafeService } from '@/services/cafe.service';
+import Navbar from '@/components/Navbar';
+import { resolveCafeImage } from '@/lib/cafeImages';
 
 function StarIcon() {
   return (
@@ -69,127 +23,231 @@ function LocationIcon() {
   );
 }
 
-function CafeCard({ cafe }: { cafe: (typeof cafes)[0] }) {
-  return (
-    <div style={{
-      display: "flex",
-      flexDirection: "column",
-      width: 320,
-      height: 355,
-      borderRadius: 12,
-      background: "#fff",
-      overflow: "hidden",
-      flexShrink: 0,
-    }}>
-      {/* Image */}
-      <div style={{ position: "relative", height: 224, flexShrink: 0, overflow: "hidden" }}>
-        <img
-          src={cafe.img}
-          alt={cafe.name}
-          style={{ width: "100%", height: "100%", objectFit: "cover" }}
-        />
-        {/* Rating badge */}
-        <div style={{
-          position: "absolute",
-          top: 16,
-          right: 16,
-          display: "flex",
-          alignItems: "center",
-          gap: 4,
-          padding: "4px 12px",
-          borderRadius: 9999,
-          background: "rgba(255,255,255,0.90)",
-          backdropFilter: "blur(4px)",
-        }}>
-          <StarIcon />
-          <span style={{ fontSize: 12, fontWeight: 500, color: "#1A1C19" }}>{cafe.rating}</span>
-        </div>
-      </div>
+export interface CafeType {
+  id: number | string;
+  name: string;
+  img: string;
+  rating: number | string;
+  distance: string;
+  area: string;
+  tags: { label: string; style?: React.CSSProperties }[];
+}
 
-      {/* Info */}
-      <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 4 }}>
-        <h3 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: "#14422D", lineHeight: "28px" }}>
-          {cafe.name}
-        </h3>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <LocationIcon />
-          <span style={{ fontSize: 14, color: "#414943" }}>{cafe.distance} • {cafe.area}</span>
+function CafeCard({ cafe }: { cafe: CafeType }) {
+  return (
+    <Link href={`/cafes/${cafe.id}`} style={{ textDecoration: 'none', color: 'inherit', flexShrink: 0 }}>
+      <div style={{
+        display: "flex",
+        flexDirection: "column",
+        width: 320,
+        height: 355,
+        borderRadius: 12,
+        background: "#fff",
+        overflow: "hidden",
+        cursor: "pointer",
+      }}>
+        {/* Image */}
+        <div style={{ position: "relative", height: 224, flexShrink: 0, overflow: "hidden" }}>
+          <img
+            src={cafe.img}
+            alt={cafe.name}
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
+          {/* Rating badge */}
+          <div style={{
+            position: "absolute",
+            top: 16,
+            right: 16,
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+            padding: "4px 12px",
+            borderRadius: 9999,
+            background: "rgba(255,255,255,0.90)",
+            backdropFilter: "blur(4px)",
+          }}>
+            <StarIcon />
+            <span style={{ fontSize: 12, fontWeight: 500, color: "#1A1C19" }}>{cafe.rating}</span>
+          </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, paddingTop: 12 }}>
-          {cafe.tags.map((tag) => (
-            <span key={tag.label} style={{
-              padding: "4px 12px",
-              borderRadius: 9999,
-              fontSize: 10,
-              fontWeight: 500,
-              textTransform: "uppercase",
-              letterSpacing: "-0.5px",
-              ...tag.style,
+
+        {/* Info */}
+        <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 4 }}>
+          <h3 style={{
+            margin: 0,
+            fontSize: 20,
+            fontWeight: 700,
+            color: "#14422D",
+            lineHeight: "28px",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}>
+            {cafe.name}
+          </h3>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, overflow: "hidden" }}>
+            <div style={{ flexShrink: 0, display: "flex" }}>
+              <LocationIcon />
+            </div>
+            <span style={{
+              fontSize: 14,
+              color: "#414943",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
             }}>
-              {tag.label}
+              {cafe.distance} • {cafe.area}
             </span>
-          ))}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, paddingTop: 12 }}>
+            {cafe.tags.map((tag) => (
+              <span key={tag.label} style={{
+                padding: "4px 12px",
+                borderRadius: 9999,
+                fontSize: 10,
+                fontWeight: 500,
+                textTransform: "uppercase",
+                letterSpacing: "-0.5px",
+                ...tag.style,
+              }}>
+                {tag.label}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
 
 export default function WorkSpotPage() {
+  const router = useRouter()
+  const [keyword, setKeyword] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+  const [recommendedCafes, setRecommendedCafes] = useState<CafeType[]>([]);
+  const [isLoadingRecommend, setIsLoadingRecommend] = useState(true);
+  const [recommendError, setRecommendError] = useState<string | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollRef.current) {
+      const { scrollLeft, clientWidth } = scrollRef.current;
+      const scrollTo = direction === 'left' ? scrollLeft - clientWidth / 2 : scrollLeft + clientWidth / 2;
+      scrollRef.current.scrollTo({ left: scrollTo, behavior: 'smooth' });
+    }
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadData = async (lat: number, lng: number) => {
+      try {
+        setIsLoadingRecommend(true);
+        const data = await CafeService.getTopRecommended(lat, lng);
+
+        const facilityLabelMap: Record<string, string> = {
+          wifi: '高速Wi-Fi',
+          socket: '電源あり',
+          workspace: 'ワークスペース',
+          desk: '専用デスク',
+          snack: '軽食',
+          flexible_hours: '柔軟な時間',
+          cleanliness: '清潔感',
+          smoking_rule: '禁煙',
+        };
+        const tagColors = [
+          { background: '#D4E8DC', color: '#14422D' },
+          { background: '#FFF0E6', color: '#904C18' },
+          { background: '#E8F4FF', color: '#1A5FA6' },
+        ];
+
+        const formatAddress = (address: string) => {
+          if (!address) return '';
+          const parts = address.split(',');
+          if (parts.length < 2) return removeVietnameseTones(address);
+          let district = parts[parts.length - 2].trim();
+          district = district.replace(/^(Quận|Huyện|Thị xã|Thành phố)\s+/i, '');
+          return removeVietnameseTones(district);
+        };
+
+        const removeVietnameseTones = (str: string) => {
+          return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D');
+        };
+
+        const mapped: CafeType[] = (data as any[]).map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          img: resolveCafeImage(item.name, item.avatar),
+          rating: item.rating ?? 0,
+          distance: `${item.distance ?? '?'} km`,
+          area: formatAddress(item.address ?? ''),
+          tags: (item.facilities as string[] ?? []).slice(0, 3).map((f, i) => ({
+            label: facilityLabelMap[f] ?? f,
+            style: tagColors[i % tagColors.length],
+          })),
+        }));
+
+        if (isMounted) setRecommendedCafes(mapped);
+      } catch (error) {
+        // Hiển thị thông báo lỗi khi không tải được dữ liệu từ API
+        if (isMounted) setRecommendError("データの読み込みに失敗しました。"); // "Không thể tải dữ liệu"  
+      } finally {
+        if (isMounted) setIsLoadingRecommend(false);
+      }
+    };
+
+    const fallbackToHanoi = () => loadData(21.0285, 105.8542);
+
+    if (!navigator.geolocation) {
+      fallbackToHanoi();
+    } else {
+      navigator.geolocation.getCurrentPosition(
+        (position) => loadData(position.coords.latitude, position.coords.longitude),
+        () => fallbackToHanoi(),
+        { timeout: 5000 }
+      );
+    }
+
+    return () => { isMounted = false; };
+  }, []);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (keyword.trim()) {
+      router.push(`/cafes/search?q=${encodeURIComponent(keyword)}`);
+      return;
+    }
+
+    if (!navigator.geolocation) {
+      alert("お使いのブラウザはGPS位置情報をサポートしていません。");
+      return;
+    }
+
+    setIsSearching(true);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        setIsSearching(false);
+        router.push(`/cafes/search?lat=${lat}&lng=${lng}&radius=5`);
+      },
+      () => {
+        setIsSearching(false);
+        alert("現在地を取得できませんでした。検索ボックスにエリア名を入力してください。");
+      },
+      { timeout: 5000 }
+    );
+  };
+
   return (
     <div style={{ minHeight: "100vh", background: "#FAFAF5", fontFamily: "Manrope, sans-serif" }}>
 
-      {/* ── Navbar ── */}
-      <nav style={{
-        position: "sticky",
-        top: 0,
-        zIndex: 50,
-        background: "rgba(250,250,245,0.80)",
-        backdropFilter: "blur(12px)",
-        boxShadow: "0 8px 30px 0 rgba(0,0,0,0.04)",
-      }}>
-        <div style={{
-          maxWidth: 1280,
-          margin: "0 auto",
-          padding: "0 32px",
-          height: 80,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}>
-          <span style={{ fontSize: 24, fontWeight: 800, color: "#14422D", letterSpacing: "-1.2px" }}>
-            WorkSpot
-          </span>
-          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <Link href="/register" style={{
-              padding: "14px 24px",
-              borderRadius: 9999,
-              background: "transparent",
-              fontSize: 14,
-              color: "#14422D",
-              textDecoration: "none",
-              fontWeight: 500,
-            }}>
-              サインアップ
-            </Link>
-            <Link href="/login" style={{
-              padding: "14px 24px",
-              borderRadius: 9999,
-              background: "linear-gradient(135deg, #14422D 0%, #2D5A43 100%)",
-              fontSize: 14,
-              color: "#fff",
-              textDecoration: "none",
-              letterSpacing: "0.35px",
-              fontWeight: 500,
-            }}>
-              サインイン
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <Navbar />
 
       {/* ── Hero ── */}
-      <section style={{ padding: "96px 32px", maxWidth: 1280, margin: "0 auto" }}>
+      <section style={{ padding: "96px 32px", maxWidth: 1536, margin: "0 auto" }}>
         <div style={{
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
@@ -208,51 +266,38 @@ export default function WorkSpotPage() {
               リモートワークに最適な、ハノイで最も静かで集中できるカフェを厳選しました。
             </p>
 
-            {/* Search bar */}
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              background: "#fff",
-              borderRadius: 9999,
-              padding: "8px 8px 8px 20px",
-              boxShadow: "0 12px 40px 0 rgba(26,28,25,0.06)",
-              maxWidth: 576,
-            }}>
+            <form
+              onSubmit={handleSearch}
+              style={{
+                display: "flex", alignItems: "center", gap: 8, background: "#fff",
+                borderRadius: 9999, padding: "8px 8px 8px 20px",
+                boxShadow: "0 12px 40px 0 rgba(26,28,25,0.06)", maxWidth: 576,
+              }}
+            >
               <svg width="16" height="20" viewBox="0 0 16 20" fill="none" style={{ flexShrink: 0 }}>
                 <path d="M8 10C8.55 10 9.02083 9.80417 9.4125 9.4125C9.80417 9.02083 10 8.55 10 8C10 7.45 9.80417 6.97917 9.4125 6.5875C9.02083 6.19583 8.55 6 8 6C7.45 6 6.97917 6.19583 6.5875 6.5875C6.19583 6.97917 6 7.45 6 8C6 8.55 6.19583 9.02083 6.5875 9.4125C6.97917 9.80417 7.45 10 8 10ZM8 17.35C10.0333 15.4833 11.5417 13.7875 12.525 12.2625C13.5083 10.7375 14 9.38333 14 8.2C14 6.38333 13.4208 4.89583 12.2625 3.7375C11.1042 2.57917 9.68333 2 8 2C6.31667 2 4.89583 2.57917 3.7375 3.7375C2.57917 4.89583 2 6.38333 2 8.2C2 9.38333 2.49167 10.7375 3.475 12.2625C4.45833 13.7875 5.96667 15.4833 8 17.35ZM8 20C5.31667 17.7167 3.3125 15.5958 1.9875 13.6375C0.6625 11.6792 0 9.86667 0 8.2C0 5.7 0.804167 3.70833 2.4125 2.225C4.02083 0.741667 5.88333 0 8 0C10.1167 0 11.9792 0.741667 13.5875 2.225C15.1958 3.70833 16 5.7 16 8.2C16 9.86667 15.3375 11.6792 14.0125 13.6375C12.6875 15.5958 10.6833 17.7167 8 20Z" fill="#717973" />
               </svg>
               <input
                 type="text"
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
                 placeholder="エリア名やカフェ名で検索..."
-                style={{
-                  flex: 1,
-                  border: "none",
-                  outline: "none",
-                  background: "transparent",
-                  fontSize: 16,
-                  color: "#414943",
-                  padding: "10px 0",
-                  fontFamily: "Manrope, sans-serif",
-                }}
+                style={{ flex: 1, border: "none", outline: "none", background: "transparent", fontSize: 16, color: "#414943", padding: "10px 0", fontFamily: "Manrope, sans-serif" }}
               />
-              <button style={{
-                flexShrink: 0,
-                padding: "16px 32px",
-                borderRadius: 9999,
-                border: "none",
-                background: "linear-gradient(135deg, #14422D 0%, #2D5A43 100%)",
-                color: "#fff",
-                fontSize: 14,
-                fontWeight: 500,
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-                letterSpacing: "0.35px",
-                fontFamily: "Manrope, sans-serif",
-              }}>
-                スポットを探す
+              <button
+                type="submit"
+                disabled={isSearching}
+                style={{
+                  flexShrink: 0, padding: "16px 32px", borderRadius: 9999, border: "none",
+                  background: isSearching ? "#9FCFB2" : "linear-gradient(135deg, #14422D 0%, #2D5A43 100%)",
+                  color: "#fff", fontSize: 14, fontWeight: 500,
+                  cursor: isSearching ? "not-allowed" : "pointer",
+                  whiteSpace: "nowrap"
+                }}
+              >
+                {isSearching ? "現在地を取得中..." : "スポットを探す"}
               </button>
-            </div>
+            </form>
           </div>
 
           {/* Right: image */}
@@ -264,7 +309,7 @@ export default function WorkSpotPage() {
               aspectRatio: "4/5",
             }}>
               <img
-                src="/images/hero-cafe.png"
+                src="./images/hero-cafe.png"
                 alt="Professional Cafe"
                 style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
               />
@@ -293,9 +338,9 @@ export default function WorkSpotPage() {
 
       {/* ── Recommended Cafes ── */}
       <section style={{ background: "#F4F4EF", padding: "48px 0" }}>
-        <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 32px" }}>
+        <div style={{ maxWidth: 1536, margin: "0 auto" }}>
           {/* Header */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32, padding: "0 32px" }}>
             <div>
               <p style={{ margin: 0, fontSize: 12, fontWeight: 500, color: "#904C18", textTransform: "uppercase", letterSpacing: "1.2px", lineHeight: "16px" }}>
                 あなたへの一押し
@@ -306,23 +351,98 @@ export default function WorkSpotPage() {
             </div>
           </div>
 
-          {/* Cards scroll */}
-          <div style={{
-            display: "flex",
-            gap: 24,
-            overflowX: "auto",
-            paddingBottom: 32,
-            scrollbarWidth: "none",
-          }}>
-            {cafes.map((cafe) => (
-              <CafeCard key={cafe.id} cafe={cafe} />
-            ))}
-          </div>
+          {isLoadingRecommend ? (
+            <div style={{ padding: "40px 0", textAlign: "center", color: "#414943" }}>
+              おすすめのカフェを探しています...
+            </div>
+          ) : recommendError ? (
+            <div style={{ padding: "40px 0", textAlign: "center", color: "#BA1A1A", fontWeight: 500 }}>
+              {recommendError}
+            </div>
+          ) : recommendedCafes.length === 0 ? (
+            <div style={{ padding: "40px 0", textAlign: "center", color: "#414943" }}>
+              近くにカフェが見つかりませんでした。
+            </div>
+          ) : (
+            <div style={{ position: "relative" }}>
+              <div
+                ref={scrollRef}
+                style={{
+                  display: "flex",
+                  gap: 24,
+                  overflowX: "auto",
+                  paddingBottom: 32,
+                  scrollbarWidth: "none",
+                  paddingLeft: 32,
+                  paddingRight: 32,
+                }}
+              >
+                {recommendedCafes.map((cafe) => (
+                  <CafeCard key={cafe.id} cafe={cafe} />
+                ))}
+              </div>
+
+              {recommendedCafes.length > 0 && (
+                <>
+                  <button
+                    onClick={() => scroll('left')}
+                    style={{
+                      position: "absolute",
+                      left: 16,
+                      top: 177.5,
+                      transform: "translateY(-50%)",
+                      width: 56,
+                      height: 56,
+                      borderRadius: "50%",
+                      background: "rgba(0, 0, 0, 0.4)",
+                      border: "3px solid #fff",
+                      boxShadow: "0 0 0 5px rgba(0, 0, 0, 0.4)",
+                      color: "#fff",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                      zIndex: 10,
+                      backgroundClip: "padding-box",
+                    }}
+                    aria-label="Scroll left"
+                  >
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
+                  </button>
+                  <button
+                    onClick={() => scroll('right')}
+                    style={{
+                      position: "absolute",
+                      right: 16,
+                      top: 177.5,
+                      transform: "translateY(-50%)",
+                      width: 56,
+                      height: 56,
+                      borderRadius: "50%",
+                      background: "rgba(0, 0, 0, 0.4)",
+                      border: "3px solid #fff",
+                      boxShadow: "0 0 0 5px rgba(0, 0, 0, 0.4)",
+                      color: "#fff",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                      zIndex: 10,
+                      backgroundClip: "padding-box",
+                    }}
+                    aria-label="Scroll right"
+                  >
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+                  </button>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </section>
 
       {/* ── Features Bento Grid ── */}
-      <section style={{ maxWidth: 1280, margin: "0 auto", padding: "80px 32px" }}>
+      <section style={{ maxWidth: 1536, margin: "0 auto", padding: "80px 32px" }}>
         <h2 style={{
           margin: "0 0 48px",
           fontSize: 36,
@@ -443,8 +563,8 @@ export default function WorkSpotPage() {
               background: "#E3E3DE",
             }}>
               <img
-                src="/images/coupon-cafe.png"
-                alt="Special offers"
+                src="./images/hero-cafe.png"
+                alt="Hero Cafe"
                 style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
               />
             </div>

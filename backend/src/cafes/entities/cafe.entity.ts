@@ -25,6 +25,7 @@ export enum FacilityType {
   WORKSPACE = 'workspace',
   DESK = 'desk',
   SNACK = 'snack',
+  FLEXIBLE_HOURS = 'flexible_hours',
   CLEANLINESS = 'cleanliness',
   SMOKING_RULE = 'smoking_rule',
 }
