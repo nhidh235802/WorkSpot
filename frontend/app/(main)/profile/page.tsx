@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { userService } from '@/services/user.service'
 
 interface UserProfile {
   id: string
@@ -138,6 +139,10 @@ export default function ProfilePage() {
   const [pwdError, setPwdError] = useState('')
   const [pwdSuccess, setPwdSuccess] = useState(false)
 
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const [avatarError, setAvatarError] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   useEffect(() => {
     fetchProfile()
       .then((data) => {
@@ -205,6 +210,39 @@ export default function ProfilePage() {
     }
   }
 
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click()
+  }
+
+   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.match(/image\/(jpeg|jpg|png|gif)/)) {
+      setAvatarError('Chỉ chấp nhận file ảnh (jpg, jpeg, png, gif)')
+      return
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarError('File ảnh không được vượt quá 5MB')
+      return
+    }
+
+    setUploadingAvatar(true)
+    setAvatarError('')
+
+    try {
+      const updatedProfile = await userService.uploadAvatar(file)
+      setProfile(updatedProfile)
+    } catch (error) {
+      setAvatarError('Không thể upload avatar')
+    } finally {
+      setUploadingAvatar(false)
+    }
+  }
+  
   const memberSince = profile
     ? `${new Date(profile.createdAt).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long' })}から利用中`
     : ''
@@ -243,19 +281,11 @@ export default function ProfilePage() {
             </svg>
             ダッシュボード
           </Link>
-          <div>
-            {profile?.avatar ? (
-              <img
-                src={profile.avatar}
-                alt="avatar"
-                onError={(e) => { (e.currentTarget as HTMLImageElement).src = `https://picsum.photos/seed/${profile.id}/36/36` }}
-                style={{ width: 36, height: 36, borderRadius: 9999, objectFit: 'cover' }}
-              />
-            ) : (
-              <div style={{ width: 36, height: 36, borderRadius: 9999, background: '#14422D', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 700 }}>
-                {profile?.fullName?.[0]?.toUpperCase() ?? 'U'}
-              </div>
-            )}
+          <div style={{ width: 36, height: 36, borderRadius: 9999, background: '#14422D', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+              <circle cx="12" cy="12" r="1"></circle>
+              <path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m3.08 3.08l4.24 4.24M1 12h6m6 0h6m-17.78 7.78l4.24-4.24m3.08-3.08l4.24-4.24"/>
+            </svg>
           </div>
         </div>
       </header>
@@ -280,28 +310,75 @@ export default function ProfilePage() {
             {/* ── Left: Avatar card ── */}
             <div style={{ width: 304, flexShrink: 0, background: 'white', borderRadius: 12, paddingTop: 32, paddingBottom: 40, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
               {/* Avatar with camera button */}
-              <div style={{ position: 'relative', marginBottom: 12 }}>
-                {profile?.avatar ? (
-                  <img
-                    src={profile.avatar}
-                    alt="avatar"
-                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = `https://picsum.photos/seed/${profile.id}/128/128` }}
-                    style={{ width: 128, height: 128, borderRadius: 9999, objectFit: 'cover', boxShadow: '0px 0px 0px 4px rgba(45,90,67,0.10)' }}
+              <div>
+                <div style={{ position: 'relative' }}>
+                  {profile?.avatar ? (
+                    <img
+                      src={`${API}${profile.avatar}`}
+                      alt="avatar"
+                      style={{ width: 128, height: 128, borderRadius: '50%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    <div style={{
+                      width: 128,
+                      height: 128,
+                      borderRadius: '50%',
+                      background: '#E3E3DE',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      <span style={{ fontSize: 48, fontWeight: 700, color: '#14422D' }}>
+                        {profile?.fullName?.[0]?.toUpperCase() ?? 'U'}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Upload button */}
+                  <button
+                    onClick={handleAvatarClick}
+                    disabled={uploadingAvatar}
+                    style={{
+                      position: 'absolute',
+                      bottom: 0,
+                      right: 0,
+                      width: 36,
+                      height: 36,
+                      borderRadius: '50%',
+                      background: '#14422D',
+                      border: 'none',
+                      cursor: uploadingAvatar ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      opacity: uploadingAvatar ? 0.6 : 1
+                    }}
+                  >
+                    {uploadingAvatar ? (
+                      <div style={{ width: 16, height: 16, border: '2px solid white', borderTop: '2px solid transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                    ) : (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                        <path d="M12 15.2a3.2 3.2 0 1 1 0-6.4 3.2 3.2 0 0 1 0 6.4z" />
+                        <path d="M9 2L7.17 4H4C2.9 4 2 4.9 2 6v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L13 2H9zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10z" />
+                      </svg>
+                    )}
+                  </button>
+
+                  {/* Hidden file input */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    style={{ display: 'none' }}
                   />
-                ) : (
-                  <div style={{ width: 128, height: 128, borderRadius: 9999, background: '#E3E3DE', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0px 0px 0px 4px rgba(45,90,67,0.10)' }}>
-                    <span style={{ fontSize: 48, fontWeight: 700, color: '#14422D', fontFamily: 'Manrope, sans-serif' }}>
-                      {profile?.fullName?.[0]?.toUpperCase() ?? 'U'}
-                    </span>
+                </div>
+
+                {avatarError && (
+                  <div style={{ color: '#BA1A1A', fontSize: 14, marginTop: 8 }}>
+                    {avatarError}
                   </div>
                 )}
-                {/* Camera edit button */}
-                <div style={{ position: 'absolute', bottom: 0, right: 0, width: 36, height: 36, background: '#14422D', borderRadius: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0px 4px 6px -4px rgba(0,0,0,0.10), 0px 10px 15px -3px rgba(0,0,0,0.10)' }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
-                    <path d="M12 15.2a3.2 3.2 0 1 1 0-6.4 3.2 3.2 0 0 1 0 6.4z" />
-                    <path d="M9 2L7.17 4H4C2.9 4 2 4.9 2 6v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L13 2H9zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10z" />
-                  </svg>
-                </div>
               </div>
 
               {/* Name */}

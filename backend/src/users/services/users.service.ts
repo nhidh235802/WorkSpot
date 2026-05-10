@@ -7,6 +7,8 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import * as fs from 'fs';
+import * as path from 'path';
 import { plainToInstance } from 'class-transformer';
 
 import { User } from '../entities/user.entity';
@@ -31,6 +33,20 @@ export class UsersService {
     dto: UpdateProfileDto,
   ): Promise<ProfileResponseDto> {
     const user = await this.findUserOrThrow(userId);
+    // Xử lý avatar mới
+    if (dto.avatar && dto.avatar !== user.avatar) {
+      // Xóa avatar cũ nếu có
+      if (user.avatar) {
+        const oldAvatarPath = path.join(
+          process.cwd(),
+          'uploads',
+          user.avatar.replace('/uploads/', ''),
+        );
+        if (fs.existsSync(oldAvatarPath)) {
+          fs.unlinkSync(oldAvatarPath);
+        }
+      }
+    }
 
     if (dto.email && dto.email !== user.email) {
       const existing = await this.userRepository.findOne({

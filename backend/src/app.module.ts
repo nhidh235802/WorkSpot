@@ -29,6 +29,10 @@ import { AuthModule } from './auth/module/auth.module';
     }),
 
     // 3. Các module tính năng của web app
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'uploads'),
+      serveRoot: '/uploads',
+    }),
     AuthModule,
     UsersModule,
     CafesModule,
