@@ -22,20 +22,21 @@ export class MailService {
     await this.transporter.sendMail({
       from: `"WorkSpot" <${this.config.get<string>('MAIL_USER')}>`,
       to: toEmail,
-      subject: 'Đặt lại mật khẩu WorkSpot',
+      subject: '【WorkSpot】パスワード再設定のご案内',
       html: `
         <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;border:1px solid #e3e3de;border-radius:12px">
-          <h2 style="color:#14422d;margin-bottom:8px">Đặt lại mật khẩu</h2>
+          <h2 style="color:#14422d;margin-bottom:8px">パスワード再設定</h2>
           <p style="color:#414943;line-height:1.6">
-            Bạn đã yêu cầu đặt lại mật khẩu cho tài khoản WorkSpot.<br/>
-            Nhấn vào nút bên dưới để tạo mật khẩu mới. Link có hiệu lực trong <strong>15 phút</strong>.
+            WorkSpot アカウントのパスワード再設定のリクエストを受け付けました。<br/>
+            以下のボタンをクリックして新しいパスワードを設定してください。<br/>
+            リンクの有効期限は <strong>15分</strong> です。
           </p>
           <a href="${resetLink}"
              style="display:inline-block;margin:24px 0;padding:12px 28px;background:#14422d;color:#fff;border-radius:8px;text-decoration:none;font-weight:600">
-            Đặt lại mật khẩu
+            パスワードを再設定する
           </a>
           <p style="color:#999;font-size:13px">
-            Nếu bạn không yêu cầu điều này, hãy bỏ qua email này.
+            このメールに心当たりがない場合は、無視していただいて構いません。
           </p>
         </div>
       `,

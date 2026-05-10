@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Circle, ZoomControl, useMap } from 'react-leaflet';
+import { useEffect, useRef, useState } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, Circle, Polyline, ZoomControl, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -103,6 +103,41 @@ function FlyToCafe({ position }: { position: [number, number] | null }) {
     prevPos.current = position;
   }, [position, map]);
   return null;
+}
+
+/**
+ * Fetches a driving route from OSRM (free, no API key) and draws it on the map.
+ * Clears automatically when either endpoint changes.
+ */
+function RoutePolyline({ from, to }: { from: [number, number]; to: [number, number] }) {
+  const [positions, setPositions] = useState<[number, number][]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const url =
+      `https://router.project-osrm.org/route/v1/driving/` +
+      `${from[1]},${from[0]};${to[1]},${to[0]}?overview=full&geometries=geojson`;
+
+    fetch(url)
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return;
+        const coords = data.routes?.[0]?.geometry?.coordinates as [number, number][] | undefined;
+        if (coords) setPositions(coords.map(([lng, lat]) => [lat, lng]));
+      })
+      .catch(() => {});
+
+    return () => { cancelled = true; setPositions([]); };
+  }, [from[0], from[1], to[0], to[1]]);
+
+  if (!positions.length) return null;
+
+  return (
+    <Polyline
+      positions={positions}
+      pathOptions={{ color: '#1350E0', weight: 5, opacity: 0.75 }}
+    />
+  );
 }
 
 const LOCATE_SVG = `
@@ -245,7 +280,7 @@ export default function CafeMap({
         }}
       />
 
-      {/* Blue area circle around SELECTED cafe (5 km) */}
+      {/* Blue area circle around SELECTED cafe */}
       {selectedCafe && (
         <Circle
           center={[selectedCafe.latitude, selectedCafe.longitude]}
@@ -257,6 +292,11 @@ export default function CafeMap({
             weight: 2,
           }}
         />
+      )}
+
+      {/* Driving route from user position → selected cafe */}
+      {selectedPosition && (
+        <RoutePolyline from={dotPosition} to={selectedPosition} />
       )}
 
       {/* User location dot — moves when "locate me" is pressed */}
