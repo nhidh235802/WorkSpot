@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { CafeService } from '@/services/cafe.service';
@@ -107,67 +107,89 @@ export default function WorkSpotPage() {
   const [recommendedCafes, setRecommendedCafes] = useState<CafeType[]>([]);
   const [isLoadingRecommend, setIsLoadingRecommend] = useState(true);
   const [recommendError, setRecommendError] = useState<string | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollRef.current) {
+      const { scrollLeft, clientWidth } = scrollRef.current;
+      const scrollTo = direction === 'left' ? scrollLeft - clientWidth / 2 : scrollLeft + clientWidth / 2;
+      scrollRef.current.scrollTo({ left: scrollTo, behavior: 'smooth' });
+    }
+  };
 
   useEffect(() => {
-      let isMounted = true;
+    let isMounted = true;
 
-      const loadData = async (lat: number, lng: number) => {
-        try {
-          setIsLoadingRecommend(true);
-          const data = await CafeService.getTopRecommended(lat, lng);
+    const loadData = async (lat: number, lng: number) => {
+      try {
+        setIsLoadingRecommend(true);
+        const data = await CafeService.getTopRecommended(lat, lng);
 
-          const facilityLabelMap: Record<string, string> = {
-            wifi: 'Wi-Fi',
-            socket: 'Ổ cắm',
-            workspace: 'Chỗ ngồi',
-            desk: 'Bàn riêng',
-            snack: 'Đồ ăn',
-            flexible_hours: 'Giờ linh hoạt',
-            cleanliness: 'Sạch sẽ',
-            smoking_rule: 'Cấm hút thuốc',
-          };
-          const tagColors = [
-            { background: '#D4E8DC', color: '#14422D' },
-            { background: '#FFF0E6', color: '#904C18' },
-            { background: '#E8F4FF', color: '#1A5FA6' },
-          ];
+        const facilityLabelMap: Record<string, string> = {
+          wifi: '高速Wi-Fi',
+          socket: '電源あり',
+          workspace: 'ワークスペース',
+          desk: '専用デスク',
+          snack: '軽食',
+          flexible_hours: '柔軟な時間',
+          cleanliness: '清潔感',
+          smoking_rule: '禁煙',
+        };
+        const tagColors = [
+          { background: '#D4E8DC', color: '#14422D' },
+          { background: '#FFF0E6', color: '#904C18' },
+          { background: '#E8F4FF', color: '#1A5FA6' },
+        ];
 
-          const mapped: CafeType[] = (data as any[]).map((item: any) => ({
-            id: item.id,
-            name: item.name,
-            img: item.avatar || '/images/hero-cafe.png',
-            rating: item.rating ?? 0,
-            distance: `${item.distance ?? '?'} km`,
-            area: item.address ?? '',
-            tags: (item.facilities as string[] ?? []).slice(0, 3).map((f, i) => ({
-              label: facilityLabelMap[f] ?? f,
-              style: tagColors[i % tagColors.length],
-            })),
-          }));
+        const formatAddress = (address: string) => {
+          if (!address) return '';
+          const parts = address.split(',');
+          if (parts.length < 2) return removeVietnameseTones(address);
+          let district = parts[parts.length - 2].trim();
+          district = district.replace(/^(Quận|Huyện|Thị xã|Thành phố)\s+/i, '');
+          return removeVietnameseTones(district);
+        };
 
-          if (isMounted) setRecommendedCafes(mapped);
-        } catch (error) {
-          // Hiển thị thông báo lỗi khi không tải được dữ liệu từ API
-          if (isMounted) setRecommendError("データの読み込みに失敗しました。"); // "Không thể tải dữ liệu"  
-        } finally {
-          if (isMounted) setIsLoadingRecommend(false);
-        }
-      };
+        const removeVietnameseTones = (str: string) => {
+          return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D');
+        };
 
-      const fallbackToHanoi = () => loadData(21.0285, 105.8542);
+        const mapped: CafeType[] = (data as any[]).map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          img: item.avatar || '/images/hero-cafe.png',
+          rating: item.rating ?? 0,
+          distance: `${item.distance ?? '?'} km`,
+          area: formatAddress(item.address ?? ''),
+          tags: (item.facilities as string[] ?? []).slice(0, 3).map((f, i) => ({
+            label: facilityLabelMap[f] ?? f,
+            style: tagColors[i % tagColors.length],
+          })),
+        }));
 
-      if (!navigator.geolocation) {
-        fallbackToHanoi();
-      } else {
-        navigator.geolocation.getCurrentPosition(
-          (position) => loadData(position.coords.latitude, position.coords.longitude),
-          () => fallbackToHanoi(),
-          { timeout: 5000 }
-        );
+        if (isMounted) setRecommendedCafes(mapped);
+      } catch (error) {
+        // Hiển thị thông báo lỗi khi không tải được dữ liệu từ API
+        if (isMounted) setRecommendError("データの読み込みに失敗しました。"); // "Không thể tải dữ liệu"  
+      } finally {
+        if (isMounted) setIsLoadingRecommend(false);
       }
+    };
 
-      return () => { isMounted = false; };
-    }, []);
+    const fallbackToHanoi = () => loadData(21.0285, 105.8542);
+
+    if (!navigator.geolocation) {
+      fallbackToHanoi();
+    } else {
+      navigator.geolocation.getCurrentPosition(
+        (position) => loadData(position.coords.latitude, position.coords.longitude),
+        () => fallbackToHanoi(),
+        { timeout: 5000 }
+      );
+    }
+
+    return () => { isMounted = false; };
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -322,16 +344,74 @@ export default function WorkSpotPage() {
               近くにカフェが見つかりませんでした。
             </div>
           ) : (
-            <div style={{
-              display: "flex",
-              gap: 24,
-              overflowX: "auto",
-              paddingBottom: 32,
-              scrollbarWidth: "none",
-            }}>
-              {recommendedCafes.map((cafe) => (
-                <CafeCard key={cafe.id} cafe={cafe} />
-              ))}
+            <div style={{ position: "relative" }}>
+              <div
+                ref={scrollRef}
+                style={{
+                  display: "flex",
+                  gap: 24,
+                  overflowX: "auto",
+                  paddingBottom: 32,
+                  scrollbarWidth: "none",
+                }}
+              >
+                {recommendedCafes.map((cafe) => (
+                  <CafeCard key={cafe.id} cafe={cafe} />
+                ))}
+              </div>
+
+              {recommendedCafes.length > 0 && (
+                <>
+                  <button
+                    onClick={() => scroll('left')}
+                    style={{
+                      position: "absolute",
+                      left: -28,
+                      top: 112,
+                      transform: "translateY(-50%)",
+                      width: 56,
+                      height: 56,
+                      borderRadius: "50%",
+                      background: "rgba(65, 73, 67, 0.8)",
+                      border: "3px solid #fff",
+                      color: "#fff",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                      zIndex: 10,
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                    }}
+                    aria-label="Scroll left"
+                  >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+                  </button>
+                  <button
+                    onClick={() => scroll('right')}
+                    style={{
+                      position: "absolute",
+                      right: -28,
+                      top: 112,
+                      transform: "translateY(-50%)",
+                      width: 56,
+                      height: 56,
+                      borderRadius: "50%",
+                      background: "rgba(65, 73, 67, 0.8)",
+                      border: "3px solid #fff",
+                      color: "#fff",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                      zIndex: 10,
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                    }}
+                    aria-label="Scroll right"
+                  >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+                  </button>
+                </>
+              )}
             </div>
           )}
         </div>
