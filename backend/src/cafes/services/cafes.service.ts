@@ -69,11 +69,17 @@ export class CafesService {
       .getRawAndEntities();
 
     // Kết hợp dữ liệu quán, rating động và khoảng cách trả về cho Frontend
-    return result.entities.map((entity, index) => ({
-      ...entity,
-      rating: Math.round(result.raw[index].avg_rating * 10) / 10, // Làm tròn 1 chữ số thập phân
-      distance: Math.round(result.raw[index].distance * 10) / 10,
-    }));
+    return result.entities.map((entity, index) => {
+      const rawItem = result.raw[index] as {
+        avg_rating: number;
+        distance: number;
+      };
+      return {
+        ...entity,
+        rating: Math.round(rawItem.avg_rating * 10) / 10, // Làm tròn 1 chữ số thập phân
+        distance: Math.round(rawItem.distance * 10) / 10,
+      };
+    });
   }
 
   async create(createCafeDto: CreateCafeDto): Promise<CafeDetailResponseDto> {

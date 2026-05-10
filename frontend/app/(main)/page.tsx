@@ -147,7 +147,8 @@ export default function WorkSpotPage() {
 
           if (isMounted) setRecommendedCafes(mapped);
         } catch (error) {
-          if (isMounted) setRecommendError("Không thể tải dữ liệu");
+          // Hiển thị thông báo lỗi khi không tải được dữ liệu từ API
+          if (isMounted) setRecommendError("データの読み込みに失敗しました。"); // "Không thể tải dữ liệu"  
         } finally {
           if (isMounted) setIsLoadingRecommend(false);
         }
