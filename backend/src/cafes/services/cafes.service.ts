@@ -3,9 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Cafe, CafeStatus } from '../entities/cafe.entity';
 import { OperatingHour } from '../entities/operating-hour.entity';
+import { Review } from '../../reviews/entities/review.entity';
 import { User } from '../../users/entities/user.entity';
 import { CreateCafeDto } from '../dto/create-cafe.dto';
 import { UpdateCafeDto } from '../dto/update-cafe.dto';
+import { CafeDetailResponseDto } from '../dto/cafe-detail-response.dto';
 import { SearchCafeDto } from '../dto/search-cafe.dto';
 
 @Injectable()
@@ -13,8 +15,13 @@ export class CafesService {
   constructor(
     @InjectRepository(Cafe)
     private readonly cafesRepository: Repository<Cafe>,
+
     @InjectRepository(OperatingHour)
     private readonly operatingHoursRepository: Repository<OperatingHour>,
+
+    @InjectRepository(Review)
+    private readonly reviewRepository: Repository<Review>,
+
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
   ) {}
@@ -75,7 +82,7 @@ export class CafesService {
     });
   }
 
-  async create(createCafeDto: CreateCafeDto): Promise<Cafe> {
+  async create(createCafeDto: CreateCafeDto): Promise<CafeDetailResponseDto> {
     const { ownerId, operatingHours, ...cafeData } = createCafeDto;
 
     const owner = await this.usersRepository.findOne({
@@ -98,53 +105,138 @@ export class CafesService {
     return this.findOne(savedCafe.id);
   }
 
-  findAll(): Promise<Cafe[]> {
-    return this.cafesRepository.find({
-      relations: ['owner', 'operatingHours'],
-    });
-  }
 
-  async findOne(id: string): Promise<Cafe> {
+private async findOneEntity(id: string): Promise<Cafe> {
+  const cafe = await this.cafesRepository.findOne({
+    where: { id },
+    relations: {
+      owner: true,
+      operatingHours: true,
+    },
+  });
+  if (!cafe) {
+    throw new NotFoundException(`Quán cà phê ${id} không tìm thấy`);
+  }
+  return cafe;
+}
+
+  async findOne(id: string): Promise<CafeDetailResponseDto> {
     const cafe = await this.cafesRepository.findOne({
       where: { id },
-      relations: ['owner', 'operatingHours', 'reviews'],
+      relations: {
+        owner: true,
+        operatingHours: true,
+        reviews: {
+          user: true,
+        },
+      },
     });
+
     if (!cafe) {
-      throw new NotFoundException(`Quán cà phê #${id} không tìm thấy`);
+      throw new NotFoundException(
+        `Quán cà phê ${id} không tìm thấy`,
+      );
     }
-    return cafe;
+
+    const reviews = cafe.reviews || [];
+    const operatingHours = cafe.operatingHours || [];
+
+    const reviewCount = reviews.length;
+
+    const averageRating =
+      reviewCount > 0
+        ? Number(
+            (
+              reviews.reduce((sum, r) => sum + r.rating, 0) /
+              reviewCount
+            ).toFixed(1),
+          )
+        : 0;
+
+    return {
+      id: cafe.id,
+      name: cafe.name,
+      description: cafe.description,
+      address: cafe.address,
+
+      images: cafe.images || [],
+
+      facilities: cafe.facilities || [],
+
+      owner: cafe.owner
+        ? {
+            id: cafe.owner.id,
+            fullName: cafe.owner.fullName,
+            avatar: cafe.owner.avatar,
+            role: cafe.owner.role,
+          }
+        : null,
+
+      operatingHours: operatingHours.map((oh) => ({
+        dayOfWeek: oh.dayOfWeek,
+        openTime: oh.openTime,
+        closeTime: oh.closeTime,
+        isDayOff: oh.isDayOff,
+      })),
+
+      reviews: reviews.map((review) => ({
+        id: review.id,
+        rating: review.rating,
+        comment: review.comment,
+        images: review.images || [],
+        createdAt: review.createdAt,
+
+        user: review.user
+          ? {
+              id: review.user.id,
+              fullName: review.user.fullName,
+              avatar: review.user.avatar,
+              jobTitle:
+                review.user.bio || 'Người dùng WorkSpot',
+            }
+          : null,
+      })),
+
+      metadata: {
+        averageRating,
+        reviewCount,
+        totalImages: cafe.images?.length || 0,
+      },
+    };
   }
 
-  async update(id: string, updateCafeDto: UpdateCafeDto): Promise<Cafe> {
-    const cafe = await this.findOne(id);
+  async update(id: string, updateCafeDto: UpdateCafeDto): Promise<CafeDetailResponseDto> {
+    const cafe = await this.findOneEntity(id);
     const { ownerId, operatingHours, ...cafeData } = updateCafeDto;
 
-    if (ownerId) {
-      const owner = await this.usersRepository.findOne({
-        where: { id: ownerId },
-      });
-      if (!owner) {
-        throw new NotFoundException(`Người dùng #${ownerId} không tìm thấy`);
+    const updatedCafe = await this.cafesRepository.manager.transaction(async (manager) => {
+      if (ownerId) {
+        const owner = await manager.findOne(User, { where: { id: ownerId } });
+        if (!owner) {
+          throw new NotFoundException(`Người dùng ${ownerId} không tìm thấy`);
+        }
+        cafe.owner = owner;
       }
-      cafe.owner = owner;
-    }
 
-    if (operatingHours !== undefined) {
-      await this.operatingHoursRepository.delete({ cafe: { id } });
-      if (operatingHours.length) {
-        const hours = operatingHours.map((h) =>
-          this.operatingHoursRepository.create({ ...h, cafe }),
-        );
-        await this.operatingHoursRepository.save(hours);
+      if (operatingHours !== undefined) {
+        await manager.delete(OperatingHour, { cafe: { id } });
+        if (operatingHours.length) {
+          const hours = operatingHours.map((h) =>
+            manager.create(OperatingHour, { ...h, cafe }),
+          );
+          await manager.save(OperatingHour, hours);
+        }
       }
-    }
 
-    Object.assign(cafe, cafeData);
-    return this.cafesRepository.save(cafe);
+      Object.assign(cafe, cafeData);
+      return manager.save(Cafe, cafe); // trả về Cafe entity
+    });
+
+    return this.findOne(updatedCafe.id); // rồi map sang DTO
   }
 
   async remove(id: string): Promise<void> {
-    const cafe = await this.findOne(id);
+    const cafe = await this.findOneEntity(id);
     await this.cafesRepository.remove(cafe);
   }
 

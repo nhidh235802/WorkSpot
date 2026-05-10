@@ -51,5 +51,12 @@ export const CafeService = {
       throw new Error("Lỗi kết nối máy chủ");
     }
     return res.json();
-  }
+  },
+  getCafeById: async (id: string) => {
+    const res = await fetch(`${API_URL}/cafes/${id}`);
+    if (!res.ok) throw new Error("カフェの情報を取得できませんでした");
+    return res.json();
+  },
+
+
 };

@@ -38,7 +38,7 @@ PHẦN 3: CẤU HÌNH DATABASE VÀ BIẾN MÔI TRƯỜNG
 
     - Mở pgAdmin hoặc công cụ SQL, tạo một Database trống tên là: workspot_db 
         (Để trống nhé, không cần tạo bảng hay chạy file .sql gì cả, typeorm sẽ tự sửa dtb cho mình qua migration)
-        Chạy Query: 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp";' (Để tải extension cho phép dùng id dạng uuid cho bảo mật)
+        Chạy Query: 'CREATE EXTENSION IF NOTcd EXISTS "uuid-ossp";' (Để tải extension cho phép dùng id dạng uuid cho bảo mật)
     - Copy file dev.env.example thành file .env (nếu chưa có) (cả 2 đều để trong backend, cùng cấp với .../src)
     - Cập nhật thông tin DB_USERNAME và DB_PASSWORD theo tài khoản PostgreSQL trên máy mọi người.
 

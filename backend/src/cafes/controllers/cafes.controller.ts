@@ -10,13 +10,15 @@ import {
   HttpStatus,
   Query,
   UseGuards,
+  ParseUUIDPipe,
   ParseFloatPipe,
 } from '@nestjs/common';
 import { CafesService } from '../services/cafes.service';
 import { CreateCafeDto } from '../dto/create-cafe.dto';
 import { UpdateCafeDto } from '../dto/update-cafe.dto';
-import { SearchCafeDto } from '../dto/search-cafe.dto';
+import { CafeDetailResponseDto } from '../dto/cafe-detail-response.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { SearchCafeDto } from '../dto/search-cafe.dto';
 
 @Controller('cafes')
 export class CafesController {
@@ -32,36 +34,35 @@ export class CafesController {
   }
 
   @Post()
-  create(@Body() createCafeDto: CreateCafeDto) {
+  @HttpCode(HttpStatus.CREATED)
+  create(@Body() createCafeDto: CreateCafeDto): Promise<CafeDetailResponseDto> {
     return this.cafesService.create(createCafeDto);
   }
+
 
   @Get('search')
   searchCafes(@Query() searchCafeDto: SearchCafeDto) {
     return this.cafesService.searchCafes(searchCafeDto);
   }
 
-  @Get()
-  findAll() {
-    return this.cafesService.findAll();
-  }
+
 
   // HÀM FIND ONE PHẢI NẰM DƯỚI HÀM SEARCH
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', ParseUUIDPipe) id: string): Promise<CafeDetailResponseDto> {
     return this.cafesService.findOne(id);
   }
 
   @UseGuards(JwtAuthGuard)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateCafeDto: UpdateCafeDto) {
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() updateCafeDto: UpdateCafeDto): Promise<CafeDetailResponseDto> {
     return this.cafesService.update(id, updateCafeDto);
   }
 
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id') id: string) {
+  remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
     return this.cafesService.remove(id);
   }
 }

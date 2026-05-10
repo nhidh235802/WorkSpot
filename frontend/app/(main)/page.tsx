@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { CafeService } from '@/services/cafe.service';
 import Navbar from '@/components/Navbar';
 
@@ -33,67 +34,69 @@ export interface CafeType {
 
 function CafeCard({ cafe }: { cafe: CafeType }) {
   return (
-    <div style={{
-      display: "flex",
-      flexDirection: "column",
-      width: 320,
-      height: 355,
-      borderRadius: 12,
-      background: "#fff",
-      overflow: "hidden",
-      flexShrink: 0,
-    }}>
-      {/* Image */}
-      <div style={{ position: "relative", height: 224, flexShrink: 0, overflow: "hidden" }}>
-        <img
-          src={cafe.img}
-          alt={cafe.name}
-          style={{ width: "100%", height: "100%", objectFit: "cover" }}
-        />
-        {/* Rating badge */}
-        <div style={{
-          position: "absolute",
-          top: 16,
-          right: 16,
-          display: "flex",
-          alignItems: "center",
-          gap: 4,
-          padding: "4px 12px",
-          borderRadius: 9999,
-          background: "rgba(255,255,255,0.90)",
-          backdropFilter: "blur(4px)",
-        }}>
-          <StarIcon />
-          <span style={{ fontSize: 12, fontWeight: 500, color: "#1A1C19" }}>{cafe.rating}</span>
+    <Link href={`/cafes/${cafe.id}`} style={{ textDecoration: 'none', color: 'inherit', flexShrink: 0 }}>
+      <div style={{
+        display: "flex",
+        flexDirection: "column",
+        width: 320,
+        height: 355,
+        borderRadius: 12,
+        background: "#fff",
+        overflow: "hidden",
+        cursor: "pointer",
+      }}>
+        {/* Image */}
+        <div style={{ position: "relative", height: 224, flexShrink: 0, overflow: "hidden" }}>
+          <img
+            src={cafe.img}
+            alt={cafe.name}
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
+          {/* Rating badge */}
+          <div style={{
+            position: "absolute",
+            top: 16,
+            right: 16,
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+            padding: "4px 12px",
+            borderRadius: 9999,
+            background: "rgba(255,255,255,0.90)",
+            backdropFilter: "blur(4px)",
+          }}>
+            <StarIcon />
+            <span style={{ fontSize: 12, fontWeight: 500, color: "#1A1C19" }}>{cafe.rating}</span>
+          </div>
         </div>
-      </div>
 
-      {/* Info */}
-      <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 4 }}>
-        <h3 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: "#14422D", lineHeight: "28px" }}>
-          {cafe.name}
-        </h3>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <LocationIcon />
-          <span style={{ fontSize: 14, color: "#414943" }}>{cafe.distance} • {cafe.area}</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, paddingTop: 12 }}>
-          {cafe.tags.map((tag) => (
-            <span key={tag.label} style={{
-              padding: "4px 12px",
-              borderRadius: 9999,
-              fontSize: 10,
-              fontWeight: 500,
-              textTransform: "uppercase",
-              letterSpacing: "-0.5px",
-              ...tag.style,
-            }}>
-              {tag.label}
-            </span>
-          ))}
+        {/* Info */}
+        <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 4 }}>
+          <h3 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: "#14422D", lineHeight: "28px" }}>
+            {cafe.name}
+          </h3>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <LocationIcon />
+            <span style={{ fontSize: 14, color: "#414943" }}>{cafe.distance} • {cafe.area}</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, paddingTop: 12 }}>
+            {cafe.tags.map((tag) => (
+              <span key={tag.label} style={{
+                padding: "4px 12px",
+                borderRadius: 9999,
+                fontSize: 10,
+                fontWeight: 500,
+                textTransform: "uppercase",
+                letterSpacing: "-0.5px",
+                ...tag.style,
+              }}>
+                {tag.label}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
 
@@ -106,16 +109,13 @@ export default function WorkSpotPage() {
   const [recommendError, setRecommendError] = useState<string | null>(null);
 
   useEffect(() => {
-      // Biến chặn gọi API nhiều lần khi re-render
-      let isMounted = true; 
+      let isMounted = true;
 
       const loadData = async (lat: number, lng: number) => {
         try {
           setIsLoadingRecommend(true);
-          // Gọi API qua Service
           const data = await CafeService.getTopRecommended(lat, lng);
 
-          // Map dữ liệu backend sang CafeType của frontend
           const facilityLabelMap: Record<string, string> = {
             wifi: 'Wi-Fi',
             socket: 'Ổ cắm',
@@ -154,16 +154,14 @@ export default function WorkSpotPage() {
         }
       };
 
-      // Fallback: khi GPS bị từ chối hoặc timeout → dùng trung tâm Hà Nội
       const fallbackToHanoi = () => loadData(21.0285, 105.8542);
 
       if (!navigator.geolocation) {
-        // Trình duyệt không hỗ trợ GPS
         fallbackToHanoi();
       } else {
         navigator.geolocation.getCurrentPosition(
           (position) => loadData(position.coords.latitude, position.coords.longitude),
-          () => fallbackToHanoi(), // Từ chối hoặc timeout 5 giây
+          () => fallbackToHanoi(),
           { timeout: 5000 }
         );
       }
@@ -174,15 +172,12 @@ export default function WorkSpotPage() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Kịch bản 1: Người dùng CÓ gõ từ khóa
     if (keyword.trim()) {
       router.push(`/cafes/search?q=${encodeURIComponent(keyword)}`);
       return;
     }
 
-    // Kịch bản 2: Người dùng KHÔNG gõ gì -> Dùng GPS
     if (!navigator.geolocation) {
-      // "Trình duyệt của bạn không hỗ trợ định vị GPS."
       alert("お使いのブラウザはGPS位置情報をサポートしていません。");
       return;
     }
@@ -193,13 +188,11 @@ export default function WorkSpotPage() {
       (position) => {
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
-        
         setIsSearching(false);
         router.push(`/cafes/search?lat=${lat}&lng=${lng}&radius=5`);
       },
-      (error) => {
+      () => {
         setIsSearching(false);
-        // "Không thể lấy vị trí hiện tại. Vui lòng nhập tên khu vực vào ô tìm kiếm."
         alert("現在地を取得できませんでした。検索ボックスにエリア名を入力してください。");
       },
       { timeout: 5000 }
@@ -231,7 +224,7 @@ export default function WorkSpotPage() {
               リモートワークに最適な、ハノイで最も静かで集中できるカフェを厳選しました。
             </p>
 
-            <form 
+            <form
               onSubmit={handleSearch}
               style={{
                 display: "flex", alignItems: "center", gap: 8, background: "#fff",
@@ -249,18 +242,18 @@ export default function WorkSpotPage() {
                 placeholder="エリア名やカフェ名で検索..."
                 style={{ flex: 1, border: "none", outline: "none", background: "transparent", fontSize: 16, color: "#414943", padding: "10px 0", fontFamily: "Manrope, sans-serif" }}
               />
-              <button 
-                type="submit" 
-                disabled={isSearching} // Khóa nút khi đang tìm GPS
-                style={{ 
-                  flexShrink: 0, padding: "16px 32px", borderRadius: 9999, border: "none", 
-                  background: isSearching ? "#9FCFB2" : "linear-gradient(135deg, #14422D 0%, #2D5A43 100%)", 
-                  color: "#fff", fontSize: 14, fontWeight: 500, 
-                  cursor: isSearching ? "not-allowed" : "pointer", 
-                  whiteSpace: "nowrap" 
+              <button
+                type="submit"
+                disabled={isSearching}
+                style={{
+                  flexShrink: 0, padding: "16px 32px", borderRadius: 9999, border: "none",
+                  background: isSearching ? "#9FCFB2" : "linear-gradient(135deg, #14422D 0%, #2D5A43 100%)",
+                  color: "#fff", fontSize: 14, fontWeight: 500,
+                  cursor: isSearching ? "not-allowed" : "pointer",
+                  whiteSpace: "nowrap"
                 }}
               >
-                {isSearching ? "現在地を取得中..." : "スポットを探す"} {/* "Đang lấy vị trí..." : "Tìm quán" */}
+                {isSearching ? "現在地を取得中..." : "スポットを探す"}
               </button>
             </form>
           </div>
@@ -316,29 +309,26 @@ export default function WorkSpotPage() {
             </div>
           </div>
 
-          {/* Xử lý 3 trạng thái: Loading, Lỗi, và Có dữ liệu */}
           {isLoadingRecommend ? (
             <div style={{ padding: "40px 0", textAlign: "center", color: "#414943" }}>
-              おすすめのカフェを探しています... {/* Đang tìm quán... */}
+              おすすめのカフェを探しています...
             </div>
           ) : recommendError ? (
             <div style={{ padding: "40px 0", textAlign: "center", color: "#BA1A1A", fontWeight: 500 }}>
-              {recommendError} {/* "データを読み込めませんでした" */}
+              {recommendError}
             </div>
           ) : recommendedCafes.length === 0 ? (
             <div style={{ padding: "40px 0", textAlign: "center", color: "#414943" }}>
-              近くにカフェが見つかりませんでした。 {/* Không tìm thấy quán ở gần */}
+              近くにカフェが見つかりませんでした。
             </div>
           ) : (
-            /* Cards scroll (Cuộn ngang theo requirement) */
             <div style={{
               display: "flex",
               gap: 24,
               overflowX: "auto",
               paddingBottom: 32,
-              scrollbarWidth: "none", // Ẩn thanh scroll trên Firefox
+              scrollbarWidth: "none",
             }}>
-              {/* Render số lượng thực tế lấy được (< 6 thì hiện bấy nhiêu, không hiện thẻ trống) */}
               {recommendedCafes.map((cafe) => (
                 <CafeCard key={cafe.id} cafe={cafe} />
               ))}
