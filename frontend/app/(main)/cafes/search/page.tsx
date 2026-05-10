@@ -166,7 +166,7 @@ export default function CafesSearchPage() {
         longitude: c.longitude,
         rating: c.rating,
         address: c.address,
-        avatar: c.avatar,
+        avatar: resolveCafeImage(c.name, c.avatar),
       })),
     [cafes]
   );
@@ -265,7 +265,7 @@ export default function CafesSearchPage() {
                   >
                     <div className="w-56 h-48 bg-gray-200 shrink-0">
                       <img
-                        src={cafe.avatar || "https://placehold.co/224x192"}
+                        src={resolveCafeImage(cafe.name, cafe.avatar)}
                         alt={cafe.name}
                         className="w-full h-full object-cover"
                       />
@@ -379,7 +379,7 @@ export default function CafesSearchPage() {
                   {/* Thumbnail */}
                   <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-gray-100">
                     <img
-                      src={cafe.avatar || 'https://placehold.co/80x80'}
+                      src={resolveCafeImage(cafe.name, cafe.avatar)}
                       alt={cafe.name}
                       className="w-full h-full object-cover"
                     />
