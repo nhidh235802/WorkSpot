@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { User, Settings, LogOut } from 'lucide-react';
 
 interface NavUser {
   fullName: string;
@@ -75,11 +76,11 @@ export default function Navbar({ center }: NavbarProps) {
         justifyContent: 'space-between',
         gap: 16,
       }}>
-        
+
         {/* --- LEFT: LOGO --- */}
         <div style={{ display: 'flex', alignItems: 'center', width: 150 }}>
-          <Link 
-            href="/" 
+          <Link
+            href="/"
             style={{
               display: 'inline-block', // Chặn Link dãn nở hết chiều cao div cha
               color: '#14422D',
@@ -100,104 +101,86 @@ export default function Navbar({ center }: NavbarProps) {
         </div>
 
         {/* --- RIGHT: AUTH AREA --- */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', width: 200 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', flexShrink: 0 }}>
           {user ? (
             <div ref={menuRef} style={{ position: 'relative' }}>
               <button
                 onClick={() => setDropdownOpen(v => !v)}
-                style={{ 
-                  background: 'none', 
-                  border: 'none', 
-                  cursor: 'pointer', 
-                  padding: 0, 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: 10 
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: 0,
+                  display: 'flex',
+                  alignItems: 'center'
                 }}
               >
-                {user.avatar ? (
-                  <img
-                    src={user.avatar}
-                    alt="avatar"
-                    style={{ 
-                      width: 40, 
-                      height: 40, 
-                      borderRadius: '50%', 
-                      objectFit: 'cover', 
-                      border: '2px solid rgba(20,66,45,0.1)' 
-                    }}
-                  />
-                ) : (
-                  <div style={{
-                    width: 40, height: 40, borderRadius: '50%', background: '#14422D',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: 'white', fontSize: 16, fontWeight: 700,
-                  }}>
-                    {user.fullName?.[0]?.toUpperCase() ?? 'U'}
-                  </div>
-                )}
-                <span style={{ 
-                  fontSize: 14, 
-                  fontWeight: 600, 
-                  color: '#14422D',
-                  fontFamily: 'Manrope, sans-serif'
+                <div style={{
+                  width: 40, height: 40, borderRadius: '50%', border: '2px solid #14422D',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: 'none', color: '#14422D'
                 }}>
-                  {user.fullName?.split(' ')[0]}
-                </span>
+                  <User size={24} color="#14422D" strokeWidth={2} />
+                </div>
               </button>
 
               {/* Dropdown Menu */}
               {dropdownOpen && (
                 <div style={{
-                  position: 'absolute', 
-                  top: 'calc(100% + 12px)', 
+                  position: 'absolute',
+                  top: 'calc(100% + 12px)',
                   right: 0,
-                  background: 'white', 
-                  borderRadius: 12, 
-                  boxShadow: '0 12px 32px rgba(0,0,0,0.15)',
-                  overflow: 'hidden', 
-                  minWidth: 180, 
+                  background: '#EEEEE9',
+                  borderRadius: 8,
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                  overflow: 'hidden',
+                  minWidth: 160,
                   zIndex: 1600,
-                  border: '1px solid rgba(0,0,0,0.05)'
+                  display: 'flex',
+                  flexDirection: 'column',
+                  padding: '14px 16px',
+                  gap: 20
                 }}>
                   <Link
                     href="/profile"
                     onClick={() => setDropdownOpen(false)}
-                    style={{ 
-                      display: 'block', 
-                      padding: '14px 20px', 
-                      fontSize: 14, 
-                      color: '#14422D', 
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      fontSize: 14,
+                      color: '#14422D',
                       textDecoration: 'none',
-                      transition: 'background 0.2s'
+                      fontFamily: 'Manrope, sans-serif'
                     }}
                   >
-                    プロフィール
+                    <Settings size={20} color="#14422D" strokeWidth={2} />
+                    <span style={{ lineHeight: '20px' }}>設定</span>
                   </Link>
                   <button
                     onClick={handleLogout}
-                    style={{ 
-                      display: 'block', 
-                      width: '100%', 
-                      padding: '14px 20px', 
-                      fontSize: 14, 
-                      color: '#BA1A1A', 
-                      background: 'none', 
-                      border: 'none', 
-                      borderTop: '1px solid #f0f0eb', 
-                      cursor: 'pointer', 
-                      textAlign: 'left',
-                      fontWeight: 600
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      fontSize: 14,
+                      color: '#14422D',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: 0,
+                      fontFamily: 'Manrope, sans-serif'
                     }}
                   >
-                    ログアウト
+                    <LogOut size={20} color="#14422D" strokeWidth={2} />
+                    <span style={{ lineHeight: '20px' }}>ログアウト</span>
                   </button>
                 </div>
               )}
             </div>
           ) : (
             /* Guest Buttons */
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, whiteSpace: 'nowrap' }}>
               <Link href="/register" style={{
                 padding: '12px 20px', borderRadius: 9999, fontSize: 14, color: '#14422D', textDecoration: 'none', fontWeight: 600
               }}>
