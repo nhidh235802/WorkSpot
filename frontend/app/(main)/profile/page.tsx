@@ -210,12 +210,22 @@ export default function ProfilePage() {
       const result = await userService.uploadAvatar(file)
       // Cập nhật bằng URL thật từ server
       setProfile(prev => prev ? { ...prev, avatar: result.avatar } : prev)
+      // Sync localStorage + notify Navbar ngay lập tức
+      const userStr = localStorage.getItem('user')
+      if (userStr) {
+        try {
+          const userData = JSON.parse(userStr)
+          userData.avatar = result.avatar
+          localStorage.setItem('user', JSON.stringify(userData))
+        } catch { /* ignore */ }
+      }
+      window.dispatchEvent(new CustomEvent('workspot:user-updated', { detail: { avatar: result.avatar } }))
     } catch (error: unknown) {
       setAvatarError((error as Error).message)
       // Rollback về avatar cũ nếu thất bại
       setProfile(prev => prev ? { ...prev, avatar: prevAvatar } : prev)
     } finally {
-      URL.revokeObjectURL(localPreview)
+      setTimeout(() => URL.revokeObjectURL(localPreview), 500)
       setUploadingAvatar(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
     }
@@ -249,11 +259,19 @@ export default function ProfilePage() {
           <Link href="/" style={{ color: '#14422D', fontSize: 24, fontFamily: 'Acme', fontWeight: 400, textDecoration: 'none', lineHeight: '32px' }}>WorkSpot</Link>
           <div ref={menuRef} style={{ position: 'relative' }}>
             <button onClick={() => setDropdownOpen(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}>
-              <div style={{ width: 40, height: 40, borderRadius: '50%', border: '2px solid #14422D', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#14422D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-                </svg>
-              </div>
+              {profile?.avatar ? (
+                <img
+                  src={profile.avatar.startsWith('blob:') || profile.avatar.startsWith('http') ? profile.avatar : `${API}${profile.avatar}`}
+                  alt={profile?.fullName}
+                  style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', border: '2px solid #14422D' }}
+                />
+              ) : (
+                <div style={{ width: 40, height: 40, borderRadius: '50%', border: '2px solid #14422D', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#14422D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                  </svg>
+                </div>
+              )}
             </button>
             {dropdownOpen && (
               <div style={{ position: 'absolute', top: 'calc(100% + 12px)', right: 0, background: '#EEEEE9', borderRadius: 8, boxShadow: '0 4px 20px rgba(0,0,0,0.08)', minWidth: 140, zIndex: 1600, padding: '14px 16px' }}>

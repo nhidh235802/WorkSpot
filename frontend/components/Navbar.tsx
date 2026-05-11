@@ -5,6 +5,14 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { User, Settings, LogOut } from 'lucide-react';
 
+const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001').replace(/\/$/, '');
+
+function resolveAvatarSrc(avatar: string | null): string | null {
+  if (!avatar) return null;
+  if (avatar.startsWith('blob:') || avatar.startsWith('http')) return avatar;
+  return `${API_URL}${avatar}`;
+}
+
 interface NavUser {
   fullName: string;
   avatar: string | null;
@@ -32,6 +40,16 @@ export default function Navbar({ center }: NavbarProps) {
         console.error("Invalid user data");
       }
     }
+  }, []);
+
+  // Lắng nghe sự kiện cập nhật avatar từ profile page
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      setUser(prev => prev ? { ...prev, avatar: detail.avatar } : prev);
+    };
+    window.addEventListener('workspot:user-updated', handler);
+    return () => window.removeEventListener('workspot:user-updated', handler);
   }, []);
 
   // Đóng dropdown khi click ra ngoài
@@ -115,13 +133,25 @@ export default function Navbar({ center }: NavbarProps) {
                   alignItems: 'center'
                 }}
               >
-                <div style={{
-                  width: 40, height: 40, borderRadius: '50%', border: '2px solid #14422D',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: 'none', color: '#14422D'
-                }}>
-                  <User size={24} color="#14422D" strokeWidth={2} />
-                </div>
+                {resolveAvatarSrc(user.avatar) ? (
+                  <img
+                    src={resolveAvatarSrc(user.avatar)!}
+                    alt={user.fullName}
+                    style={{
+                      width: 40, height: 40, borderRadius: '50%',
+                      objectFit: 'cover',
+                      border: '2px solid #14422D',
+                    }}
+                  />
+                ) : (
+                  <div style={{
+                    width: 40, height: 40, borderRadius: '50%', border: '2px solid #14422D',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: 'none', color: '#14422D'
+                  }}>
+                    <User size={24} color="#14422D" strokeWidth={2} />
+                  </div>
+                )}
               </button>
 
               {/* Dropdown Menu */}
