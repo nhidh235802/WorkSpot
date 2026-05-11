@@ -1,9 +1,9 @@
 import {
   IsArray,
   IsInt,
+  IsNotEmpty,
   IsOptional,
   IsString,
-  IsUUID,
   Max,
   Min,
 } from 'class-validator';
@@ -23,9 +23,11 @@ export class CreateReviewDto {
   @IsString({ each: true })
   images?: string[];
 
-  @IsUUID()
+  @IsString()
+  @IsNotEmpty()
   userId!: string;
 
-  @IsUUID()
+  @IsString()
+  @IsNotEmpty()
   cafeId!: string;
 }
