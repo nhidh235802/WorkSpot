@@ -63,7 +63,7 @@ async function changePassword(currentPassword: string, newPassword: string): Pro
   const res = await fetch(`${API}/profile/change-password`, {
     method: 'PUT',
     headers: getAuthHeaders(),
-    body: JSON.stringify({ currentPassword, newPassword }),
+    body: JSON.stringify({ currentPassword, newPassword, confirmPassword: newPassword }),
   })
   if (!res.ok) throw new Error(await parseError(res))
 }
