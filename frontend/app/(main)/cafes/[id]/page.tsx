@@ -443,6 +443,31 @@ export default function CafeDetailPage() {
                 <span style={{ fontSize: 15, color: '#737770' }}>{closingLabel}</span>
               </div>
             </div>
+
+            {/* 地図で表示 button */}
+            {cafe.latitude && cafe.longitude && (
+              <div style={{ marginTop: 24 }}>
+                <Link
+                  href={`/cafes/search?lat=${cafe.latitude}&lng=${cafe.longitude}&selectedId=${id}&showRoute=1`}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 10,
+                    padding: '12px 24px',
+                    background: 'white',
+                    border: '1.5px solid #C0C9C1',
+                    borderRadius: 9999,
+                    fontSize: 14, fontWeight: 600, color: '#14422D',
+                    textDecoration: 'none',
+                    boxShadow: '0 1px 4px rgba(0,0,0,0.07)',
+                    transition: 'box-shadow 0.15s',
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#14422D" strokeWidth="2.5">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                  </svg>
+                  地図で表示
+                </Link>
+              </div>
+            )}
           </section>
 
           {/* ════════════════════════════════════

@@ -158,6 +158,8 @@ private async findOneEntity(id: string): Promise<Cafe> {
       name: cafe.name,
       description: cafe.description,
       address: cafe.address,
+      latitude: cafe.latitude ?? null,
+      longitude: cafe.longitude ?? null,
 
       images: cafe.images || [],
 
