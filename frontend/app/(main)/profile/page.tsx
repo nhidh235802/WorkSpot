@@ -1,7 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { userService } from '@/services/user.service'
 
 interface UserProfile {
   id: string
@@ -26,7 +28,7 @@ const API = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001').replace
 function getAuthHeaders(): HeadersInit {
   const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : ''
   const headers: HeadersInit = { 'Content-Type': 'application/json' }
-  if (token) headers.Authorization = `Bearer ${token}`
+  if (token) (headers as Record<string, string>).Authorization = `Bearer ${token}`
   return headers
 }
 
@@ -61,7 +63,7 @@ async function changePassword(currentPassword: string, newPassword: string): Pro
   const res = await fetch(`${API}/profile/change-password`, {
     method: 'PUT',
     headers: getAuthHeaders(),
-    body: JSON.stringify({ currentPassword, newPassword, confirmPassword: newPassword }),
+    body: JSON.stringify({ currentPassword, newPassword }),
   })
   if (!res.ok) throw new Error(await parseError(res))
 }
@@ -79,43 +81,23 @@ function EyeIcon({ open }: { open: boolean }) {
 }
 
 const fieldLabelStyle: React.CSSProperties = {
-  color: '#78716C',
-  fontSize: 12,
-  fontFamily: 'Be Vietnam Pro, sans-serif',
-  fontWeight: 600,
-  textTransform: 'uppercase',
-  lineHeight: '16px',
-  letterSpacing: 1.20,
-  paddingLeft: 4,
-  paddingRight: 4,
+  color: '#78716C', fontSize: 12, fontFamily: 'Be Vietnam Pro, sans-serif',
+  fontWeight: 600, textTransform: 'uppercase', lineHeight: '16px',
+  letterSpacing: 1.20, paddingLeft: 4, paddingRight: 4,
 }
 
 const readOnlyBoxStyle: React.CSSProperties = {
-  alignSelf: 'stretch',
-  padding: 16,
-  background: '#E3E3DE',
-  overflow: 'hidden',
-  borderRadius: 8,
-  color: '#1A1C19',
-  fontSize: 16,
-  fontFamily: 'Be Vietnam Pro, sans-serif',
-  fontWeight: 400,
-  lineHeight: '24px',
+  alignSelf: 'stretch', padding: 16, background: '#E3E3DE',
+  overflow: 'hidden', borderRadius: 8, color: '#1A1C19',
+  fontSize: 16, fontFamily: 'Be Vietnam Pro, sans-serif',
+  fontWeight: 400, lineHeight: '24px',
 }
 
 const inputStyle: React.CSSProperties = {
-  width: '100%',
-  boxSizing: 'border-box',
-  padding: 16,
-  background: '#E3E3DE',
-  borderRadius: 8,
-  border: 'none',
-  outline: 'none',
-  color: '#1A1C19',
-  fontSize: 16,
-  fontFamily: 'Be Vietnam Pro, sans-serif',
-  fontWeight: 400,
-  lineHeight: '24px',
+  width: '100%', boxSizing: 'border-box', padding: 16,
+  background: '#E3E3DE', borderRadius: 8, border: 'none', outline: 'none',
+  color: '#1A1C19', fontSize: 16, fontFamily: 'Be Vietnam Pro, sans-serif',
+  fontWeight: 400, lineHeight: '24px',
 }
 
 export default function ProfilePage() {
@@ -137,70 +119,105 @@ export default function ProfilePage() {
   const [pwdError, setPwdError] = useState('')
   const [pwdSuccess, setPwdSuccess] = useState(false)
 
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const [avatarError, setAvatarError] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Navbar dropdown
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!dropdownOpen) return
+    function handleClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setDropdownOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [dropdownOpen])
+
+  function handleLogout() {
+    localStorage.removeItem('access_token')
+    localStorage.removeItem('user')
+    setDropdownOpen(false)
+    router.push('/')
+  }
+
+  // Load profile
   useEffect(() => {
     fetchProfile()
       .then((data) => {
         setProfile(data)
-        setEditForm({
-          fullName: data.fullName ?? '',
-          email: data.email ?? '',
-          phone: data.phone ?? '',
-          address: data.address ?? '',
-          bio: data.bio ?? '',
-        })
+        setEditForm({ fullName: data.fullName ?? '', email: data.email ?? '', phone: data.phone ?? '', address: data.address ?? '', bio: data.bio ?? '' })
       })
       .catch((e) => setLoadError(e.message))
       .finally(() => setLoading(false))
   }, [])
 
   async function handleSaveProfile() {
-    setSavingProfile(true)
-    setProfileError('')
+    setSavingProfile(true); setProfileError('')
     try {
       const updated = await patchProfile({
-        fullName: editForm.fullName.trim(),
-        email: editForm.email.trim(),
-        phone: editForm.phone.trim() || undefined,
-        address: editForm.address.trim() || undefined,
+        fullName: editForm.fullName.trim(), email: editForm.email.trim(),
+        phone: editForm.phone.trim() || undefined, address: editForm.address.trim() || undefined,
         bio: editForm.bio.trim() || undefined,
       })
-      setProfile(updated)
-      setIsEditing(false)
-    } catch (e: unknown) {
-      setProfileError((e as Error).message)
-    } finally {
-      setSavingProfile(false)
-    }
+      setProfile(updated); setIsEditing(false)
+    } catch (e: unknown) { setProfileError((e as Error).message) }
+    finally { setSavingProfile(false) }
   }
 
   function handleCancelEdit() {
     if (!profile) return
-    setEditForm({
-      fullName: profile.fullName ?? '',
-      email: profile.email ?? '',
-      phone: profile.phone ?? '',
-      address: profile.address ?? '',
-      bio: profile.bio ?? '',
-    })
-    setIsEditing(false)
-    setProfileError('')
+    setEditForm({ fullName: profile.fullName ?? '', email: profile.email ?? '', phone: profile.phone ?? '', address: profile.address ?? '', bio: profile.bio ?? '' })
+    setIsEditing(false); setProfileError('')
   }
 
   async function handleChangePassword() {
-    setPwdError('')
-    setPwdSuccess(false)
+    setPwdError(''); setPwdSuccess(false)
     if (!currentPwd || !newPwd) { setPwdError('パスワードを入力してください。'); return }
     if (newPwd.length < 6) { setPwdError('新しいパスワードは6文字以上で入力してください。'); return }
     setSavingPwd(true)
     try {
       await changePassword(currentPwd, newPwd)
-      setCurrentPwd('')
-      setNewPwd('')
-      setPwdSuccess(true)
-    } catch (e: unknown) {
-      setPwdError((e as Error).message)
+      setCurrentPwd(''); setNewPwd(''); setPwdSuccess(true)
+    } catch (e: unknown) { setPwdError((e as Error).message) }
+    finally { setSavingPwd(false) }
+  }
+
+  // Upload avatar → lưu vào DB
+  const handleAvatarClick = () => fileInputRef.current?.click()
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    if (!file.type.match(/image\/(jpeg|jpg|png|gif)/)) {
+      setAvatarError('画像ファイル (jpg, jpeg, png, gif) を選択してください。'); return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarError('5MB以下の画像を選択してください。'); return
+    }
+
+    setUploadingAvatar(true); setAvatarError('')
+
+    // Preview ngay lập tức
+    const localPreview = URL.createObjectURL(file)
+    const prevAvatar = profile?.avatar ?? null
+    setProfile(prev => prev ? { ...prev, avatar: localPreview } : prev)
+
+    try {
+      // Gọi POST /profile/avatar → backend lưu file, trả về { avatar: "/uploads/xxx.jpg" }
+      const result = await userService.uploadAvatar(file)
+      // Cập nhật bằng URL thật từ server
+      setProfile(prev => prev ? { ...prev, avatar: result.avatar } : prev)
+    } catch (error: unknown) {
+      setAvatarError((error as Error).message)
+      // Rollback về avatar cũ nếu thất bại
+      setProfile(prev => prev ? { ...prev, avatar: prevAvatar } : prev)
     } finally {
-      setSavingPwd(false)
+      URL.revokeObjectURL(localPreview)
+      setUploadingAvatar(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
     }
   }
 
@@ -208,247 +225,168 @@ export default function ProfilePage() {
     ? `${new Date(profile.createdAt).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long' })}から利用中`
     : ''
 
-  if (loading) {
-    return (
-      <div style={{ minHeight: '100vh', background: '#FAFAF5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ color: '#414943', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif' }}>読み込み中...</p>
-      </div>
-    )
-  }
+  if (loading) return (
+    <div style={{ minHeight: '100vh', background: '#FAFAF5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <p style={{ color: '#414943', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif' }}>読み込み中...</p>
+    </div>
+  )
 
-  if (loadError) {
-    return (
-      <div style={{ minHeight: '100vh', background: '#FAFAF5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ background: 'white', borderRadius: 12, padding: 32, boxShadow: '0 4px 12px rgba(0,0,0,0.08)', textAlign: 'center', maxWidth: 384 }}>
-          <p style={{ color: '#BA1A1A', fontWeight: 600, marginBottom: 8, fontFamily: 'Manrope, sans-serif' }}>プロフィールを読み込めませんでした</p>
-          <p style={{ color: '#78716C', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif' }}>{loadError}</p>
-        </div>
+  if (loadError) return (
+    <div style={{ minHeight: '100vh', background: '#FAFAF5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ background: 'white', borderRadius: 12, padding: 32, boxShadow: '0 4px 12px rgba(0,0,0,0.08)', textAlign: 'center', maxWidth: 384 }}>
+        <p style={{ color: '#BA1A1A', fontWeight: 600, marginBottom: 8, fontFamily: 'Manrope, sans-serif' }}>プロフィールを読み込めませんでした</p>
+        <p style={{ color: '#78716C', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif' }}>{loadError}</p>
       </div>
-    )
-  }
+    </div>
+  )
 
   return (
-    <div style={{ minHeight: '100vh', background: '#FAFAF5', position: 'relative' }}>
+    <div style={{ minHeight: '100vh', background: '#FAFAF5' }}>
 
-      {/* ── Header ── */}
-      <header style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(250,250,245,0.80)', boxShadow: '0px 8px 30px rgba(0,0,0,0.04)', backdropFilter: 'blur(12px)' }}>
-        <div style={{ maxWidth: 1536, margin: '0 auto', paddingLeft: 32, paddingRight: 32, height: 80, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          {/* Logo */}
-          <a href="/" style={{ color: '#14422D', fontSize: 24, fontFamily: 'Acme, sans-serif', fontWeight: 400, lineHeight: '32px', textDecoration: 'none' }}>
-            WorkSpot
-          </a>
-          {/* Right side: avatar only (matching design) */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-            {profile?.avatar ? (
-              <img
-                src={profile.avatar}
-                alt="avatar"
-                onError={(e) => { (e.currentTarget as HTMLImageElement).src = `https://picsum.photos/seed/${profile.id}/36/36` }}
-                style={{ width: 36, height: 36, borderRadius: 9999, objectFit: 'cover' }}
-              />
-            ) : (
-              <div style={{ width: 36, height: 36, borderRadius: 9999, background: '#14422D', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 700 }}>
-                {profile?.fullName?.[0]?.toUpperCase() ?? 'U'}
+      {/* ── Navbar ── */}
+      <nav style={{ position: 'sticky', top: 0, zIndex: 1500, width: '100%', background: 'rgba(250,250,245,0.85)', backdropFilter: 'blur(12px)', boxShadow: '0 8px 30px 0 rgba(0,0,0,0.04)', borderBottom: '1px solid rgba(20,66,45,0.05)' }}>
+        <div style={{ maxWidth: 1536, margin: '0 auto', padding: '0 32px', height: 80, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Link href="/" style={{ color: '#14422D', fontSize: 24, fontFamily: 'Acme', fontWeight: 400, textDecoration: 'none', lineHeight: '32px' }}>WorkSpot</Link>
+          <div ref={menuRef} style={{ position: 'relative' }}>
+            <button onClick={() => setDropdownOpen(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}>
+              <div style={{ width: 40, height: 40, borderRadius: '50%', border: '2px solid #14422D', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#14422D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                </svg>
+              </div>
+            </button>
+            {dropdownOpen && (
+              <div style={{ position: 'absolute', top: 'calc(100% + 12px)', right: 0, background: '#EEEEE9', borderRadius: 8, boxShadow: '0 4px 20px rgba(0,0,0,0.08)', minWidth: 140, zIndex: 1600, padding: '14px 16px' }}>
+                <button onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: '#14422D', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'Manrope, sans-serif', width: '100%' }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#14422D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+                  </svg>
+                  <span style={{ lineHeight: '20px' }}>ログアウト</span>
+                </button>
               </div>
             )}
           </div>
         </div>
-      </header>
+      </nav>
 
       {/* ── Page content ── */}
       <div style={{ paddingLeft: 65, paddingRight: 65 }}>
         <div style={{ maxWidth: 1152, margin: '0 auto', paddingTop: 64, paddingLeft: 24, paddingRight: 24, paddingBottom: 80, display: 'flex', flexDirection: 'column', gap: 64 }}>
 
-          {/* Title */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <h1 style={{ margin: 0, color: '#14422D', fontSize: 48, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '48px' }}>
-              プロフィール
-            </h1>
+            <h1 style={{ margin: 0, color: '#14422D', fontSize: 48, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '48px' }}>プロフィール</h1>
             <p style={{ margin: 0, maxWidth: 512, color: '#414943', fontSize: 16, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 400, lineHeight: '24px' }}>
               アカウント情報を管理して、WorkSpotをより便利に利用しましょう。
             </p>
           </div>
 
-          {/* Two-column layout */}
           <div style={{ display: 'flex', gap: 32, alignItems: 'flex-start' }}>
 
             {/* ── Left: Avatar card ── */}
             <div style={{ width: 304, flexShrink: 0, background: 'white', borderRadius: 12, paddingTop: 32, paddingBottom: 40, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-              {/* Avatar with camera button */}
-              <div style={{ position: 'relative', marginBottom: 12 }}>
-                {profile?.avatar ? (
-                  <img
-                    src={profile.avatar}
-                    alt="avatar"
-                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = `https://picsum.photos/seed/${profile.id}/128/128` }}
-                    style={{ width: 128, height: 128, borderRadius: 9999, objectFit: 'cover', boxShadow: '0px 0px 0px 4px rgba(45,90,67,0.10)' }}
-                  />
-                ) : (
-                  <div style={{ width: 128, height: 128, borderRadius: 9999, background: '#E3E3DE', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0px 0px 0px 4px rgba(45,90,67,0.10)' }}>
-                    <span style={{ fontSize: 48, fontWeight: 700, color: '#14422D', fontFamily: 'Manrope, sans-serif' }}>
-                      {profile?.fullName?.[0]?.toUpperCase() ?? 'U'}
-                    </span>
-                  </div>
-                )}
-                {/* Camera edit button */}
-                <div style={{ position: 'absolute', bottom: 0, right: 0, width: 36, height: 36, background: '#14422D', borderRadius: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0px 4px 6px -4px rgba(0,0,0,0.10), 0px 10px 15px -3px rgba(0,0,0,0.10)' }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
-                    <path d="M12 15.2a3.2 3.2 0 1 1 0-6.4 3.2 3.2 0 0 1 0 6.4z" />
-                    <path d="M9 2L7.17 4H4C2.9 4 2 4.9 2 6v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L13 2H9zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10z" />
-                  </svg>
+              <div>
+                <div style={{ position: 'relative' }}>
+                  {profile?.avatar ? (
+                    <img
+                      src={profile.avatar.startsWith('blob:') || profile.avatar.startsWith('http') ? profile.avatar : `${API}${profile.avatar}`}
+                      alt="avatar"
+                      style={{ width: 128, height: 128, borderRadius: '50%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    <div style={{ width: 128, height: 128, borderRadius: '50%', background: '#E3E3DE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <span style={{ fontSize: 48, fontWeight: 700, color: '#14422D', fontFamily: 'Manrope, sans-serif' }}>
+                        {profile?.fullName?.[0]?.toUpperCase() ?? 'U'}
+                      </span>
+                    </div>
+                  )}
+                  <button
+                    onClick={handleAvatarClick}
+                    disabled={uploadingAvatar}
+                    style={{ position: 'absolute', bottom: 0, right: 0, width: 36, height: 36, borderRadius: '50%', background: '#14422D', border: 'none', cursor: uploadingAvatar ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: uploadingAvatar ? 0.6 : 1 }}
+                  >
+                    {uploadingAvatar ? (
+                      <div style={{ width: 16, height: 16, border: '2px solid white', borderTop: '2px solid transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                    ) : (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                        <path d="M12 15.2a3.2 3.2 0 1 1 0-6.4 3.2 3.2 0 0 1 0 6.4z" />
+                        <path d="M9 2L7.17 4H4C2.9 4 2 4.9 2 6v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L13 2H9zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10z" />
+                      </svg>
+                    )}
+                  </button>
+                  <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
                 </div>
+                {avatarError && (
+                  <div style={{ color: '#BA1A1A', fontSize: 12, marginTop: 8, textAlign: 'center', maxWidth: 200, fontFamily: 'Be Vietnam Pro, sans-serif' }}>{avatarError}</div>
+                )}
+                <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
               </div>
 
-              {/* Name */}
-              <div style={{ color: '#14422D', fontSize: 24, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '32px', textAlign: 'center', paddingLeft: 16, paddingRight: 16 }}>
-                {profile?.fullName}
-              </div>
-
-              {/* Member since */}
-              <div style={{ color: '#78716C', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 400, lineHeight: '20px', textAlign: 'center', paddingLeft: 16, paddingRight: 16 }}>
-                {memberSince}
-              </div>
-
-              {/* Role badge */}
+              <div style={{ color: '#14422D', fontSize: 24, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '32px', textAlign: 'center', paddingLeft: 16, paddingRight: 16 }}>{profile?.fullName}</div>
+              <div style={{ color: '#78716C', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', lineHeight: '20px', textAlign: 'center', paddingLeft: 16, paddingRight: 16 }}>{memberSince}</div>
               <div style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 6, paddingBottom: 6, background: '#FFDBC7', borderRadius: 9999 }}>
-                <span style={{ color: '#311300', fontSize: 12, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 400, textTransform: 'uppercase', lineHeight: '16px', letterSpacing: 0.30 }}>
+                <span style={{ color: '#311300', fontSize: 12, fontFamily: 'Be Vietnam Pro, sans-serif', textTransform: 'uppercase', lineHeight: '16px', letterSpacing: 0.30 }}>
                   {ROLE_LABEL_JP[profile?.role ?? 'customer']}
                 </span>
               </div>
             </div>
 
-            {/* ── Right: Form sections ── */}
+            {/* ── Right: Forms ── */}
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 48 }}>
 
               {/* 基本情報 */}
               <div style={{ background: 'white', borderRadius: 12, paddingTop: 40, paddingBottom: 56, paddingLeft: 40, paddingRight: 40, display: 'flex', flexDirection: 'column', gap: 40 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <h2 style={{ margin: 0, color: '#14422D', fontSize: 24, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '32px' }}>基本情報</h2>
-                </div>
+                <h2 style={{ margin: 0, color: '#14422D', fontSize: 24, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '32px' }}>基本情報</h2>
 
-                {/* Fields */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-
-                  {/* Row 1: 氏名 + メールアドレス */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
-                    {/* 氏名 */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       <div style={fieldLabelStyle}>氏名</div>
-                      {isEditing ? (
-                        <input
-                          value={editForm.fullName}
-                          onChange={e => setEditForm(f => ({ ...f, fullName: e.target.value }))}
-                          style={inputStyle}
-                        />
-                      ) : (
-                        <div style={readOnlyBoxStyle}>{profile?.fullName}</div>
-                      )}
+                      {isEditing ? <input value={editForm.fullName} onChange={e => setEditForm(f => ({ ...f, fullName: e.target.value }))} style={inputStyle} /> : <div style={readOnlyBoxStyle}>{profile?.fullName}</div>}
                     </div>
-                    {/* メールアドレス */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       <div style={fieldLabelStyle}>メールアドレス</div>
-                      {isEditing ? (
-                        <input
-                          type="email"
-                          value={editForm.email}
-                          onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))}
-                          style={inputStyle}
-                        />
-                      ) : (
-                        <div style={readOnlyBoxStyle}>{profile?.email}</div>
-                      )}
+                      {isEditing ? <input type="email" value={editForm.email} onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))} style={inputStyle} /> : <div style={readOnlyBoxStyle}>{profile?.email}</div>}
                     </div>
                   </div>
-
-                  {/* Row 2: 電話番号 + 所在地 */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
-                    {/* 電話番号 */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       <div style={fieldLabelStyle}>電話番号</div>
-                      {isEditing ? (
-                        <input
-                          type="tel"
-                          value={editForm.phone}
-                          onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))}
-                          style={inputStyle}
-                        />
-                      ) : (
-                        <div style={readOnlyBoxStyle}>{profile?.phone || <span style={{ color: '#78716C' }}>—</span>}</div>
-                      )}
+                      {isEditing ? <input type="tel" value={editForm.phone} onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))} style={inputStyle} /> : <div style={readOnlyBoxStyle}>{profile?.phone || <span style={{ color: '#78716C' }}>—</span>}</div>}
                     </div>
-                    {/* 所在地 */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       <div style={fieldLabelStyle}>所在地</div>
-                      {isEditing ? (
-                        <input
-                          value={editForm.address}
-                          onChange={e => setEditForm(f => ({ ...f, address: e.target.value }))}
-                          style={inputStyle}
-                        />
-                      ) : (
-                        <div style={readOnlyBoxStyle}>{profile?.address || <span style={{ color: '#78716C' }}>—</span>}</div>
-                      )}
+                      {isEditing ? <input value={editForm.address} onChange={e => setEditForm(f => ({ ...f, address: e.target.value }))} style={inputStyle} /> : <div style={readOnlyBoxStyle}>{profile?.address || <span style={{ color: '#78716C' }}>—</span>}</div>}
                     </div>
                   </div>
-
-                  {/* Row 3: 自己紹介 (full width) */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     <div style={fieldLabelStyle}>自己紹介</div>
-                    {isEditing ? (
-                      <textarea
-                        value={editForm.bio}
-                        onChange={e => setEditForm(f => ({ ...f, bio: e.target.value }))}
-                        rows={4}
-                        style={{ ...inputStyle, paddingTop: 16, paddingBottom: 40, resize: 'none' }}
-                      />
-                    ) : (
-                      <div style={{ ...readOnlyBoxStyle, paddingTop: 16, paddingBottom: 40 }}>
-                        {profile?.bio || <span style={{ color: '#78716C' }}>—</span>}
-                      </div>
-                    )}
+                    {isEditing ? <textarea value={editForm.bio} onChange={e => setEditForm(f => ({ ...f, bio: e.target.value }))} rows={4} style={{ ...inputStyle, paddingTop: 16, paddingBottom: 40, resize: 'none' }} /> : <div style={{ ...readOnlyBoxStyle, paddingTop: 16, paddingBottom: 40 }}>{profile?.bio || <span style={{ color: '#78716C' }}>—</span>}</div>}
                   </div>
-
                 </div>
 
-                {/* Profile error */}
                 {profileError && (
-                  <div style={{ padding: 12, background: '#FFDAD6', borderRadius: 8, outline: '1px rgba(186,26,26,0.10) solid', outlineOffset: '-1px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ padding: 12, background: '#FFDAD6', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div style={{ width: 15, height: 15, flexShrink: 0, background: '#BA1A1A', borderRadius: 9999 }} />
                     <div style={{ color: '#BA1A1A', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 500 }}>{profileError}</div>
                   </div>
                 )}
 
-                {/* Buttons */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
                   {isEditing ? (
                     <>
-                      <button
-                        onClick={handleSaveProfile}
-                        disabled={savingProfile}
-                        style={{ width: 120, paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8, background: '#14422D', borderRadius: 8, border: 'none', cursor: savingProfile ? 'not-allowed' : 'pointer', color: 'white', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 500, lineHeight: '20px', textAlign: 'center', opacity: savingProfile ? 0.6 : 1 }}
-                      >
+                      <button onClick={handleSaveProfile} disabled={savingProfile} style={{ width: 120, padding: '8px 16px', background: '#14422D', borderRadius: 8, border: 'none', cursor: savingProfile ? 'not-allowed' : 'pointer', color: 'white', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 500, opacity: savingProfile ? 0.6 : 1 }}>
                         {savingProfile ? '保存中...' : '保存'}
                       </button>
-                      <button
-                        onClick={handleCancelEdit}
-                        disabled={savingProfile}
-                        style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8, background: '#FDFFFE', borderRadius: 8, outline: '1px rgba(20,66,45,0.25) solid', outlineOffset: '-1px', border: 'none', cursor: 'pointer', color: '#14422D', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 500, lineHeight: '20px' }}
-                      >
+                      <button onClick={handleCancelEdit} style={{ padding: '8px 16px', background: '#FDFFFE', borderRadius: 8, outline: '1px rgba(20,66,45,0.25) solid', outlineOffset: '-1px', border: 'none', cursor: 'pointer', color: '#14422D', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 500 }}>
                         キャンセル
                       </button>
                     </>
                   ) : (
                     <>
-                      <button
-                        onClick={() => setIsEditing(true)}
-                        style={{ width: 120, paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8, background: '#14422D', borderRadius: 8, border: 'none', cursor: 'pointer', color: 'white', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 500, lineHeight: '20px', textAlign: 'center' }}
-                      >
+                      <button onClick={() => setIsEditing(true)} style={{ width: 120, padding: '8px 16px', background: '#14422D', borderRadius: 8, border: 'none', cursor: 'pointer', color: 'white', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 500 }}>
                         編集
                       </button>
-                      <button
-                        onClick={() => router.push('/')}
-                        style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8, background: '#FDFFFE', borderRadius: 8, outline: '1px rgba(20,66,45,0.25) solid', outlineOffset: '-1px', border: 'none', cursor: 'pointer', color: '#14422D', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 500, lineHeight: '20px' }}
-                      >
+                      <button onClick={() => router.push('/')} style={{ padding: '8px 16px', background: '#FDFFFE', borderRadius: 8, outline: '1px rgba(20,66,45,0.25) solid', outlineOffset: '-1px', border: 'none', cursor: 'pointer', color: '#14422D', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 500 }}>
                         ホームに戻る
                       </button>
                     </>
@@ -456,69 +394,34 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* ── セキュリティ ── */}
+              {/* セキュリティ */}
               <div style={{ background: 'white', borderRadius: 12, padding: 40, display: 'flex', flexDirection: 'column', gap: 40 }}>
                 <h2 style={{ margin: 0, color: '#14422D', fontSize: 24, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '32px' }}>セキュリティ</h2>
-
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
-                  {/* Password fields side by side */}
                   <div style={{ display: 'flex', gap: 16 }}>
-                    {/* 現在のパスワード */}
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
                       <div style={fieldLabelStyle}>現在のパスワード</div>
                       <div style={{ position: 'relative' }}>
-                        <input
-                          type={showCurrent ? 'text' : 'password'}
-                          value={currentPwd}
-                          onChange={e => setCurrentPwd(e.target.value)}
-                          placeholder="••••••••"
-                          style={{ ...inputStyle, paddingTop: 18, paddingBottom: 18, paddingRight: 48 }}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowCurrent(v => !v)}
-                          style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}
-                        >
+                        <input type={showCurrent ? 'text' : 'password'} value={currentPwd} onChange={e => setCurrentPwd(e.target.value)} placeholder="••••••••" style={{ ...inputStyle, paddingTop: 18, paddingBottom: 18, paddingRight: 48 }} />
+                        <button type="button" onClick={() => setShowCurrent(v => !v)} style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}>
                           <EyeIcon open={showCurrent} />
                         </button>
                       </div>
                     </div>
-
-                    {/* 新しいパスワード */}
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
                       <div style={fieldLabelStyle}>新しいパスワード</div>
                       <div style={{ position: 'relative' }}>
-                        <input
-                          type={showNew ? 'text' : 'password'}
-                          value={newPwd}
-                          onChange={e => setNewPwd(e.target.value)}
-                          placeholder="••••••••"
-                          style={{ ...inputStyle, paddingTop: 18, paddingBottom: 18, paddingRight: 48 }}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowNew(v => !v)}
-                          style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}
-                        >
+                        <input type={showNew ? 'text' : 'password'} value={newPwd} onChange={e => setNewPwd(e.target.value)} placeholder="••••••••" style={{ ...inputStyle, paddingTop: 18, paddingBottom: 18, paddingRight: 48 }} />
+                        <button type="button" onClick={() => setShowNew(v => !v)} style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}>
                           <EyeIcon open={showNew} />
                         </button>
                       </div>
                     </div>
                   </div>
-
-                  {/* Error / Success + 変更する button */}
                   <div style={{ paddingTop: 24, borderTop: '1px #E8E8E3 solid', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
-                    {pwdError && (
-                      <p style={{ margin: 0, fontSize: 14, color: '#BA1A1A', fontFamily: 'Be Vietnam Pro, sans-serif' }}>{pwdError}</p>
-                    )}
-                    {pwdSuccess && (
-                      <p style={{ margin: 0, fontSize: 14, color: '#14422D', fontFamily: 'Be Vietnam Pro, sans-serif' }}>パスワードを変更しました。</p>
-                    )}
-                    <button
-                      onClick={handleChangePassword}
-                      disabled={savingPwd}
-                      style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 10, paddingBottom: 10, background: '#E8E8E3', borderRadius: 9999, border: 'none', cursor: savingPwd ? 'not-allowed' : 'pointer', color: '#1A1C19', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 600, lineHeight: '20px', opacity: savingPwd ? 0.6 : 1 }}
-                    >
+                    {pwdError && <p style={{ margin: 0, fontSize: 14, color: '#BA1A1A', fontFamily: 'Be Vietnam Pro, sans-serif' }}>{pwdError}</p>}
+                    {pwdSuccess && <p style={{ margin: 0, fontSize: 14, color: '#14422D', fontFamily: 'Be Vietnam Pro, sans-serif' }}>パスワードを変更しました。</p>}
+                    <button onClick={handleChangePassword} disabled={savingPwd} style={{ padding: '10px 24px', background: '#E8E8E3', borderRadius: 9999, border: 'none', cursor: savingPwd ? 'not-allowed' : 'pointer', color: '#1A1C19', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 600, opacity: savingPwd ? 0.6 : 1 }}>
                       {savingPwd ? '変更中...' : '変更する'}
                     </button>
                   </div>
