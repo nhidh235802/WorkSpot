@@ -312,9 +312,9 @@ export default function ProfilePage() {
                     />
                   ) : (
                     <div style={{ width: 128, height: 128, borderRadius: '50%', background: '#E3E3DE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <span style={{ fontSize: 48, fontWeight: 700, color: '#14422D', fontFamily: 'Manrope, sans-serif' }}>
-                        {profile?.fullName?.[0]?.toUpperCase() ?? 'U'}
-                      </span>
+                      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#14422D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                      </svg>
                     </div>
                   )}
                   <button
