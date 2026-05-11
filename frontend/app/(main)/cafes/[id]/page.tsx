@@ -8,6 +8,13 @@ import { CafeService } from '@/services/cafe.service';
 import { facilityConfig } from '@/utils/facilityConfig';
 import axios from 'axios';
 
+const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001').replace(/\/$/, '');
+const toAbsoluteUrl = (path: string | null | undefined) => {
+  if (!path) return null;
+  if (path.startsWith('http') || path.startsWith('blob:')) return path;
+  return `${API_URL}${path}`;
+};
+
 
 // ── Icon components (inline SVG đơn giản) ──────────────────────────
 const icons: Record<string, JSX.Element> = {
@@ -602,8 +609,8 @@ export default function CafeDetailPage() {
                   }}>
                     <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
                       {/* Avatar */}
-                      {review.user?.avatar ? (
-                        <img src={review.user.avatar} alt="" style={{
+                      {toAbsoluteUrl(review.user?.avatar) ? (
+                        <img src={toAbsoluteUrl(review.user?.avatar)!} alt="" style={{
                           width: 52, height: 52, borderRadius: 9999,
                           objectFit: 'cover',
                           border: '2px solid rgba(20,66,45,0.1)',
