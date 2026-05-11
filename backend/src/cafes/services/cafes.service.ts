@@ -295,11 +295,13 @@ private async findOneEntity(id: string): Promise<Cafe> {
       }
     }
 
-    // 3. Lọc bán kính (HAVING vì dùng GROUP BY)
-    const effectiveRadius = radius ?? 5;
-    queryBuilder
-      .having(`${distanceSql} <= :radius`, { radius: effectiveRadius })
-      .orderBy(distanceSql, 'ASC');
+    // 3. Lọc bán kính — chỉ áp dụng khi KHÔNG có keyword
+    if (!keyword) {
+      const effectiveRadius = radius ?? 5;
+      queryBuilder.having(`${distanceSql} <= :radius`, { radius: effectiveRadius });
+    }
+
+    queryBuilder.orderBy(distanceSql, 'ASC');
 
     const { entities, raw } = await queryBuilder.getRawAndEntities();
 
