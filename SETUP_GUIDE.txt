@@ -96,7 +96,8 @@ NGAY SAU KHI PULL VỀ, BẮT BUỘC PHẢI LÀM 2 VIỆC SAU TRƯỚC KHI CODE 
 
 2. Đồng bộ lại Database: (Ví dụ có thể ai đó vừa thêm cột mới hoặc xóa bảng.)
    - Mở Terminal ở thư mục "backend".
-   - Chạy: npm run m:run
+   - Chạy:  npm run m:drop (để xoá database hiện tại)
+            npm run m:run (để tạo lại database)
    (Nó sẽ tự chạy migration để sửa dtb trên máy mọi người khớp với dtb trên git, còn nếu không có gì thì nó sẽ báo "No migrations are pending".)
 
 ====================================================================
