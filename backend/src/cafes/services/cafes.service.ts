@@ -105,20 +105,19 @@ export class CafesService {
     return this.findOne(savedCafe.id);
   }
 
-
-private async findOneEntity(id: string): Promise<Cafe> {
-  const cafe = await this.cafesRepository.findOne({
-    where: { id },
-    relations: {
-      owner: true,
-      operatingHours: true,
-    },
-  });
-  if (!cafe) {
-    throw new NotFoundException(`Quán cà phê ${id} không tìm thấy`);
+  private async findOneEntity(id: string): Promise<Cafe> {
+    const cafe = await this.cafesRepository.findOne({
+      where: { id },
+      relations: {
+        owner: true,
+        operatingHours: true,
+      },
+    });
+    if (!cafe) {
+      throw new NotFoundException(`Quán cà phê ${id} không tìm thấy`);
+    }
+    return cafe;
   }
-  return cafe;
-}
 
   async findOne(id: string): Promise<CafeDetailResponseDto> {
     const cafe = await this.cafesRepository.findOne({
@@ -133,9 +132,7 @@ private async findOneEntity(id: string): Promise<Cafe> {
     });
 
     if (!cafe) {
-      throw new NotFoundException(
-        `Quán cà phê ${id} không tìm thấy`,
-      );
+      throw new NotFoundException(`Quán cà phê ${id} không tìm thấy`);
     }
 
     const reviews = cafe.reviews || [];
@@ -147,8 +144,7 @@ private async findOneEntity(id: string): Promise<Cafe> {
       reviewCount > 0
         ? Number(
             (
-              reviews.reduce((sum, r) => sum + r.rating, 0) /
-              reviewCount
+              reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount
             ).toFixed(1),
           )
         : 0;
@@ -193,8 +189,7 @@ private async findOneEntity(id: string): Promise<Cafe> {
               id: review.user.id,
               fullName: review.user.fullName,
               avatar: review.user.avatar,
-              jobTitle:
-                review.user.bio || 'Người dùng WorkSpot',
+              jobTitle: review.user.bio || 'Người dùng WorkSpot',
             }
           : null,
       })),
@@ -207,32 +202,37 @@ private async findOneEntity(id: string): Promise<Cafe> {
     };
   }
 
-  async update(id: string, updateCafeDto: UpdateCafeDto): Promise<CafeDetailResponseDto> {
+  async update(
+    id: string,
+    updateCafeDto: UpdateCafeDto,
+  ): Promise<CafeDetailResponseDto> {
     const cafe = await this.findOneEntity(id);
     const { ownerId, operatingHours, ...cafeData } = updateCafeDto;
 
-    const updatedCafe = await this.cafesRepository.manager.transaction(async (manager) => {
-      if (ownerId) {
-        const owner = await manager.findOne(User, { where: { id: ownerId } });
-        if (!owner) {
-          throw new NotFoundException(`Người dùng ${ownerId} không tìm thấy`);
+    const updatedCafe = await this.cafesRepository.manager.transaction(
+      async (manager) => {
+        if (ownerId) {
+          const owner = await manager.findOne(User, { where: { id: ownerId } });
+          if (!owner) {
+            throw new NotFoundException(`Người dùng ${ownerId} không tìm thấy`);
+          }
+          cafe.owner = owner;
         }
-        cafe.owner = owner;
-      }
 
-      if (operatingHours !== undefined) {
-        await manager.delete(OperatingHour, { cafe: { id } });
-        if (operatingHours.length) {
-          const hours = operatingHours.map((h) =>
-            manager.create(OperatingHour, { ...h, cafe }),
-          );
-          await manager.save(OperatingHour, hours);
+        if (operatingHours !== undefined) {
+          await manager.delete(OperatingHour, { cafe: { id } });
+          if (operatingHours.length) {
+            const hours = operatingHours.map((h) =>
+              manager.create(OperatingHour, { ...h, cafe }),
+            );
+            await manager.save(OperatingHour, hours);
+          }
         }
-      }
 
-      Object.assign(cafe, cafeData);
-      return manager.save(Cafe, cafe); // trả về Cafe entity
-    });
+        Object.assign(cafe, cafeData);
+        return manager.save(Cafe, cafe); // trả về Cafe entity
+      },
+    );
 
     return this.findOne(updatedCafe.id); // rồi map sang DTO
   }
@@ -300,7 +300,9 @@ private async findOneEntity(id: string): Promise<Cafe> {
     // 3. Lọc bán kính — chỉ áp dụng khi KHÔNG có keyword
     if (!keyword) {
       const effectiveRadius = radius ?? 5;
-      queryBuilder.having(`${distanceSql} <= :radius`, { radius: effectiveRadius });
+      queryBuilder.having(`${distanceSql} <= :radius`, {
+        radius: effectiveRadius,
+      });
     }
 
     queryBuilder.orderBy(distanceSql, 'ASC');
