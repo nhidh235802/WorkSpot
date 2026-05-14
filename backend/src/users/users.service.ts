@@ -11,10 +11,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { plainToInstance } from 'class-transformer';
 
-import { User } from '../entities/user.entity';
-import { UpdateProfileDto } from '../dto/update-profile.dto';
-import { ChangePasswordDto } from '../dto/change-password.dto';
-import { ProfileResponseDto } from '../dto/profile-response.dto';
+import { User } from './entities/user.entity';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { ProfileResponseDto } from './dto/profile-response.dto';
 
 @Injectable()
 export class UsersService {

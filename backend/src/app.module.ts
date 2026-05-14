@@ -6,10 +6,10 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { UsersModule } from './users/module/users.module';
-import { CafesModule } from './cafes/module/cafes.module';
-import { ReviewsModule } from './reviews/module/reviews.module';
-import { AuthModule } from './auth/module/auth.module';
+import { UsersModule } from './users/users.module';
+import { CafesModule } from './cafes/cafes.module';
+import { ReviewsModule } from './reviews/reviews.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [

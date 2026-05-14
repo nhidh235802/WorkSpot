@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { JSX, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
@@ -18,21 +18,21 @@ const toAbsoluteUrl = (path: string | null | undefined) => {
 
 // ── Icon components (inline SVG đơn giản) ──────────────────────────
 const icons: Record<string, JSX.Element> = {
-  wifi:      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>,
-  zap:       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
-  wind:      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/></svg>,
-  coffee:    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>,
-  'volume-x':<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>,
-  monitor:   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>,
-  slash:     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>,
-  clock:     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+  wifi: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12.55a11 11 0 0 1 14.08 0" /><path d="M1.42 9a16 16 0 0 1 21.16 0" /><path d="M8.53 16.11a6 6 0 0 1 6.95 0" /><line x1="12" y1="20" x2="12.01" y2="20" /></svg>,
+  zap: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>,
+  wind: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2" /></svg>,
+  coffee: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1" /><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" /><line x1="6" y1="1" x2="6" y2="4" /><line x1="10" y1="1" x2="10" y2="4" /><line x1="14" y1="1" x2="14" y2="4" /></svg>,
+  'volume-x': <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" /><line x1="23" y1="9" x2="17" y2="15" /><line x1="17" y1="9" x2="23" y2="15" /></svg>,
+  monitor: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" /></svg>,
+  slash: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><line x1="4.93" y1="4.93" x2="19.07" y2="19.07" /></svg>,
+  clock: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>,
 };
 
 // ── Star rating display ────────────────────────────────────────────
 function StarRating({ rating }: { rating: number }) {
   return (
     <span style={{ color: '#D97706', fontSize: 16, letterSpacing: 2 }}>
-      {[1,2,3,4,5].map(i => (
+      {[1, 2, 3, 4, 5].map(i => (
         <span key={i} style={{ opacity: i <= Math.round(rating) ? 1 : 0.25 }}>★</span>
       ))}
     </span>
@@ -303,12 +303,12 @@ export default function CafeDetailPage() {
   const { metadata, reviews = [], operatingHours = [], facilities = [], images = [] } = cafe;
 
   // Tính giờ đóng cửa hôm nay (0=Sun, 1=Mon, ...)
-  const dayNames = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+  const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
   const todayName = dayNames[new Date().getDay()];
   const todayHours = operatingHours.find((h: any) => h.dayOfWeek === todayName);
   const closingLabel = !todayHours ? '--'
     : todayHours.isDayOff ? '定休日'
-    : `${todayHours.closeTime}まで営業`;
+      : `${todayHours.closeTime}まで営業`;
 
   return (
     <>
@@ -370,27 +370,29 @@ export default function CafeDetailPage() {
             </div>
 
             {/* Ảnh nhỏ dưới phải + overlay button */}
-            <div style={{ position: 'relative', overflow: 'hidden', cursor: 'pointer' }}  onClick={() => openModal(2)}>
+            <div style={{ position: 'relative', overflow: 'hidden', cursor: 'pointer' }} onClick={() => openModal(2)}>
               <img
                 src={images[2] || '/placeholder.jpg'}
                 alt=""
-                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block',
-                  filter: images.length > 2 ? 'brightness(0.5)' : 'none' }}
+                style={{
+                  width: '100%', height: '100%', objectFit: 'cover', display: 'block',
+                  filter: images.length > 2 ? 'brightness(0.5)' : 'none'
+                }}
               />
               {images.length > 2 && (
                 <button
                   onClick={() => openModal(0)}
                   style={{
-                  position: 'absolute', top: '50%', left: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  background: 'rgba(255,255,255,0.18)',
-                  border: '1px solid rgba(255,255,255,0.35)',
-                  backdropFilter: 'blur(8px)',
-                  color: 'white', fontSize: 14, fontWeight: 500,
-                  padding: '10px 22px', borderRadius: 9999,
-                  cursor: 'pointer', whiteSpace: 'nowrap',
-                  fontFamily: 'Manrope, sans-serif',
-                }}>
+                    position: 'absolute', top: '50%', left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    background: 'rgba(255,255,255,0.18)',
+                    border: '1px solid rgba(255,255,255,0.35)',
+                    backdropFilter: 'blur(8px)',
+                    color: 'white', fontSize: 14, fontWeight: 500,
+                    padding: '10px 22px', borderRadius: 9999,
+                    cursor: 'pointer', whiteSpace: 'nowrap',
+                    fontFamily: 'Manrope, sans-serif',
+                  }}>
                   全{images.length}枚の写真を見る
                 </button>
               )}
@@ -436,7 +438,7 @@ export default function CafeDetailPage() {
               {/* Địa chỉ */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <svg width="16" height="20" viewBox="0 0 24 24" fill="none" stroke="#737770" strokeWidth="2">
-                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
                 </svg>
                 <span style={{ fontSize: 15, color: '#737770' }}>{cafe.address}</span>
               </div>
@@ -444,7 +446,7 @@ export default function CafeDetailPage() {
               {/* Giờ mở cửa */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#737770" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                  <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
                 </svg>
                 <span style={{ fontSize: 15, color: '#737770' }}>{closingLabel}</span>
               </div>
@@ -468,7 +470,7 @@ export default function CafeDetailPage() {
                   }}
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#14422D" strokeWidth="2.5">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
                   </svg>
                   地図で表示
                 </Link>
@@ -583,13 +585,13 @@ export default function CafeDetailPage() {
               <button
                 onClick={() => setReviewModalOpen(true)}
                 style={{
-                background: 'linear-gradient(135deg, #14422D 0%, #2D5A43 100%)',
-                color: 'white', border: 'none',
-                borderRadius: 9999, padding: '12px 28px',
-                fontSize: 14, fontWeight: 500, cursor: 'pointer',
-                fontFamily: 'Manrope, sans-serif',
-                boxShadow: '0 4px 12px rgba(20,66,45,0.25)',
-              }}>
+                  background: 'linear-gradient(135deg, #14422D 0%, #2D5A43 100%)',
+                  color: 'white', border: 'none',
+                  borderRadius: 9999, padding: '12px 28px',
+                  fontSize: 14, fontWeight: 500, cursor: 'pointer',
+                  fontFamily: 'Manrope, sans-serif',
+                  boxShadow: '0 4px 12px rgba(20,66,45,0.25)',
+                }}>
                 レビューを書く
               </button>
             </div>

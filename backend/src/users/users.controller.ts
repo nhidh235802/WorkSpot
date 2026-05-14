@@ -16,11 +16,11 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { Request as ExpressRequest } from 'express';
-import { UsersService } from '../services/users.service';
-import { UpdateProfileDto } from '../dto/update-profile.dto';
-import { ChangePasswordDto } from '../dto/change-password.dto';
-import { ProfileResponseDto } from '../dto/profile-response.dto';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { UsersService } from './users.service';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { ProfileResponseDto } from './dto/profile-response.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 interface AuthenticatedRequest extends ExpressRequest {
   user?: {

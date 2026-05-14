@@ -10,12 +10,12 @@ import { ConfigService } from '@nestjs/config';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
-import { User, UserRole } from '../../users/entities/user.entity';
-import { RegisterDto } from '../dto/register.dto';
-import { LoginDto } from '../dto/login.dto';
-import { ForgotPasswordDto } from '../dto/forgot-password.dto';
-import { ResetPasswordDto } from '../dto/reset-password.dto';
-import { MailService } from '../../mail/mail.service';
+import { User, UserRole } from '../users/entities/user.entity';
+import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class AuthService {
@@ -77,7 +77,9 @@ export class AuthService {
 
     // Luôn trả về thành công để tránh email enumeration
     if (!user) {
-      return { message: 'Nếu email tồn tại, chúng tôi đã gửi link đặt lại mật khẩu.' };
+      return {
+        message: 'Nếu email tồn tại, chúng tôi đã gửi link đặt lại mật khẩu.',
+      };
     }
 
     const token = crypto.randomBytes(32).toString('hex');
@@ -87,12 +89,15 @@ export class AuthService {
     user.resetPasswordExpiry = expiry;
     await this.usersRepository.save(user);
 
-    const frontendUrl = this.config.get<string>('FRONTEND_URL') ?? 'http://localhost:3000';
+    const frontendUrl =
+      this.config.get<string>('FRONTEND_URL') ?? 'http://localhost:3000';
     const resetLink = `${frontendUrl}/reset-password?token=${token}`;
 
     await this.mailService.sendPasswordReset(user.email, resetLink);
 
-    return { message: 'Nếu email tồn tại, chúng tôi đã gửi link đặt lại mật khẩu.' };
+    return {
+      message: 'Nếu email tồn tại, chúng tôi đã gửi link đặt lại mật khẩu.',
+    };
   }
 
   async resetPassword(dto: ResetPasswordDto): Promise<{ message: string }> {
@@ -100,8 +105,14 @@ export class AuthService {
       where: { resetPasswordToken: dto.token },
     });
 
-    if (!user || !user.resetPasswordExpiry || user.resetPasswordExpiry < new Date()) {
-      throw new BadRequestException('Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.');
+    if (
+      !user ||
+      !user.resetPasswordExpiry ||
+      user.resetPasswordExpiry < new Date()
+    ) {
+      throw new BadRequestException(
+        'Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.',
+      );
     }
 
     user.password = await bcrypt.hash(dto.newPassword, 10);

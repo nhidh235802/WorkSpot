@@ -1,14 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Cafe, CafeStatus } from '../entities/cafe.entity';
-import { OperatingHour } from '../entities/operating-hour.entity';
-import { Review } from '../../reviews/entities/review.entity';
-import { User } from '../../users/entities/user.entity';
-import { CreateCafeDto } from '../dto/create-cafe.dto';
-import { UpdateCafeDto } from '../dto/update-cafe.dto';
-import { CafeDetailResponseDto } from '../dto/cafe-detail-response.dto';
-import { SearchCafeDto } from '../dto/search-cafe.dto';
+import { Cafe, CafeStatus } from './entities/cafe.entity';
+import { OperatingHour } from './entities/operating-hour.entity';
+import { Review } from '../reviews/entities/review.entity';
+import { User } from '../users/entities/user.entity';
+import { CreateCafeDto } from './dto/create-cafe.dto';
+import { UpdateCafeDto } from './dto/update-cafe.dto';
+import { CafeDetailResponseDto } from './dto/cafe-detail-response.dto';
+import { SearchCafeDto } from './dto/search-cafe.dto';
 
 @Injectable()
 export class CafesService {
