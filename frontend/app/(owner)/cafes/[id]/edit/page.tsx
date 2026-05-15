@@ -1,7 +1,9 @@
 'use client'
 
-import { useState, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useRef, useEffect } from 'react'
+import { useRouter, useParams } from 'next/navigation'
+import { CafeService } from '@/services/cafe.service'
+import axios from 'axios'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 type Facility = 'wifi' | 'socket' | 'desk' | 'snack' | 'cleanliness' | 'workspace' | 'smoking_rule'
@@ -129,24 +131,68 @@ const inputBase: React.CSSProperties = {
 // ─── Main page ──────────────────────────────────────────────────────────────────
 export default function EditCafePage() {
   const router = useRouter()
+  const params = useParams()
+  const cafeId = params.id as string
 
   const [form, setForm] = useState<CafeForm>({
-    name: 'Cafe Studio',
-    address: '45 Lý Quốc Sư, Hoàn Kiếm, Hà Nội',
-    description: 'Một không gian yên tĩnh ngay trung tâm Hà Nội, được thiết kế tối giản dành riêng cho những ai cần sự tập trung để làm việc và sáng tạo.',
-    facilities: ['wifi', 'socket'],
-    images: ['https://placehold.co/300x208'],
-    isClosedOnHolidays: true,
-    operatingHours: [
-      { label: 'Thứ Hai - Thứ Sáu', days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'], openTime: '08:00', closeTime: '22:00', isDayOff: false },
-      { label: 'Thứ Bảy', days: ['saturday'], openTime: '08:00', closeTime: '23:00', isDayOff: false },
-      { label: 'Chủ Nhật', days: ['sunday'], openTime: '08:00', closeTime: '22:00', isDayOff: true },
-    ],
+    name: '',
+    address: '',
+    description: '',
+    facilities: [],
+    images: [],
+    isClosedOnHolidays: false,
+    operatingHours: [],
   })
 
+  const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    async function fetchCafe() {
+      try {
+        const userStr = localStorage.getItem('user')
+        const user = userStr ? JSON.parse(userStr) : null
+        
+        if (!user) {
+          router.push('/login')
+          return
+        }
+
+        const data = await CafeService.getCafeById(cafeId)
+        
+        // Ownership check
+        if (data.owner?.id !== user.id) {
+          router.push('/dashboard')
+          return
+        }
+
+        // Map backend data to form state
+        setForm({
+          name: data.name,
+          address: data.address,
+          description: data.description || '',
+          facilities: data.facilities || [],
+          images: data.images || [],
+          isClosedOnHolidays: data.isClosedOnHolidays || false,
+          operatingHours: data.operatingHours.map((oh: any) => ({
+            label: oh.dayOfWeek === 'weekday' ? 'Thứ Hai - Thứ Sáu' : oh.dayOfWeek === 'saturday' ? 'Thứ Bảy' : 'Chủ Nhật',
+            days: [oh.dayOfWeek],
+            openTime: oh.openTime || '08:00',
+            closeTime: oh.closeTime || '22:00',
+            isDayOff: oh.isDayOff
+          }))
+        })
+      } catch (err) {
+        console.error(err)
+        setSaveError('Không thể tải thông tin quán.')
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchCafe()
+  }, [cafeId, router])
 
   // Toggle facility
   function toggleFacility(key: Facility) {
@@ -196,11 +242,30 @@ export default function EditCafePage() {
     setSaving(true)
     setSaveError('')
     try {
-      // TODO: gọi API PATCH /cafes/:id với form data
-      await new Promise(r => setTimeout(r, 800)) // simulate
-      router.push('/')
-    } catch (e: unknown) {
-      setSaveError((e as Error).message)
+      const token = localStorage.getItem('access_token')
+      
+      const payload = {
+        name: form.name,
+        address: form.address,
+        description: form.description,
+        facilities: form.facilities,
+        images: form.images,
+        isClosedOnHolidays: form.isClosedOnHolidays,
+        operatingHours: form.operatingHours.map(oh => ({
+          dayOfWeek: oh.days[0],
+          openTime: oh.openTime,
+          closeTime: oh.closeTime,
+          isDayOff: oh.isDayOff
+        }))
+      }
+
+      await axios.patch(`http://localhost:3001/cafes/${cafeId}`, payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+
+      router.push('/dashboard')
+    } catch (e: any) {
+      setSaveError(e.response?.data?.message || e.message)
     } finally {
       setSaving(false)
     }
@@ -212,6 +277,14 @@ export default function EditCafePage() {
     const ampm = h < 12 ? 'AM' : 'PM'
     const h12 = h % 12 === 0 ? 12 : h % 12
     return { h: String(h12).padStart(2, '0'), m: String(m).padStart(2, '0'), ampm }
+  }
+
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#FAFAF5' }}>
+        <p style={{ color: '#14422D', fontSize: 18, fontWeight: 500 }}>Đang tải thông tin quán...</p>
+      </div>
+    )
   }
 
   return (
