@@ -1,162 +1,74 @@
 'use client';
 
+import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Store, User } from 'lucide-react';
+import { LayoutGrid, FileSignature, User } from 'lucide-react';
+
+const navigationItems = [
+  { id: 'overview', label: 'Tổng quan', path: '/dashboard', icon: LayoutGrid },
+  { id: 'new-venue', label: 'Đăng ký quán mới', path: '/cafes/create', icon: FileSignature },
+  { id: 'profile', label: 'Hồ sơ cá nhân', path: '/owner/profile', icon: User },
+];
 
 export default function OwnerSidebar() {
   const pathname = usePathname();
 
-  const menuItems = [
-    { name: 'Tổng quan', path: '/dashboard', icon: LayoutDashboard },
-    { name: 'Đăng ký quán mới', path: '/cafes/create', icon: Store },
-    { name: 'Hồ sơ cá nhân', path: '/profile', icon: User },
-  ];
-
   return (
-    <aside
-      style={{
-        width: 288,
-        height: '100vh',
-        padding: 24,
-        background: '#FAFAF5',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 8,
-        borderRight: '1px solid #E7E5E4',
-        position: 'sticky',
-        top: 0,
-        flexShrink: 0,
-        boxSizing: 'border-box',
-      }}
-    >
-      {/* Logo & Tiêu đề */}
-      <div style={{ paddingBottom: 40, display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <h1
-          style={{
-            color: '#1A1C19',
-            fontSize: 24,
-            fontFamily: 'Manrope, sans-serif',
-            fontWeight: 700,
-            margin: 0,
-            lineHeight: '28px',
-            letterSpacing: '-0.5px',
-          }}
-        >
+    <aside className="w-[288px] h-screen sticky top-0 left-0 flex flex-col py-8 px-6 border-r border-[#E7E5E4] shrink-0 bg-[#FAFAF5] box-border z-50">
+      
+      {/* Header / Logo */}
+      <div className="mb-10">
+        <h1 className="text-[#1A1C19] text-[20px] font-bold font-['Manrope'] leading-tight">
           WorkSpot Owner
         </h1>
-        <p
-          style={{
-            color: '#A8A29E',
-            fontSize: 10,
-            fontFamily: 'Be Vietnam Pro, sans-serif',
-            fontWeight: 400,
-            margin: 0,
-            lineHeight: '15px',
-            letterSpacing: 0.5,
-          }}
-        >
+        <p className="text-[#A8A29E] text-[10px] tracking-wide mt-1 font-['Be_Vietnam_Pro']">
           Cổng thông tin Hà Nội
         </p>
       </div>
 
-      {/* Menu Items */}
-      <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {menuItems.map((item) => {
+      {/* Menu Navigation */}
+      <nav className="flex flex-col gap-2 font-['Be_Vietnam_Pro']">
+        {navigationItems.map((item) => {
           const isActive = pathname === item.path || pathname.startsWith(item.path + '/');
           const Icon = item.icon;
 
           return (
             <Link
-              key={item.path}
+              key={item.id}
               href={item.path}
-              style={{
-                textDecoration: 'none',
-                padding: '12px 16px',
-                borderRadius: 12,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                background: isActive ? '#14422D' : 'transparent',
-                boxShadow: isActive ? '0px 1px 2px rgba(0,0,0,0.05)' : 'none',
-                transition: 'all 0.15s ease',
-              }}
+              className={`flex items-center gap-3 px-4 py-3.5 rounded-[12px] transition-all duration-200 ${
+                isActive
+                  ? 'bg-[#14422D] text-white shadow-sm'
+                  : 'bg-transparent text-[#57534E] hover:bg-[#E8F0EB]/50'
+              }`}
             >
-              <Icon size={15} color={isActive ? 'white' : '#57534E'} strokeWidth={2} />
-              <span
-                style={{
-                  color: isActive ? 'white' : '#57534E',
-                  fontSize: 14,
-                  fontFamily: 'Be Vietnam Pro, sans-serif',
-                  fontWeight: isActive ? 700 : 500,
-                  lineHeight: '20px',
-                }}
-              >
-                {item.name}
+              <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
+              <span className={`text-[14px] ${isActive ? 'font-bold' : 'font-medium'}`}>
+                {item.label}
               </span>
             </Link>
           );
         })}
       </nav>
 
-      {/* User Info */}
-      <div
-        style={{
-          marginTop: 'auto',
-          paddingTop: 24,
-          borderTop: '1px solid #E7E5E4',
-        }}
-      >
-        <div
-          style={{
-            padding: 8,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-          }}
-        >
+      {/* User Profile - Nằm sát đáy */}
+      <div className="mt-auto flex flex-col gap-6">
+        <div className="w-full h-px bg-[#E7E5E4]" />
+        
+        <div className="flex items-center gap-3 font-['Be_Vietnam_Pro'] px-2">
           <img
-            src="/avatar-placeholder.png"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src =
-                'https://ui-avatars.com/api/?name=Minh+Anh&background=14422D&color=fff&size=40';
-            }}
-            alt="Avatar"
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 9999,
-              objectFit: 'cover',
-              flexShrink: 0,
-            }}
+            src="https://ui-avatars.com/api/?name=Minh+Anh&background=1A1C19&color=fff&size=40"
+            alt="Avatar Minh Anh"
+            className="w-10 h-10 rounded-full object-cover shrink-0"
           />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-            <span
-              style={{
-                color: '#1A1C19',
-                fontSize: 14,
-                fontFamily: 'Roboto, sans-serif',
-                fontWeight: 500,
-                lineHeight: '20px',
-              }}
-            >
-              Minh Anh
-            </span>
-            <span
-              style={{
-                color: '#78716C',
-                fontSize: 10,
-                fontFamily: 'Be Vietnam Pro, sans-serif',
-                fontWeight: 400,
-                lineHeight: '15px',
-                letterSpacing: 0.25,
-              }}
-            >
-              Chủ quán
-            </span>
+          <div className="flex flex-col">
+            <span className="text-[#1A1C19] text-[14px] font-bold">Minh Anh</span>
+            <span className="text-[#A8A29E] text-[10px]">Chủ quán</span>
           </div>
         </div>
       </div>
+
     </aside>
   );
 }
