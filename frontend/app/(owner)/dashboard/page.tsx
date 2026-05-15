@@ -1,11 +1,3 @@
-import React from 'react'
+'use client';
 
-type Props = unknown
-
-const page = (props: Props) => {
-  return (
-    <div>page</div>
-  )
-}
-
-export default page
+import OwnerSidebar from '@/components/OwnerSidebar';
