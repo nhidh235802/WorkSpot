@@ -1,5 +1,5 @@
 import { FacilityType } from '../entities/cafe.entity';
-import { OperatingHourDto } from './operating-hour.dto';
+import { OperatingHourResponseDto } from './operating-hour.dto';
 import { UserRole } from '../../users/entities/user.entity';
 
 export class OwnerDto {
@@ -41,7 +41,7 @@ export class CafeDetailResponseDto {
   images!: string[];
   facilities!: FacilityType[];
   owner!: OwnerDto | null;
-  operatingHours!: OperatingHourDto[];
+  operatingHours!: OperatingHourResponseDto[];
   reviews!: ReviewDto[];
   metadata!: CafeMetadataDto;
 }
