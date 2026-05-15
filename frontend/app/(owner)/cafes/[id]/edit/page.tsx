@@ -204,14 +204,14 @@ function TimeSelect({
 }) {
   if (showDash) {
     return (
-      <div className="relative w-[122px] flex items-center justify-center px-4 py-3 rounded-lg border border-[#c0c9c133] bg-[#fafaf5]">
+      <div className="relative w-30.5 flex items-center justify-center px-4 py-3 rounded-lg border border-[#c0c9c133] bg-[#fafaf5]">
         <span className="font-['Noto_Sans'] font-normal text-sm text-[#1a1c194d]">—</span>
       </div>
     );
   }
   return (
     <div
-      className={`relative w-[122px] flex items-center px-4 py-3 rounded-lg overflow-hidden border border-solid ${disabled ? "bg-[#fafaf5] border-[#c0c9c133]" : "bg-white border-[#c0c9c14c]"
+      className={`relative w-30.5 flex items-center px-4 py-3 rounded-lg overflow-hidden border border-solid ${disabled ? "bg-[#fafaf5] border-[#c0c9c133]" : "bg-white border-[#c0c9c14c]"
         }`}
     >
       <span
@@ -268,7 +268,7 @@ function Checkbox({
         {checked && <IconCheck />}
       </span>
       {label && (
-        <span className="font-['Noto_Sans'] font-bold text-[#414943] text-sm tracking-[0] leading-5 whitespace-nowrap">
+        <span className="font-['Noto_Sans'] font-bold text-[#414943] text-sm tracking-normalmal leading-5 whitespace-nowrap">
           {label}
         </span>
       )}
@@ -288,7 +288,7 @@ function OwnerNavigationSection() {
         <h1 className="font-['Manrope'] font-bold text-[#1a1c19] text-xl tracking-[-0.50px] leading-7">
           WorkSpot Owner
         </h1>
-        <p className="font-['Be_Vietnam_Pro'] font-normal text-stone-400 text-[10px] tracking-[0.50px] leading-[15px]">
+        <p className="font-['Be_Vietnam_Pro'] font-normal text-stone-400 text-[10px] tracking-[0.50px] leading-3.75">
           Cổng thông tin Hà Nội
         </p>
       </div>
@@ -332,7 +332,7 @@ function OwnerNavigationSection() {
             <span className="font-['Roboto'] font-medium text-[#1a1c19] text-sm leading-5 whitespace-nowrap">
               Minh Anh
             </span>
-            <span className="font-['Be_Vietnam_Pro'] font-normal text-stone-500 text-[10px] tracking-[0.25px] leading-[15px] whitespace-nowrap">
+            <span className="font-['Be_Vietnam_Pro'] font-normal text-stone-500 text-[10px] tracking-[0.25px] leading-3.75 whitespace-nowrap">
               Chủ quán
             </span>
           </div>
@@ -376,7 +376,7 @@ function CafeProfileDetailsSection() {
   };
 
   return (
-    <section className="flex flex-1 flex-col items-start gap-14 pt-16 pb-28 px-10 max-w-[960px]">
+    <section className="flex flex-1 flex-col items-start gap-14 pt-16 pb-28 px-10 max-w-240">
       {/* Header */}
       <header className="flex flex-col items-start gap-5 self-stretch w-full">
         <button
@@ -390,7 +390,7 @@ function CafeProfileDetailsSection() {
           </span>
         </button>
         <div className="flex flex-col items-start pt-3 self-stretch w-full">
-          <h1 className="font-['Manrope'] font-extrabold text-[#1b4332] text-5xl tracking-[-1.20px] leading-[48px]">
+          <h1 className="font-['Manrope'] font-extrabold text-[#1b4332] text-5xl tracking-[-1.20px] leading-12">
             Chỉnh sửa thông tin của quán
           </h1>
         </div>
@@ -519,7 +519,7 @@ function CafeProfileDetailsSection() {
                     <path d="M4 32l10-10 8 8 6-6 16 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#00000010]" />
+                <div className="absolute inset-0 bg-linear-to-b from-transparent to-[#00000010]" />
                 <button
                   type="button"
                   onClick={() => setHasGalleryImage(false)}
@@ -555,14 +555,14 @@ function CafeProfileDetailsSection() {
           </div>
 
           <div className="col-span-8 p-8 bg-[#fdfdfb] rounded-2xl border border-[#c0c9c133]">
-            <div className="flex flex-wrap gap-x-[18px] gap-y-4">
+            <div className="flex flex-wrap gap-x-4.5 gap-y-4">
               {amenities.map((amenity) => (
                 <button
                   key={amenity.id}
                   type="button"
                   onClick={() => toggleAmenity(amenity.id)}
                   aria-pressed={amenity.selected}
-                  className={`relative inline-flex items-center gap-2 px-5 py-[11px] rounded-full transition-colors ${amenity.selected
+                  className={`relative inline-flex items-center gap-2 px-5 py-2.75 rounded-full transition-colors ${amenity.selected
                     ? "bg-[#1b4332] shadow-[0px_2px_4px_-2px_#1b43321a,0px_4px_6px_-1px_#1b43321a]"
                     : "bg-[#fafaf5] border border-[#c0c9c14c] hover:border-[#1b4332]"
                     }`}
@@ -658,7 +658,7 @@ function CafeProfileDetailsSection() {
           </button>
           <button
             type="submit"
-            className="relative inline-flex items-center justify-center px-14 py-[17px] bg-[#1b4332] rounded-full hover:bg-[#163829] transition-colors shadow-[0px_8px_10px_-6px_#1b433233,0px_20px_25px_-5px_#1b433233]"
+            className="relative inline-flex items-center justify-center px-14 py-4.25 bg-[#1b4332] rounded-full hover:bg-[#163829] transition-colors shadow-[0px_8px_10px_-6px_#1b433233,0px_20px_25px_-5px_#1b433233]"
           >
             <span className="font-['Noto_Sans'] font-bold text-white text-base leading-6 whitespace-nowrap">
               Lưu thay đổi
@@ -675,7 +675,7 @@ function CafeProfileDetailsSection() {
 export default function OwnerCafeProfilePage() {
   return (
     <main
-      className="bg-[#fafaf5] w-full min-w-[1280px] min-h-screen flex"
+      className="bg-[#fafaf5] w-full min-w-7xl min-h-screen flex"
       data-screen="OwnerCafeProfile"
     >
       <OwnerNavigationSection />
