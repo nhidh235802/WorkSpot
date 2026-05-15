@@ -74,7 +74,7 @@ export default function CafesSearchPage() {
 
   const [cafes, setCafes] = useState<any[]>([]);
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
-  const [radius, setRadius] = useState<number>(10);
+  const [radius, setRadius] = useState<number>(5);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedCafeId, setSelectedCafeId] = useState<string | number | null>(null);
@@ -101,7 +101,7 @@ export default function CafesSearchPage() {
     navigator.geolocation.getCurrentPosition(
       (pos) => setUserPosition([pos.coords.latitude, pos.coords.longitude]),
       () => {}, // silently fall back to mapCenter
-      { timeout: 6000, maximumAge: 30000 },
+      { timeout: 6000, maximumAge: 10000 },
     );
   }, []);
 
@@ -117,7 +117,7 @@ export default function CafesSearchPage() {
   const resetFilters = () => {
     setActiveFilters([]);
     setKeyword("");
-    setRadius(10);
+    setRadius(5);
   };
 
   useEffect(() => {
@@ -222,8 +222,8 @@ export default function CafesSearchPage() {
                      onClick={(e) => toggleFilter(e, filter.id)}
                      className={`px-4 py-2 flex items-center gap-2 rounded-full text-sm font-medium transition-all duration-200 border ${
                        isActive
-                          ? 'bg-[#ffdbc7] text-[#311300] border-[#ffdbc7] shadow-sm'
-                          : 'bg-[#e8e8e3] text-[#1a1c19] border-transparent hover:bg-gray-300'
+                         ? 'bg-[#ffdbc7] text-[#311300] border-[#ffdbc7] shadow-sm'
+                         : 'bg-[#e8e8e3] text-[#1a1c19] border-transparent hover:bg-gray-300'
                      }`}
                    >
                      <IconComponent className={`w-4 h-4 ${isActive ? 'text-[#904c18]' : 'text-gray-600'}`} />
@@ -342,7 +342,7 @@ export default function CafesSearchPage() {
             cafes={mapCafes}
             center={mapCenter}
             userPosition={userPosition}
-            radius={radius}
+            radius={keyword ? 0 : radius} // <-- SỬA: Ẩn vòng tròn trên map khi có từ khóa
             onSelectCafe={handleSelectCafe}
             selectedId={selectedCafeId}
             onLocate={(pos) => setUserPosition(pos)}
@@ -358,22 +358,24 @@ export default function CafesSearchPage() {
             </span>
           </div>
 
-          {/* Radius selector – top right */}
-          <div className="absolute top-4 right-4 z-[1000] px-4 py-2.5 bg-white/95 backdrop-blur-md rounded-2xl shadow-lg border border-[#e3e3de] flex items-center gap-3">
-            <MapPin className="w-4 h-4 text-[#14422d] shrink-0" />
-            <span className="text-[#14422d] text-sm font-medium whitespace-nowrap">検索範囲</span>
-            <input
-              type="range"
-              min={1}
-              max={30}
-              value={radius}
-              onChange={(e) => setRadius(Number(e.target.value))}
-              className="w-24 accent-[#14422d]"
-            />
-            <span className="text-[#14422d] font-bold text-sm w-10 text-right">{radius} km</span>
-          </div>
+          {/* Radius selector – top right (SỬA: Ẩn đi khi có keyword) */}
+          {!keyword && (
+            <div className="absolute top-4 right-4 z-[1000] px-4 py-2.5 bg-white/95 backdrop-blur-md rounded-2xl shadow-lg border border-[#e3e3de] flex items-center gap-3">
+              <MapPin className="w-4 h-4 text-[#14422d] shrink-0" />
+              <span className="text-[#14422d] text-sm font-medium whitespace-nowrap">検索範囲</span>
+              <input
+                type="range"
+                min={5}
+                max={10}
+                value={radius}
+                onChange={(e) => setRadius(Number(e.target.value))}
+                className="w-24 accent-[#14422d]"
+              />
+              <span className="text-[#14422d] font-bold text-sm w-10 text-right">{radius} km</span>
+            </div>
+          )}
 
-          {/* Selected cafe bottom panel - CẬP NHẬT THEO MẪU ẢNH */}
+          {/* Selected cafe bottom panel */}
           {selectedCafeId && (() => {
             const cafe = cafes.find((c: any) => c.id === selectedCafeId);
             if (!cafe) return null;
@@ -383,7 +385,7 @@ export default function CafesSearchPage() {
                 className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] bg-white rounded-[32px] shadow-2xl border border-[#e3e3de] transition-all duration-500 ease-in-out flex flex-col overflow-hidden`}
                 style={{ 
                   width: 400, 
-                  height: isExpanded ? '720px' : '235px', 
+                  height: isExpanded ? '600px' : '215px', 
                   maxWidth: 'calc(100% - 32px)',
                 }}
               >
@@ -399,7 +401,7 @@ export default function CafesSearchPage() {
                 <div className="px-6 flex-1 overflow-y-auto no-scrollbar">
                   {/* Header luôn hiện */}
                   <div 
-                    className="flex gap-4 items-start mb-4 cursor-pointer"
+                    className="flex gap-4 items-start mb-3 cursor-pointer" // <-- Giảm mb để vừa layout mới
                     onClick={() => !isExpanded && setIsExpanded(true)}
                   >
                     <div className="w-16 h-16 rounded-2xl overflow-hidden shrink-0">
@@ -416,7 +418,7 @@ export default function CafesSearchPage() {
                   </div>
 
                   {/* Tags nhỏ luôn hiện */}
-                  <div className="flex gap-2 mb-4 overflow-hidden">
+                  <div className="flex gap-2 mb-3 overflow-hidden">
                     <span className="px-3 py-1 bg-[#FDF2F0] text-[#904C18] text-[10px] font-bold rounded-md whitespace-nowrap">サイレントゾーン</span>
                     <span className="px-3 py-1 bg-[#F4F4F1] text-[#717973] text-[10px] font-bold rounded-md whitespace-nowrap">ガーデンビュー</span>
                     <span className="px-3 py-1 bg-[#F4F4F1] text-[#717973] text-[10px] font-bold rounded-md whitespace-nowrap">居心地が良い</span>
@@ -453,7 +455,7 @@ export default function CafesSearchPage() {
                 </div>
 
                 {/* 3. NÚT BẤM (Cố định ở dưới cùng của Card) */}
-                <div className="px-6 pb-6 pt-2 bg-white shrink-0">
+                <div className="px-6 pb-4 pt-2 bg-white shrink-0"> {/* <-- Giảm pb-6 thành pb-4 */}
                   <div className="flex gap-3">
                     <Link
                       href={`/cafes/${cafe.id}`}
