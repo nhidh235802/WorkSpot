@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
@@ -16,13 +16,36 @@ export default function LoginPage() {
   const { register, handleSubmit, formState: { isSubmitting } } =
     useForm<FormData>()
 
+  useEffect(() => {
+    const userStr = localStorage.getItem('user')
+    if (userStr) {
+      const user = JSON.parse(userStr)
+      if (user.role === 'admin') {
+        router.push('/admin/dashboard')
+      } else if (user.role === 'owner') {
+        router.push('/dashboard')
+      } else {
+        router.push('/')
+      }
+    }
+  }, [router])
+
   const onSubmit = async (data: FormData) => {
     setServerError('')
     try {
       const res = await axios.post('http://localhost:3001/auth/login', data)
+      const user = res.data.user
       localStorage.setItem('access_token', res.data.access_token)
-      localStorage.setItem('user', JSON.stringify(res.data.user))
-      router.push('/')
+      localStorage.setItem('user', JSON.stringify(user))
+
+      // Redirection logic based on role
+      if (user.role === 'admin') {
+        router.push('/admin/dashboard')
+      } else if (user.role === 'owner') {
+        router.push('/dashboard')
+      } else {
+        router.push('/')
+      }
     } catch (err: unknown) {
       if (axios.isAxiosError(err) && err.response?.status === 401) {
         setServerError('メールアドレスまたはパスワードが正しくありません')

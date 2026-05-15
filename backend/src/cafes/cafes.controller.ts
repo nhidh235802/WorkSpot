@@ -19,6 +19,11 @@ import { CreateCafeDto } from './dto/create-cafe.dto';
 import { UpdateCafeDto } from './dto/update-cafe.dto';
 import { CafeDetailResponseDto } from './dto/cafe-detail-response.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Cafe, CafeStatus } from './entities/cafe.entity';
+
+import { UserRole } from '../users/entities/user.entity';
+import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
 import { SearchCafeDto } from './dto/search-cafe.dto';
 
 @Controller('cafes')
@@ -34,6 +39,8 @@ export class CafesController {
     return this.cafesService.getRecommended(lat, lng);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.OWNER)
   @Post()
   @HttpCode(HttpStatus.CREATED)
   create(@Body() createCafeDto: CreateCafeDto): Promise<CafeDetailResponseDto> {
@@ -45,7 +52,6 @@ export class CafesController {
     return this.cafesService.searchCafes(searchCafeDto);
   }
 
-  // HÀM FIND ONE PHẢI NẰM DƯỚI HÀM SEARCH
   @Get(':id')
   findOne(
     @Param('id', ParseUUIDPipe) id: string,
@@ -53,7 +59,8 @@ export class CafesController {
     return this.cafesService.findOne(id);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.OWNER)
   @Patch(':id')
   update(
     @Param('id', ParseUUIDPipe) id: string,
@@ -63,7 +70,18 @@ export class CafesController {
     return this.cafesService.update(id, updateCafeDto, req.user.id);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Patch(':id/status')
+  patchStatus(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('status') status: CafeStatus,
+  ): Promise<CafeDetailResponseDto> {
+    return this.cafesService.patchStatus(id, status);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {

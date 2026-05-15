@@ -28,11 +28,16 @@ interface AuthenticatedRequest extends ExpressRequest {
   };
 }
 
+import { UserRole } from './entities/user.entity';
+import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
+
 /**
- * Mọi route đều yêu cầu JWT.
+ * Mọi route đều yêu cầu JWT và đúng phân quyền.
  * userId được lấy từ req.user.id (do JwtAuthGuard inject sau khi verify token).
  */
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRole.CUSTOMER, UserRole.OWNER)
 @Controller('profile')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}

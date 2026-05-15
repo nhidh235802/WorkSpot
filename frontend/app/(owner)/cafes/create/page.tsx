@@ -301,7 +301,7 @@ export default function CreateCafeForm() {
       }
 
       // 4. Success
-      router.push('/owner/dashboard');
+      router.push('/dashboard');
     } catch (err) {
       console.error(err);
       setError('Có lỗi xảy ra, vui lòng thử lại.');

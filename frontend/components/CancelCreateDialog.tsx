@@ -13,7 +13,7 @@ export default function CancelConfirmDialog({ isOpen, onClose }: CancelConfirmDi
   if (!isOpen) return null;
 
   const handleConfirmCancel = () => {
-    router.push('/owner/dashboard');
+    router.push('/dashboard');
   };
 
   return (

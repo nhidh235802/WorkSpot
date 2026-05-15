@@ -261,6 +261,13 @@ export class CafesService {
     await this.cafesRepository.remove(cafe);
   }
 
+  async patchStatus(id: string, status: CafeStatus): Promise<CafeDetailResponseDto> {
+    const cafe = await this.findOneEntity(id);
+    cafe.status = status;
+    const saved = await this.cafesRepository.save(cafe);
+    return this.findOne(saved.id);
+  }
+
   // TÌM KIẾM VÀ LỌC QUÁN CAFE
   async searchCafes(query: SearchCafeDto): Promise<any[]> {
     const { lat, lng, radius, keyword } = query;
