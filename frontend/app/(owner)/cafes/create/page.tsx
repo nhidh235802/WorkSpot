@@ -321,8 +321,6 @@ export default function CreateCafeForm() {
           paddingLeft: 32,
           paddingRight: 32,
           boxSizing: 'border-box',
-          maxWidth: 992,
-          margin: '0 auto',
         }}
       >
         {/* Page Header */}
@@ -355,7 +353,7 @@ export default function CreateCafeForm() {
         </div>
 
         {/* Two-column layout */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 288px', gap: 32 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '4fr 3fr', gap: 32 }}>
           {/* LEFT COLUMN */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
 
@@ -492,8 +490,8 @@ export default function CreateCafeForm() {
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   style={{
-                    width: 100,
-                    height: 90,
+                    width: 160,
+                    height: 120,
                     background: '#FAFAF5',
                     border: '2px dashed #E7E5E4',
                     borderRadius: 12,
