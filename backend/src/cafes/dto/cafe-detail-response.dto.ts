@@ -36,6 +36,8 @@ export class CafeDetailResponseDto {
   name!: string;
   description!: string | null;
   address!: string;
+  latitude!: number | null;
+  longitude!: number | null;
   images!: string[];
   facilities!: FacilityType[];
   owner!: OwnerDto | null;

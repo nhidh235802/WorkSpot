@@ -77,9 +77,10 @@ export default function CafesSearchPage() {
   const [radius, setRadius] = useState<number>(5);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedCafeId, setSelectedCafeId] = useState<string | number | null>(null);
+  const initialSelectedId = searchParams.get("selectedId") || null;
+  const [selectedCafeId, setSelectedCafeId] = useState<string | number | null>(initialSelectedId);
   const [fitRouteTrigger, setFitRouteTrigger] = useState(0);
-  const [showRoute, setShowRoute] = useState(false);
+  const [showRoute, setShowRoute] = useState(searchParams.get("showRoute") === "1");
 
   const centerLat = parseFloat(searchParams.get("lat") || String(DEFAULT_LAT));
   const centerLng = parseFloat(searchParams.get("lng") || String(DEFAULT_LNG));
@@ -179,6 +180,19 @@ export default function CafesSearchPage() {
       })),
     [cafes]
   );
+
+  // When navigated from detail page with selectedId in URL, scroll + zoom after cafes load
+  useEffect(() => {
+    if (!initialSelectedId || !cafes.length) return;
+    const exists = cafes.some((c) => c.id === initialSelectedId);
+    if (!exists) return;
+    const el = document.getElementById(`cafe-card-${initialSelectedId}`);
+    el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    // If showRoute=1 in URL, trigger fitBounds so map zooms to fit the route
+    if (searchParams.get("showRoute") === "1") {
+      setFitRouteTrigger((n) => n + 1);
+    }
+  }, [cafes, initialSelectedId]);
 
   const handleSelectCafe = (id: string | number) => {
     setSelectedCafeId((prev) => (prev === id ? null : id));

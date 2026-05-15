@@ -98,7 +98,7 @@ export default function RegisterPage() {
         style={{ flex: '1 1 0', position: 'relative', background: '#14422D', overflow: 'hidden', display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}
       >
         <Image
-          src="/login_register_img/291cf934ac1b4d19a98f0b191a0efa2da4f4de86.png"
+          src="/images/291cf934ac1b4d19a98f0b191a0efa2da4f4de86.png"
           alt="WorkSpot cafe"
           fill
           style={{ objectFit: 'cover', opacity: 0.60 }}

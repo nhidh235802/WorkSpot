@@ -1,11 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Review } from '../entities/review.entity';
-import { User } from '../../users/entities/user.entity';
-import { Cafe } from '../../cafes/entities/cafe.entity';
-import { CreateReviewDto } from '../dto/create-review.dto';
-import { UpdateReviewDto } from '../dto/update-review.dto';
+import { Review } from './entities/review.entity';
+import { User } from '../users/entities/user.entity';
+import { Cafe } from '../cafes/entities/cafe.entity';
+import { CreateReviewDto } from './dto/create-review.dto';
+import { UpdateReviewDto } from './dto/update-review.dto';
 
 @Injectable()
 export class ReviewsService {
@@ -55,7 +55,9 @@ export class ReviewsService {
     const { userId, cafeId, ...reviewData } = updateReviewDto;
 
     if (userId) {
-      const user = await this.usersRepository.findOne({ where: { id: userId } });
+      const user = await this.usersRepository.findOne({
+        where: { id: userId },
+      });
       if (!user) {
         throw new NotFoundException(`Người dùng #${userId} không tìm thấy`);
       }
@@ -63,7 +65,9 @@ export class ReviewsService {
     }
 
     if (cafeId) {
-      const cafe = await this.cafesRepository.findOne({ where: { id: cafeId } });
+      const cafe = await this.cafesRepository.findOne({
+        where: { id: cafeId },
+      });
       if (!cafe) {
         throw new NotFoundException(`Quán cà phê #${cafeId} không tìm thấy`);
       }

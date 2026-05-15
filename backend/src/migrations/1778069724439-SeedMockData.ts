@@ -38,23 +38,23 @@ export class SeedMockData1778069724439 implements MigrationInterface {
     await queryRunner.query(`
         INSERT INTO "users" ("id", "fullName", "email", "phone", "password", "avatar", "address", "bio", "role") VALUES
         -- 1 Admin
-        ('${adminId}', 'Hệ thống WorkSpot', 'admin@workspot.vn', '0999999999', '${hash}', 'https://ui-avatars.com/api/?name=Admin&background=0D8ABC&color=fff', 'Trụ sở WorkSpot Hà Nội', 'Quản trị viên hệ thống', 'admin'),
+        ('${adminId}', 'Hệ thống WorkSpot', 'admin@workspot.vn', '0999999999', '${hash}', NULL, 'Trụ sở WorkSpot Hà Nội', 'Quản trị viên hệ thống', 'admin'),
         
         -- 5 Chủ quán
-        ('${o1}', 'Nguyễn Văn An', 'an.nguyen@owner.vn', '0901111111', '${hash}', 'https://ui-avatars.com/api/?name=Nguyen+Van+An&background=random', 'Cầu Giấy, Hà Nội', 'Đam mê kinh doanh F&B và mang đến không gian làm việc lý tưởng.', 'owner'),
-        ('${o2}', 'Trần Thị Bích', 'bich.tran@owner.vn', '0902222222', '${hash}', 'https://ui-avatars.com/api/?name=Tran+Thi+Bich&background=random', 'Hoàn Kiếm, Hà Nội', 'Quản lý chuỗi quán cafe phong cách hoài cổ.', 'owner'),
-        ('${o3}', 'Lê Hoàng Hải', 'hai.le@owner.vn', '0903333333', '${hash}', 'https://ui-avatars.com/api/?name=Le+Hoang+Hai&background=random', 'Đống Đa, Hà Nội', 'Chuyên gia pha chế, muốn tạo ra văn hóa thưởng thức cà phê mới.', 'owner'),
-        ('${o4}', 'Phạm Thị Mai', 'mai.pham@owner.vn', '0904444444', '${hash}', 'https://ui-avatars.com/api/?name=Pham+Thi+Mai&background=random', 'Hai Bà Trưng, Hà Nội', 'Khởi nghiệp với mô hình cafe kết hợp thư viện sách.', 'owner'),
-        ('${o5}', 'Vũ Đức Thắng', 'thang.vu@owner.vn', '0905555555', '${hash}', 'https://ui-avatars.com/api/?name=Vu+Duc+Thang&background=random', 'Ba Đình, Hà Nội', 'Mong muốn kết nối cộng đồng Freelancer qua không gian cafe.', 'owner'),
+        ('${o1}', 'Nguyễn Văn An', 'an.nguyen@owner.vn', '0901111111', '${hash}', NULL, 'Cầu Giấy, Hà Nội', 'Đam mê kinh doanh F&B và mang đến không gian làm việc lý tưởng.', 'owner'),
+        ('${o2}', 'Trần Thị Bích', 'bich.tran@owner.vn', '0902222222', '${hash}', NULL, 'Hoàn Kiếm, Hà Nội', 'Quản lý chuỗi quán cafe phong cách hoài cổ.', 'owner'),
+        ('${o3}', 'Lê Hoàng Hải', 'hai.le@owner.vn', '0903333333', '${hash}', NULL, 'Đống Đa, Hà Nội', 'Chuyên gia pha chế, muốn tạo ra văn hóa thưởng thức cà phê mới.', 'owner'),
+        ('${o4}', 'Phạm Thị Mai', 'mai.pham@owner.vn', '0904444444', '${hash}', NULL, 'Hai Bà Trưng, Hà Nội', 'Khởi nghiệp với mô hình cafe kết hợp thư viện sách.', 'owner'),
+        ('${o5}', 'Vũ Đức Thắng', 'thang.vu@owner.vn', '0905555555', '${hash}', NULL, 'Ba Đình, Hà Nội', 'Mong muốn kết nối cộng đồng Freelancer qua không gian cafe.', 'owner'),
         -- Chủ quán Test (Vĩnh Yên)
-        ('${o6}', 'Vĩnh Yên Tester', 'vinhyen@owner.vn', '0906666666', '${hash}', 'https://ui-avatars.com/api/?name=Vinh+Yen&background=random', 'Vĩnh Yên, Vĩnh Phúc', 'Tạo tài khoản để test GPS ở quê.', 'owner'),
+        ('${o6}', 'Vĩnh Yên Tester', 'vinhyen@owner.vn', '0906666666', '${hash}', NULL, 'Vĩnh Yên, Vĩnh Phúc', 'Tạo tài khoản để test GPS ở quê.', 'owner'),
 
         -- 5 Khách hàng
-        ('${c1}', 'Đinh Tùng Lâm', 'lam.dinh@gmail.com', '0911111111', '${hash}', 'https://ui-avatars.com/api/?name=Dinh+Tung+Lam&background=random', 'Thanh Xuân, Hà Nội', 'Sinh viên IT đam mê code dạo, chuyên vác laptop ra quán cafe chạy deadline.', 'customer'),
-        ('${c2}', 'Hồ Thu Hương', 'huong.ho@gmail.com', '0912222222', '${hash}', 'https://ui-avatars.com/api/?name=Ho+Thu+Huong&background=random', 'Tây Hồ, Hà Nội', 'Freelancer thiết kế đồ họa. Tìm kiếm nguồn cảm hứng từ không gian đẹp.', 'customer'),
-        ('${c3}', 'Ngô Văn Nam', 'nam.ngo@gmail.com', '0913333333', '${hash}', 'https://ui-avatars.com/api/?name=Ngo+Van+Nam&background=random', 'Nam Từ Liêm, Hà Nội', 'Nhân viên văn phòng, thường xuyên cần nơi gặp gỡ đối tác.', 'customer'),
-        ('${c4}', 'Bùi Thị Lan', 'lan.bui@gmail.com', '0914444444', '${hash}', 'https://ui-avatars.com/api/?name=Bui+Thi+Lan&background=random', 'Hà Đông, Hà Nội', 'Sở thích review quán xá cuối tuần, đam mê chụp ảnh check-in.', 'customer'),
-        ('${c5}', 'Đỗ Quang Huy', 'huy.do@gmail.com', '0915555555', '${hash}', 'https://ui-avatars.com/api/?name=Do+Quang+Huy&background=random', 'Hoàng Mai, Hà Nội', 'Remote worker toàn thời gian. Ưu tiên quán có wifi xịn và ghế êm.', 'customer');
+        ('${c1}', 'Đinh Tùng Lâm', 'lam.dinh@gmail.com', '0911111111', '${hash}', NULL, 'Thanh Xuân, Hà Nội', 'Sinh viên IT đam mê code dạo, chuyên vác laptop ra quán cafe chạy deadline.', 'customer'),
+        ('${c2}', 'Hồ Thu Hương', 'huong.ho@gmail.com', '0912222222', '${hash}', NULL, 'Tây Hồ, Hà Nội', 'Freelancer thiết kế đồ họa. Tìm kiếm nguồn cảm hứng từ không gian đẹp.', 'customer'),
+        ('${c3}', 'Ngô Văn Nam', 'nam.ngo@gmail.com', '0913333333', '${hash}', NULL, 'Nam Từ Liêm, Hà Nội', 'Nhân viên văn phòng, thường xuyên cần nơi gặp gỡ đối tác.', 'customer'),
+        ('${c4}', 'Bùi Thị Lan', 'lan.bui@gmail.com', '0914444444', '${hash}', NULL, 'Hà Đông, Hà Nội', 'Sở thích review quán xá cuối tuần, đam mê chụp ảnh check-in.', 'customer'),
+        ('${c5}', 'Đỗ Quang Huy', 'huy.do@gmail.com', '0915555555', '${hash}', NULL, 'Hoàng Mai, Hà Nội', 'Remote worker toàn thời gian. Ưu tiên quán có wifi xịn và ghế êm.', 'customer');
     `);
 
     // 2. THÊM 10 QUÁN CAFE - MỖI QUÁN 3 ẢNH THẬT TỪ UNSPLASH
