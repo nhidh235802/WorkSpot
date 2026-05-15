@@ -1,685 +1,457 @@
-"use client";
+'use client'
 
-import { useId, useState } from "react";
+import { useState, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 
-// ─── Types ──────────────────────────────────────────────────────────────────
+// ─── Types ─────────────────────────────────────────────────────────────────────
+type Facility = 'wifi' | 'socket' | 'desk' | 'snack' | 'cleanliness' | 'workspace' | 'smoking_rule'
 
-type Amenity = {
-  id: string;
-  label: string;
-  icon: React.ReactNode;
-  selected: boolean;
-};
-
-type ScheduleItem = {
-  id: string;
-  label: string;
-  open: string;
-  close: string;
-  closed: boolean;
-  disabled?: boolean;
-};
-
-// ─── Inline SVG Icons (replace external .svg imports) ────────────────────────
-
-const IconBack = () => (
-  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-    <path d="M8 2L4 6L8 10" stroke="#1b4332" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-const IconLocation = () => (
-  <svg width="16" height="20" viewBox="0 0 16 20" fill="none" aria-hidden="true">
-    <path d="M8 0C4.13 0 1 3.13 1 7c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 8 4.5a2.5 2.5 0 0 1 0 5z" fill="#6b7280" />
-  </svg>
-);
-
-const IconUpload = () => (
-  <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
-    <path d="M11 15V7M7 11l4-4 4 4" stroke="#1b4332b2" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-    <rect x="1" y="1" width="20" height="20" rx="5" stroke="#1b4332b2" strokeWidth="1.5" strokeDasharray="3 2" />
-  </svg>
-);
-
-const IconClose = () => (
-  <svg width="8" height="8" viewBox="0 0 8 8" fill="none" aria-hidden="true">
-    <path d="M1 1L7 7M7 1L1 7" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
-  </svg>
-);
-
-const IconCheck = ({ dark = false }: { dark?: boolean }) => (
-  <svg width="12" height="10" viewBox="0 0 12 10" fill="none" aria-hidden="true">
-    <path d="M1 5L4.5 8.5L11 1.5" stroke={dark ? "#fff" : "#fff"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-const IconChevron = ({ disabled = false }: { disabled?: boolean }) => (
-  <svg
-    className={disabled ? "opacity-30" : "opacity-70"}
-    width="14" height="14" viewBox="0 0 20 20" fill="none"
-    aria-hidden="true"
-  >
-    <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-// Amenity icon components — matched to design screenshots
-// Wi-Fi: fan arcs + dot
-const WifiIcon = () => (
-  <svg width="18" height="15" viewBox="0 0 18 15" fill="none">
-    <circle cx="9" cy="13" r="1.5" fill="currentColor" />
-    <path d="M5.5 9.8a5 5 0 0 1 7 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    <path d="M2.5 6.8a9 9 0 0 1 13 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    <path d="M0 3.8a13 13 0 0 1 18 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-  </svg>
-);
-// Power plug: plug head with two prongs
-const PowerIcon = () => (
-  <svg width="16" height="18" viewBox="0 0 16 18" fill="none">
-    <rect x="3" y="6" width="10" height="8" rx="2" stroke="currentColor" strokeWidth="1.6" />
-    <path d="M8 14v3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    <path d="M5 6V3M11 6V3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    <path d="M6 10h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-  </svg>
-);
-// Desk: table top + two legs (matches ảnh "Bàn làm việc")
-const DeskIcon = () => (
-  <svg width="20" height="16" viewBox="0 0 20 16" fill="none">
-    <rect x="1" y="4" width="18" height="3" rx="1.2" stroke="currentColor" strokeWidth="1.6" />
-    <path d="M4 7v8M16 7v8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-  </svg>
-);
-// Snacks: bowl with steam lines (matches ảnh "Đồ ăn nhẹ")
-const SnacksIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-    <path d="M1 9h16" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    <path d="M2 9c0 4 2.69 7 7 7s7-3 7-7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    <path d="M6 6c0-1.5 1-2 1-3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-    <path d="M9 5c0-1.5 1-2 1-3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-    <path d="M12 6c0-1.5 1-2 1-3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-  </svg>
-);
-// Clean: broom/mop (matches ảnh "Độ sạch sẽ" — upright brush shape)
-const CleanIcon = () => (
-  <svg width="16" height="18" viewBox="0 0 16 18" fill="none">
-    <path d="M8 1v11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    <path d="M3 12h10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    <path d="M2 12c0 3 1.5 5 6 5s6-2 6-5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    <path d="M6 6L4 3M10 6l2-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-  </svg>
-);
-// Workspace: monitor screen (matches ảnh "Không gian làm việc")
-const WorkspaceIcon = () => (
-  <svg width="20" height="17" viewBox="0 0 20 17" fill="none">
-    <rect x="1" y="1" width="18" height="12" rx="2" stroke="currentColor" strokeWidth="1.6" />
-    <path d="M6 16h8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    <path d="M10 13v3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-  </svg>
-);
-// No-smoking: cigarette with diagonal cross/slash (matches ảnh "Quy định hút thuốc")
-const SmokingIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-    <circle cx="9" cy="9" r="8" stroke="currentColor" strokeWidth="1.6" />
-    <path d="M4 9h5M12 9h2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    <path d="M12 7v4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-    <path d="M3 15L15 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-  </svg>
-);
-
-// Nav icons
-const DashboardIcon = () => (
-  <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-    <rect x="0.75" y="0.75" width="5.75" height="5.75" rx="1.25" fill="currentColor" />
-    <rect x="8.5" y="0.75" width="5.75" height="5.75" rx="1.25" fill="currentColor" />
-    <rect x="0.75" y="8.5" width="5.75" height="5.75" rx="1.25" fill="currentColor" />
-    <rect x="8.5" y="8.5" width="5.75" height="5.75" rx="1.25" fill="currentColor" />
-  </svg>
-);
-const AddCafeIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-    {/* 3 horizontal bars */}
-    <rect x="0" y="1" width="10" height="2.2" rx="1.1" />
-    <rect x="0" y="5" width="10" height="2.2" rx="1.1" />
-    <rect x="0" y="9" width="7" height="2.2" rx="1.1" />
-    {/* Pencil — rotated -45deg around its center at (12,11) */}
-    <g transform="translate(12,11) rotate(-45)">
-      <rect x="-2" y="-5.5" width="4" height="8" rx="0.8" />
-      <polygon points="-2,2.5 2,2.5 0,6" />
-      <rect x="-2" y="-7.5" width="4" height="2.5" rx="0.5" fill="currentColor" opacity="0.55" />
-    </g>
-  </svg>
-);
-const ProfileIcon = () => (
-  <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-    <circle cx="7.5" cy="4.5" r="3" stroke="currentColor" strokeWidth="1.5" />
-    <path d="M1.5 14c0-3.31 2.69-6 6-6s6 2.69 6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-  </svg>
-);
-
-// ─── Data ────────────────────────────────────────────────────────────────────
-
-const navigationItems = [
-  { label: "Tổng quan", icon: <DashboardIcon />, active: true },
-  { label: "Đăng ký quán mới", icon: <AddCafeIcon />, active: false },
-  { label: "Hồ sơ cá nhân", icon: <ProfileIcon />, active: false },
-];
-
-const initialAmenities: Amenity[] = [
-  { id: "wifi", label: "Wi-Fi", icon: <WifiIcon />, selected: true },
-  { id: "power", label: "Ổ cắm điện", icon: <PowerIcon />, selected: true },
-  { id: "desk", label: "Bàn làm việc", icon: <DeskIcon />, selected: false },
-  { id: "snacks", label: "Đồ ăn nhẹ", icon: <SnacksIcon />, selected: false },
-  { id: "clean", label: "Độ sạch sẽ", icon: <CleanIcon />, selected: false },
-  { id: "workspace", label: "Không gian làm việc", icon: <WorkspaceIcon />, selected: false },
-  { id: "smoking", label: "Quy định hút thuốc", icon: <SmokingIcon />, selected: false },
-];
-
-const initialSchedule: ScheduleItem[] = [
-  { id: "weekdays", label: "Thứ Hai - Thứ Sáu", open: "08:00 AM", close: "10:00 PM", closed: false },
-  { id: "saturday", label: "Thứ Bảy", open: "08:00 AM", close: "11:00 PM", closed: false },
-  { id: "sunday", label: "Chủ Nhật", open: "", close: "", closed: true, disabled: true },
-];
-
-const timeOptions = [
-  "06:00 AM", "07:00 AM", "08:00 AM", "09:00 AM", "10:00 AM", "11:00 AM",
-  "12:00 PM", "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM", "05:00 PM",
-  "06:00 PM", "07:00 PM", "08:00 PM", "09:00 PM", "10:00 PM", "11:00 PM",
-];
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-function formatTime(value: string) {
-  if (!value) return "—";
-  return value.replace(":", " : ");
+interface OperatingHour {
+  label: string
+  days: string[]
+  openTime: string
+  closeTime: string
+  isDayOff: boolean
 }
 
-function TimeSelect({
-  value, onChange, disabled = false, ariaLabel, showDash = false,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  disabled?: boolean;
-  ariaLabel: string;
-  showDash?: boolean;
-}) {
-  if (showDash) {
-    return (
-      <div className="relative w-30.5 flex items-center justify-center px-4 py-3 rounded-lg border border-[#c0c9c133] bg-[#fafaf5]">
-        <span className="font-['Noto_Sans'] font-normal text-sm text-[#1a1c194d]">—</span>
-      </div>
-    );
-  }
-  return (
-    <div
-      className={`relative w-30.5 flex items-center px-4 py-3 rounded-lg overflow-hidden border border-solid ${disabled ? "bg-[#fafaf5] border-[#c0c9c133]" : "bg-white border-[#c0c9c14c]"
-        }`}
-    >
-      <span
-        className={`pointer-events-none absolute left-4 font-['Noto_Sans'] font-normal text-sm leading-5 ${disabled ? "text-[#1a1c194d]" : "text-[#1a1c19]"
-          }`}
-      >
-        {value ? formatTime(value) : "—"}
-      </span>
-      <select
-        aria-label={ariaLabel}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        disabled={disabled}
-        className="relative z-10 w-full appearance-none bg-transparent text-transparent pr-6 font-['Noto_Sans'] font-normal text-sm leading-5 outline-none"
-      >
-        {!value && <option value="">—</option>}
-        {timeOptions.map((opt) => (
-          <option key={opt} value={opt}>{opt}</option>
-        ))}
-      </select>
-      <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2">
-        <IconChevron disabled={disabled} />
-      </div>
-    </div>
-  );
+interface CafeForm {
+  name: string
+  address: string
+  description: string
+  facilities: Facility[]
+  images: string[]
+  isClosedOnHolidays: boolean
+  operatingHours: OperatingHour[]
 }
 
-function Checkbox({
-  checked, onChange, label, disabled = false,
-}: {
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-  label: string;
-  disabled?: boolean;
-}) {
-  const id = useId();
-  return (
-    <label
-      htmlFor={id}
-      className={`inline-flex items-center gap-2 ${disabled ? "cursor-not-allowed" : "cursor-pointer"}`}
-    >
-      <span
-        className={`relative flex h-5 w-5 items-center justify-center rounded border ${checked ? "border-transparent bg-[#1b4332]" : `border-[#c0c9c1] bg-white ${disabled ? "opacity-60" : ""}`
-          }`}
-      >
-        <input
-          id={id}
-          type="checkbox"
-          checked={checked}
-          onChange={(e) => onChange(e.target.checked)}
-          disabled={disabled}
-          className="sr-only"
-        />
-        {checked && <IconCheck />}
-      </span>
-      {label && (
-        <span className="font-['Noto_Sans'] font-bold text-[#414943] text-sm tracking-normalmal leading-5 whitespace-nowrap">
-          {label}
-        </span>
-      )}
-    </label>
-  );
-}
+// ─── Facility config ────────────────────────────────────────────────────────────
+const FACILITIES: { key: Facility; label: string; icon: React.ReactNode }[] = [
+  {
+    key: 'wifi', label: 'Wi-Fi',
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M5 12.55a11 11 0 0 1 14.08 0" /><path d="M1.42 9a16 16 0 0 1 21.16 0" /><path d="M8.53 16.11a6 6 0 0 1 6.95 0" /><circle cx="12" cy="20" r="1" fill="currentColor" stroke="none" /></svg>
+  },
+  {
+    key: 'socket', label: 'Ổ cắm điện',
+    icon: <svg width="10" height="14" viewBox="0 0 14 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="5" y1="1" x2="5" y2="5" /><line x1="9" y1="1" x2="9" y2="5" /><rect x="2" y="5" width="10" height="9" rx="4" /><line x1="7" y1="14" x2="7" y2="19" /></svg>
+  },
+  {
+    key: 'desk', label: 'Bàn làm việc',
+    icon: <svg width="14" height="10" viewBox="0 0 20 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="1" y="1" width="18" height="5" rx="1" /><line x1="4" y1="6" x2="4" y2="13" /><line x1="16" y1="6" x2="16" y2="13" /><line x1="4" y1="10" x2="16" y2="10" /></svg>
+  },
+  {
+    key: 'snack', label: 'Đồ ăn nhẹ',
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10" /><circle cx="9" cy="9.5" r="1.5" fill="currentColor" stroke="none" /><circle cx="14.5" cy="11" r="1" fill="currentColor" stroke="none" /><circle cx="10.5" cy="15" r="1" fill="currentColor" stroke="none" /></svg>
+  },
+  {
+    key: 'cleanliness', label: 'Độ sạch sẽ',
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="10" y="2" width="4" height="6" rx="2" /><rect x="3" y="8" width="18" height="10" rx="2" /><line x1="8" y1="11" x2="8" y2="16" /><line x1="12" y1="11" x2="12" y2="16" /><line x1="16" y1="11" x2="16" y2="16" /></svg>
+  },
+  {
+    key: 'workspace', label: 'Không gian làm việc',
+    icon: <svg width="16" height="12" viewBox="0 0 22 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="1" y="1" width="20" height="11" rx="2" /><line x1="7" y1="15" x2="15" y2="15" /><line x1="11" y1="12" x2="11" y2="15" /></svg>
+  },
+  {
+    key: 'smoking_rule', label: 'Quy định hút thuốc',
+    icon: <svg width="16" height="14" viewBox="0 0 22 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="2" y1="12" x2="14" y2="12" /><line x1="16" y1="12" x2="20" y2="12" /><path d="M14 9 c3 0 3 3 3 3" /><path d="M12 6 c3 0 4 2 4 6" /><line x1="2" y1="2" x2="20" y2="16" /></svg>
+  },
+]
 
-// ─── Navigation Sidebar ───────────────────────────────────────────────────────
+// ─── Sidebar ────────────────────────────────────────────────────────────────────
+function Sidebar({ userName = 'Minh Anh' }: { userName?: string }) {
+  const navItems = [
+    { label: 'Tổng quan', active: true, icon: <svg width="14" height="14" viewBox="0 0 18 18" fill="currentColor"><rect x="1" y="1" width="7" height="7" rx="1.5" /><rect x="10" y="1" width="7" height="7" rx="1.5" /><rect x="1" y="10" width="7" height="7" rx="1.5" /><rect x="10" y="10" width="7" height="7" rx="1.5" /></svg> },
+    { label: 'Đăng ký quán mới', active: false, icon: <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2H5a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h7" /><polyline points="12,2 12,6 16,6" /><path d="M16 2h-4" /><path d="M13 13.5l3.5-3.5a1.2 1.2 0 0 1 1.7 1.7L14.7 15l-2.2.5.5-2z" /><line x1="7" y1="8" x2="11" y2="8" /><line x1="7" y1="11" x2="10" y2="11" /></svg> },
+    { label: 'Hồ sơ cá nhân', active: false, icon: <svg width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="9" cy="6" r="3.5" /><path d="M2 16c0-3.3 3.1-6 7-6s7 2.7 7 6" /></svg> },
+  ]
 
-function OwnerNavigationSection() {
   return (
-    <aside
-      className="flex w-72 min-h-screen sticky top-0 flex-col items-start gap-2 p-6 bg-[#fafaf5] border-r border-[#e7ede8]"
-      aria-label="Điều hướng chủ quán"
-    >
-      <div className="flex flex-col items-start pb-10 relative self-stretch w-full">
-        <h1 className="font-['Manrope'] font-bold text-[#1a1c19] text-xl tracking-[-0.50px] leading-7">
-          WorkSpot Owner
-        </h1>
-        <p className="font-['Be_Vietnam_Pro'] font-normal text-stone-400 text-[10px] tracking-[0.50px] leading-3.75">
-          Cổng thông tin Hà Nội
-        </p>
+    <div style={{ width: 288, minHeight: '100vh', background: '#FAFAF5', borderRight: '1px solid rgba(120,113,108,0.1)', padding: 24, display: 'flex', flexDirection: 'column', position: 'fixed', left: 0, top: 0, bottom: 0, zIndex: 10 }}>
+      {/* Brand */}
+      <div style={{ paddingBottom: 40 }}>
+        <div style={{ color: '#1C1917', fontSize: 20, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '28px' }}>WorkSpot Owner</div>
+        <div style={{ color: '#A8A29E', fontSize: 10, fontFamily: 'Be Vietnam Pro, sans-serif', letterSpacing: '0.08em', lineHeight: '16px', marginTop: 2 }}>Cổng thông tin Hà Nội</div>
       </div>
 
-      <nav className="flex flex-col items-start gap-2 flex-1 self-stretch w-full" aria-label="Menu chính">
-        {navigationItems.map((item) => (
-          <button
-            key={item.label}
-            type="button"
-            aria-current={item.active ? "page" : undefined}
-            className={`flex gap-3 px-4 py-3 self-stretch w-full rounded-xl items-center text-left transition-colors ${item.active
-              ? "bg-[#14422d] shadow-[0px_1px_2px_#0000000d]"
-              : "hover:bg-[#f0f4f1]"
-              }`}
-          >
-            <span className={item.active ? "text-white" : "text-stone-500"}>
-              {item.icon}
-            </span>
-            <span
-              className={`text-sm leading-5 ${item.active
-                ? "font-['Be_Vietnam_Pro'] font-bold text-white"
-                : "font-['Be_Vietnam_Pro'] font-medium text-stone-600"
-                }`}
-            >
-              {item.label}
-            </span>
+      {/* Nav */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {navItems.map(item => (
+          <button key={item.label} style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, background: item.active ? '#14422D' : 'transparent', color: item.active ? 'white' : '#78716C', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: item.active ? 700 : 500, lineHeight: '20px', textAlign: 'left', boxShadow: item.active ? '0 1px 2px rgba(0,0,0,0.05)' : 'none' }}>
+            <span style={{ color: item.active ? 'white' : '#78716C', flexShrink: 0 }}>{item.icon}</span>
+            {item.label}
           </button>
         ))}
-      </nav>
+      </div>
 
-      <div className="flex flex-col items-start pt-6 self-stretch w-full border-t border-stone-200">
-        <div className="flex items-center gap-3 p-2 self-stretch w-full">
-          <div
-            className="w-10 h-10 rounded-full bg-[#c7d9ce] flex items-center justify-center text-[#1b4332] font-bold text-sm"
-            role="img"
-            aria-label="Ảnh hồ sơ Minh Anh"
-          >
-            MA
+      {/* User */}
+      <div style={{ borderTop: '1px solid #E7E5E4', paddingTop: 24 }}>
+        <div style={{ padding: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#D6D3D1', flexShrink: 0, overflow: 'hidden' }}>
+            <img src="https://placehold.co/40x40" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
-          <div className="flex flex-col items-start">
-            <span className="font-['Roboto'] font-medium text-[#1a1c19] text-sm leading-5 whitespace-nowrap">
-              Minh Anh
-            </span>
-            <span className="font-['Be_Vietnam_Pro'] font-normal text-stone-500 text-[10px] tracking-[0.25px] leading-3.75 whitespace-nowrap">
-              Chủ quán
-            </span>
+          <div>
+            <div style={{ color: '#1C1917', fontSize: 14, fontFamily: 'Roboto, sans-serif', fontWeight: 500, lineHeight: '20px' }}>{userName}</div>
+            <div style={{ color: '#78716C', fontSize: 10, fontFamily: 'Be Vietnam Pro, sans-serif', lineHeight: '16px' }}>Chủ quán</div>
           </div>
         </div>
       </div>
-    </aside>
-  );
+    </div>
+  )
 }
 
-// ─── Cafe Profile Details Section ─────────────────────────────────────────────
+// ─── Section wrapper ────────────────────────────────────────────────────────────
+function Section({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', gap: 48, alignItems: 'flex-start' }}>
+      {/* Left label */}
+      <div style={{ width: 240, flexShrink: 0, paddingTop: 4 }}>
+        <div style={{ color: '#14422D', fontSize: 24, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '32px', marginBottom: 12 }}>{title}</div>
+        <div style={{ color: '#525252', fontSize: 14, fontFamily: 'Noto Sans, sans-serif', fontWeight: 400, lineHeight: '24px' }}>{description}</div>
+      </div>
+      {/* Right content */}
+      <div style={{ flex: 1 }}>{children}</div>
+    </div>
+  )
+}
 
-function CafeProfileDetailsSection() {
-  const [cafeName, setCafeName] = useState("Cafe Studio");
-  const [address, setAddress] = useState("45 Lý Quốc Sư, Hoàn Kiếm, Hà Nội");
-  const [description, setDescription] = useState(
-    "Một không gian yên tĩnh ngay trung tâm Hà Nội, được thiết kế tối giản dành riêng cho những ai cần sự tập trung để làm việc và sáng tạo.",
-  );
-  const [amenities, setAmenities] = useState<Amenity[]>(initialAmenities);
-  const [schedule, setSchedule] = useState<ScheduleItem[]>(initialSchedule);
-  const [closedOnHolidays, setClosedOnHolidays] = useState(true);
-  const [hasGalleryImage, setHasGalleryImage] = useState(true);
+const labelStyle: React.CSSProperties = {
+  color: '#92400E', fontSize: 12, fontFamily: 'Noto Sans, sans-serif',
+  fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', lineHeight: '16px',
+}
 
-  const toggleAmenity = (id: string) => {
-    setAmenities((current) =>
-      current.map((item) => (item.id === id ? { ...item, selected: !item.selected } : item)),
-    );
-  };
+const inputBase: React.CSSProperties = {
+  width: '100%', boxSizing: 'border-box', background: 'white',
+  border: 'none', outline: '1px solid rgba(120,113,108,0.3)', outlineOffset: -1,
+  borderRadius: 8, padding: '12px 16px',
+  color: '#1C1917', fontSize: 16, fontFamily: 'Noto Sans, sans-serif',
+  fontWeight: 400, lineHeight: '24px',
+}
 
-  const updateSchedule = (
-    id: string,
-    field: "open" | "close" | "closed",
-    value: string | boolean,
-  ) => {
-    setSchedule((current) =>
-      current.map((item) => {
-        if (item.id !== id) return item;
-        if (field === "closed") return { ...item, closed: Boolean(value) };
-        return { ...item, [field]: value as string };
-      }),
-    );
-  };
+// ─── Main page ──────────────────────────────────────────────────────────────────
+export default function EditCafePage() {
+  const router = useRouter()
+
+  const [form, setForm] = useState<CafeForm>({
+    name: 'Cafe Studio',
+    address: '45 Lý Quốc Sư, Hoàn Kiếm, Hà Nội',
+    description: 'Một không gian yên tĩnh ngay trung tâm Hà Nội, được thiết kế tối giản dành riêng cho những ai cần sự tập trung để làm việc và sáng tạo.',
+    facilities: ['wifi', 'socket'],
+    images: ['https://placehold.co/300x208'],
+    isClosedOnHolidays: true,
+    operatingHours: [
+      { label: 'Thứ Hai - Thứ Sáu', days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'], openTime: '08:00', closeTime: '22:00', isDayOff: false },
+      { label: 'Thứ Bảy', days: ['saturday'], openTime: '08:00', closeTime: '23:00', isDayOff: false },
+      { label: 'Chủ Nhật', days: ['sunday'], openTime: '08:00', closeTime: '22:00', isDayOff: true },
+    ],
+  })
+
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Toggle facility
+  function toggleFacility(key: Facility) {
+    setForm(f => ({
+      ...f,
+      facilities: f.facilities.includes(key)
+        ? f.facilities.filter(k => k !== key)
+        : [...f.facilities, key],
+    }))
+  }
+
+  // Toggle day off
+  function toggleDayOff(idx: number) {
+    setForm(f => {
+      const hours = [...f.operatingHours]
+      hours[idx] = { ...hours[idx], isDayOff: !hours[idx].isDayOff }
+      return { ...f, operatingHours: hours }
+    })
+  }
+
+  function setTime(idx: number, field: 'openTime' | 'closeTime', val: string) {
+    setForm(f => {
+      const hours = [...f.operatingHours]
+      hours[idx] = { ...hours[idx], [field]: val }
+      return { ...f, operatingHours: hours }
+    })
+  }
+
+  // Add image
+  function handleAddImage(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      setForm(f => ({ ...f, images: [...f.images, reader.result as string] }))
+    }
+    reader.readAsDataURL(file)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  function removeImage(idx: number) {
+    setForm(f => ({ ...f, images: f.images.filter((_, i) => i !== idx) }))
+  }
+
+  // Save
+  async function handleSave() {
+    setSaving(true)
+    setSaveError('')
+    try {
+      // TODO: gọi API PATCH /cafes/:id với form data
+      await new Promise(r => setTimeout(r, 800)) // simulate
+      router.push('/')
+    } catch (e: unknown) {
+      setSaveError((e as Error).message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // Format time display: "08:00" → "08 : 00  AM"
+  function formatTime(t: string) {
+    const [h, m] = t.split(':').map(Number)
+    const ampm = h < 12 ? 'AM' : 'PM'
+    const h12 = h % 12 === 0 ? 12 : h % 12
+    return { h: String(h12).padStart(2, '0'), m: String(m).padStart(2, '0'), ampm }
+  }
 
   return (
-    <section className="flex flex-1 flex-col items-start gap-14 pt-16 pb-28 px-10 max-w-240">
-      {/* Header */}
-      <header className="flex flex-col items-start gap-5 self-stretch w-full">
-        <button
-          type="button"
-          className="inline-flex gap-2 items-center"
-          aria-label="Quay lại dashboard"
-        >
-          <IconBack />
-          <span className="font-['Noto_Sans'] font-bold text-[#1b4332] text-sm tracking-[0.70px] leading-5 whitespace-nowrap">
-            QUAY LẠI DASHBOARD
-          </span>
+    <div style={{ minHeight: '100vh', background: '#FAFAF5', display: 'flex' }}>
+      <Sidebar />
+
+      {/* Main content */}
+      <div style={{ marginLeft: 288, flex: 1, padding: '64px 48px 112px', maxWidth: 1280 - 288, boxSizing: 'border-box' }}>
+
+        {/* Back link */}
+        <button onClick={() => router.back()} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', color: '#14422D', fontSize: 14, fontFamily: 'Noto Sans, sans-serif', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', lineHeight: '20px', padding: 0, marginBottom: 20 }}>
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#14422D" strokeWidth="2.5" strokeLinecap="round"><path d="M14 8H2M2 8l5-5M2 8l5 5" /></svg>
+          Quay lại Dashboard
         </button>
-        <div className="flex flex-col items-start pt-3 self-stretch w-full">
-          <h1 className="font-['Manrope'] font-extrabold text-[#1b4332] text-5xl tracking-[-1.20px] leading-12">
+
+        {/* Page title */}
+        <div style={{ marginBottom: 56 }}>
+          <h1 style={{ margin: 0, color: '#14422D', fontSize: 48, fontFamily: 'Manrope, sans-serif', fontWeight: 800, lineHeight: '48px', marginBottom: 20 }}>
             Chỉnh sửa thông tin của quán
           </h1>
+          <p style={{ margin: 0, maxWidth: 672, color: '#525252', fontSize: 20, fontFamily: 'Noto Sans, sans-serif', fontWeight: 400, lineHeight: '32px' }}>
+            Cập nhật thông tin chi tiết của quán để khách hàng có thông tin chính xác nhất.
+          </p>
         </div>
-        <p className="font-['Be_Vietnam_Pro'] font-normal text-[#414943] text-xl leading-[32.5px]">
-          Cập nhật thông tin chi tiết của quán để khách hàng có thông tin chính xác nhất.
-        </p>
-      </header>
 
-      <form
-        className="flex flex-col items-start gap-20 self-stretch w-full"
-        onSubmit={(e) => e.preventDefault()}
-      >
-        {/* ── Thông tin cơ bản ── */}
-        <div className="grid grid-cols-12 gap-10 w-full">
-          <div className="col-span-4 flex flex-col items-start gap-3">
-            <h2 className="font-['Manrope'] font-bold text-[#1b4332] text-2xl leading-8">
-              Thông tin cơ bản
-            </h2>
-            <p className="font-['Noto_Sans'] font-normal text-[#414943] text-sm leading-[22.8px]">
-              Tên quán và địa chỉ chính xác giúp khách
-              <br />
-              hàng dễ dàng tìm thấy bạn trên bản đồ.
-            </p>
-          </div>
+        {/* Sections */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 80 }}>
 
-          <div className="col-span-8 flex flex-col items-start gap-6 p-8 bg-[#fdfdfb] rounded-2xl border border-[#c0c9c133]">
-            {/* Tên quán */}
-            <div className="flex flex-col items-start gap-2 self-stretch w-full">
-              <label
-                htmlFor="cafe-name"
-                className="font-['Noto_Sans'] font-bold text-[#904c18] text-xs tracking-[1.20px] leading-4 whitespace-nowrap"
-              >
-                TÊN QUÁN
-              </label>
-              <div className="flex items-start justify-center px-4 py-3 self-stretch w-full bg-white rounded-lg border border-[#c0c9c14c]">
+          {/* ── Thông tin cơ bản ── */}
+          <Section title="Thông tin cơ bản" description={'Tên quán và địa chỉ chính xác giúp khách hàng dễ dàng tìm thấy bạn trên bản đồ.'}>
+            <div style={{ background: '#FAFAF5', borderRadius: 16, outline: '1px solid rgba(120,113,108,0.2)', outlineOffset: -1, padding: 32, display: 'flex', flexDirection: 'column', gap: 24 }}>
+
+              {/* Tên quán */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={labelStyle}>Tên quán</div>
                 <input
-                  id="cafe-name"
-                  type="text"
-                  value={cafeName}
-                  onChange={(e) => setCafeName(e.target.value)}
-                  className="flex-1 bg-transparent font-['Noto_Sans'] font-normal text-[#1a1c19] text-base leading-6 outline-none"
+                  value={form.name}
+                  onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                  style={inputBase}
                 />
               </div>
-            </div>
 
-            {/* Địa chỉ */}
-            <div className="flex flex-col items-start gap-2 self-stretch w-full">
-              <label
-                htmlFor="cafe-address"
-                className="font-['Noto_Sans'] font-bold text-[#904c18] text-xs tracking-[1.20px] leading-4 whitespace-nowrap"
-              >
-                ĐỊA CHỈ
-              </label>
-              <div className="relative flex items-center self-stretch w-full">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                  <IconLocation />
-                </span>
-                <div className="flex items-start justify-center pl-10 pr-4 py-3 self-stretch w-full bg-white rounded-lg border border-[#c0c9c14c]">
+              {/* Địa chỉ */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={labelStyle}>Địa chỉ</div>
+                <div style={{ position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: '#A8A29E', display: 'flex', alignItems: 'center' }}>
+                    <svg width="16" height="20" viewBox="0 0 16 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 0C4.686 0 2 2.686 2 6c0 4.5 6 13 6 13s6-8.5 6-13c0-3.314-2.686-6-6-6z" fill="#A8A29E" /><circle cx="8" cy="6" r="2.2" fill="white" /></svg>
+                  </span>
                   <input
-                    id="cafe-address"
-                    type="text"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    className="flex-1 bg-transparent font-['Noto_Sans'] font-normal text-[#1a1c19] text-base leading-6 outline-none"
+                    value={form.address}
+                    onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
+                    style={{ ...inputBase, paddingLeft: 40 }}
                   />
                 </div>
               </div>
-            </div>
 
-            {/* Mô tả */}
-            <div className="flex flex-col items-start gap-2 self-stretch w-full">
-              <label
-                htmlFor="cafe-description"
-                className="font-['Noto_Sans'] font-bold text-[#904c18] text-xs tracking-[1.20px] leading-4 whitespace-nowrap"
-              >
-                MÔ TẢ QUÁN
-              </label>
-              <div className="flex items-start justify-center pt-3 pb-16 px-4 self-stretch w-full bg-white rounded-lg border border-[#c0c9c14c]">
+              {/* Mô tả */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={labelStyle}>Mô tả quán</div>
                 <textarea
-                  id="cafe-description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={4}
-                  className="flex-1 resize-none bg-transparent font-['Noto_Sans'] font-normal text-[#1a1c19] text-base leading-6 outline-none"
+                  value={form.description}
+                  onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                  rows={5}
+                  style={{ ...inputBase, resize: 'vertical', paddingTop: 12, paddingBottom: 56 }}
                 />
               </div>
             </div>
-          </div>
-        </div>
+          </Section>
 
-        {/* ── Bộ sưu tập ── */}
-        <div className="grid grid-cols-12 gap-10 w-full">
-          <div className="col-span-4 flex flex-col items-start gap-3">
-            <h2 className="font-['Manrope'] font-bold text-[#1b4332] text-2xl leading-8">
-              Bộ sưu tập
-            </h2>
-            <p className="font-['Noto_Sans'] font-normal text-[#414943] text-sm leading-[22.8px]">
-              Hình ảnh đẹp và rõ nét về không gian làm
-              <br />
-              việc sẽ thu hút nhiều khách hàng hơn.
-            </p>
-          </div>
-
-          <div className="col-span-8 grid grid-cols-2 gap-4 h-52">
-            {/* Upload slot */}
-            <button
-              type="button"
-              className="w-full h-full flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#c0c9c180] hover:border-[#1b4332] hover:bg-[#f5f9f7] transition-colors"
-              aria-label="Thêm ảnh"
-            >
-              <span className="mb-2">
-                <IconUpload />
-              </span>
-              <span className="font-['Noto_Sans'] font-bold text-[#1b4332b2] text-xs leading-4 whitespace-nowrap">
-                Thêm ảnh
-              </span>
-            </button>
-
-            {/* Gallery image */}
-            {hasGalleryImage ? (
-              <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-[0px_2px_4px_-2px_#0000001a,0px_4px_6px_-1px_#0000001a] bg-[#d4e6d9]">
-                <div className="absolute inset-0 flex items-center justify-center text-[#1b4332] opacity-30">
-                  <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-                    <rect x="4" y="4" width="40" height="40" rx="8" stroke="currentColor" strokeWidth="2" />
-                    <circle cx="17" cy="17" r="4" stroke="currentColor" strokeWidth="2" />
-                    <path d="M4 32l10-10 8 8 6-6 16 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
-                <div className="absolute inset-0 bg-linear-to-b from-transparent to-[#00000010]" />
-                <button
-                  type="button"
-                  onClick={() => setHasGalleryImage(false)}
-                  className="absolute top-3 right-3 flex items-center justify-center p-1.5 bg-[#00000080] rounded-full backdrop-blur-sm"
-                  aria-label="Xóa ảnh"
-                >
-                  <IconClose />
-                </button>
-              </div>
-            ) : (
+          {/* ── Bộ sưu tập ── */}
+          <Section title="Bộ sưu tập" description={'Hình ảnh đẹp và rõ nét về không gian làm việc sẽ thu hút nhiều khách hàng hơn.'}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+              {/* Add button */}
               <button
-                type="button"
-                onClick={() => setHasGalleryImage(true)}
-                className="w-full h-full flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#c0c9c180] hover:border-[#1b4332] hover:bg-[#f5f9f7] transition-colors"
-                aria-label="Thêm ảnh"
+                onClick={() => fileInputRef.current?.click()}
+                style={{ width: 208, height: 208, borderRadius: 16, outline: '2px dashed rgba(120,113,108,0.5)', outlineOffset: -2, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, color: 'rgba(20,66,45,0.7)' }}
               >
-                <span className="mb-2"><IconUpload /></span>
-                <span className="font-['Noto_Sans'] font-bold text-[#1b4332b2] text-xs leading-4">Thêm ảnh</span>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(20,66,45,0.6)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  {/* Khung ảnh */}
+                  <rect x="2" y="4" width="17" height="14" rx="2" />
+                  {/* Mặt trời */}
+                  <circle cx="7.5" cy="9" r="1.5" />
+                  {/* Núi */}
+                  <polyline points="2,16 7,10 11,14 14,11 19,16" />
+                  {/* Dấu + góc trên phải */}
+                  <line x1="20" y1="2" x2="20" y2="8" />
+                  <line x1="17" y1="5" x2="23" y2="5" />
+                </svg>
+                <span style={{ fontSize: 12, fontFamily: 'Noto Sans, sans-serif', fontWeight: 700, color: 'rgba(20,66,45,0.7)' }}>Thêm ảnh</span>
               </button>
-            )}
-          </div>
-        </div>
+              <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAddImage} style={{ display: 'none' }} />
 
-        {/* ── Tiện ích & Không gian ── */}
-        <div className="grid grid-cols-12 gap-10 w-full">
-          <div className="col-span-4 flex flex-col items-start gap-3">
-            <h2 className="font-['Manrope'] font-bold text-[#1b4332] text-2xl leading-8">
-              Tiện ích &amp; Không gian
-            </h2>
-            <p className="font-['Noto_Sans'] font-normal text-[#414943] text-sm leading-[22.8px]">
-              Chọn các tiện ích nổi bật nhất mà quán của bạn đang cung cấp cho khách hàng.
-            </p>
-          </div>
-
-          <div className="col-span-8 p-8 bg-[#fdfdfb] rounded-2xl border border-[#c0c9c133]">
-            <div className="flex flex-wrap gap-x-4.5 gap-y-4">
-              {amenities.map((amenity) => (
-                <button
-                  key={amenity.id}
-                  type="button"
-                  onClick={() => toggleAmenity(amenity.id)}
-                  aria-pressed={amenity.selected}
-                  className={`relative inline-flex items-center gap-2 px-5 py-2.75 rounded-full transition-colors ${amenity.selected
-                    ? "bg-[#1b4332] shadow-[0px_2px_4px_-2px_#1b43321a,0px_4px_6px_-1px_#1b43321a]"
-                    : "bg-[#fafaf5] border border-[#c0c9c14c] hover:border-[#1b4332]"
-                    }`}
-                >
-                  <span className={amenity.selected ? "text-white" : "text-[#1a1c19]"}>
-                    {amenity.icon}
-                  </span>
-                  <span
-                    className={`font-['Noto_Sans'] font-bold text-sm leading-5 whitespace-nowrap ${amenity.selected ? "text-white" : "text-[#1a1c19]"
-                      }`}
+              {/* Images */}
+              {form.images.map((src, idx) => (
+                <div key={idx} style={{ position: 'relative', width: 300, height: 208, borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 4px -2px rgba(0,0,0,0.1), 0 4px 6px -1px rgba(0,0,0,0.08)' }}>
+                  <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <button
+                    onClick={() => removeImage(idx)}
+                    style={{ position: 'absolute', top: 12, right: 12, width: 28, height: 28, borderRadius: '50%', background: 'rgba(0,0,0,0.5)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(2px)' }}
                   >
-                    {amenity.label}
-                  </span>
-                </button>
+                    <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><line x1="2" y1="2" x2="12" y2="12" /><line x1="12" y1="2" x2="2" y2="12" /></svg>
+                  </button>
+                </div>
               ))}
             </div>
-          </div>
-        </div>
+          </Section>
 
-        {/* ── Giờ hoạt động ── */}
-        <div className="grid grid-cols-12 gap-10 w-full">
-          <div className="col-span-4 flex flex-col items-start gap-3">
-            <h2 className="font-['Manrope'] font-bold text-[#1b4332] text-2xl leading-8">
-              Giờ hoạt động
-            </h2>
-            <p className="font-['Noto_Sans'] font-normal text-[#414943] text-sm leading-[22.8px]">
-              Thiết lập thời gian đóng mở cửa chính xác
-              <br />
-              cho từng giai đoạn trong tuần.
-            </p>
-          </div>
-
-          <div className="col-span-8 flex flex-col items-end gap-4">
-            {schedule.map((item, index) => (
-              <div
-                key={item.id}
-                className={`flex items-center gap-4 p-6 self-stretch w-full bg-[#fdfdfb] rounded-2xl border border-[#c0c9c133]`}
-              >
-                <div className="flex flex-col w-40 items-start">
-                  <p className="font-['Noto_Sans'] font-bold text-[#1b4332] text-base leading-6">
-                    {item.label}
-                  </p>
-                </div>
-
-                <>
-                  <div className="flex gap-4">
-                    <TimeSelect
-                      value={item.open}
-                      onChange={(value) => updateSchedule(item.id, "open", value)}
-                      disabled={item.closed}
-                      showDash={!!item.disabled}
-                      ariaLabel={`${item.label} giờ mở cửa`}
-                    />
-                    <TimeSelect
-                      value={item.close}
-                      onChange={(value) => updateSchedule(item.id, "close", value)}
-                      disabled={item.closed}
-                      showDash={!!item.disabled}
-                      ariaLabel={`${item.label} giờ đóng cửa`}
-                    />
-                  </div>
-                  <div className="pl-2">
-                    <Checkbox
-                      checked={item.closed}
-                      onChange={item.disabled ? () => { } : (checked) => updateSchedule(item.id, "closed", checked)}
-                      label="Nghỉ"
-                      disabled={!!item.disabled}
-                    />
-                  </div>
-                </>
+          {/* ── Tiện ích ── */}
+          <Section title="Tiện ích & Không gian" description="Chọn các tiện ích nổi bật nhất mà quán của bạn đang cung cấp cho khách hàng.">
+            <div style={{ background: '#FAFAF5', borderRadius: 16, outline: '1px solid rgba(120,113,108,0.2)', outlineOffset: -1, padding: 32, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+                {FACILITIES.map(({ key, label, icon }) => {
+                  const active = form.facilities.includes(key)
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => toggleFacility(key)}
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 8,
+                        padding: '10px 20px', borderRadius: 9999, border: 'none', cursor: 'pointer',
+                        background: active ? '#14422D' : '#FAFAF5',
+                        outline: active ? 'none' : '1px solid rgba(120,113,108,0.3)',
+                        outlineOffset: -1,
+                        color: active ? 'white' : '#1C1917',
+                        fontSize: 14, fontFamily: 'Noto Sans, sans-serif', fontWeight: 700, lineHeight: '20px',
+                        boxShadow: active ? '0 2px 4px -2px rgba(27,67,50,0.1), 0 4px 6px -1px rgba(27,67,50,0.1)' : 'none',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      <span style={{ display: 'flex', alignItems: 'center', color: active ? 'white' : '#1C1917' }}>{icon}</span>
+                      {label}
+                    </button>
+                  )
+                })}
               </div>
-            ))}
-
-            <div className="flex items-center gap-2 self-stretch">
-              <Checkbox
-                checked={closedOnHolidays}
-                onChange={setClosedOnHolidays}
-                label="Đóng cửa vào ngày lễ"
-              />
             </div>
-          </div>
+          </Section>
+
+          {/* ── Giờ hoạt động ── */}
+          <Section title="Giờ hoạt động" description={'Thiết lập thời gian đóng mở cửa chính xác cho từng giai đoạn trong tuần.'}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {form.operatingHours.map((row, idx) => {
+                const open = formatTime(row.openTime)
+                const close = formatTime(row.closeTime)
+                return (
+                  <div
+                    key={row.label}
+                    style={{ padding: 24, background: '#FAFAF5', borderRadius: 16, outline: '1px solid rgba(120,113,108,0.2)', outlineOffset: -1, display: 'flex', alignItems: 'center', gap: 16, opacity: row.isDayOff ? 0.5 : 1, transition: 'opacity 0.2s' }}
+                  >
+                    {/* Day label */}
+                    <div style={{ width: 160, flexShrink: 0, color: '#14422D', fontSize: 16, fontFamily: 'Noto Sans, sans-serif', fontWeight: 700, lineHeight: '24px' }}>
+                      {row.label}
+                    </div>
+
+                    {/* Time inputs – ngang hàng */}
+                    <div style={{ flex: 1, display: 'flex', gap: 8 }}>
+                      {/* Open */}
+                      <div style={{ flex: 1, padding: '10px 14px', background: 'white', borderRadius: 8, outline: '1px solid rgba(120,113,108,0.3)', outlineOffset: -1, display: 'flex', alignItems: 'center' }}>
+                        {row.isDayOff ? (
+                          <div style={{ width: 20, height: 1.5, background: '#A8A29E', borderRadius: 2 }} />
+                        ) : (
+                          <input
+                            type="time"
+                            value={row.openTime}
+                            disabled={row.isDayOff}
+                            onChange={e => setTime(idx, 'openTime', e.target.value)}
+                            style={{ border: 'none', outline: 'none', background: 'transparent', color: '#1C1917', fontSize: 14, fontFamily: 'Noto Sans, sans-serif', cursor: row.isDayOff ? 'not-allowed' : 'text', width: '100%' }}
+                          />
+                        )}
+                      </div>
+                      {/* Close */}
+                      <div style={{ flex: 1, padding: '10px 14px', background: 'white', borderRadius: 8, outline: '1px solid rgba(120,113,108,0.3)', outlineOffset: -1, display: 'flex', alignItems: 'center' }}>
+                        {row.isDayOff ? (
+                          <div style={{ width: 20, height: 1.5, background: '#A8A29E', borderRadius: 2 }} />
+                        ) : (
+                          <input
+                            type="time"
+                            value={row.closeTime}
+                            disabled={row.isDayOff}
+                            onChange={e => setTime(idx, 'closeTime', e.target.value)}
+                            style={{ border: 'none', outline: 'none', background: 'transparent', color: '#1C1917', fontSize: 14, fontFamily: 'Noto Sans, sans-serif', cursor: row.isDayOff ? 'not-allowed' : 'text', width: '100%' }}
+                          />
+                        )}
+                      </div>
+                    </div>
+
+
+                    {/* Day off checkbox */}
+                    <div style={{ paddingLeft: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <button
+                        onClick={() => toggleDayOff(idx)}
+                        style={{ width: 20, height: 20, borderRadius: 4, background: row.isDayOff ? '#14422D' : 'white', border: row.isDayOff ? 'none' : '1px solid #D6D3D1', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, outline: row.isDayOff ? '1px solid rgba(0,0,0,0)' : 'none' }}
+                      >
+                        {row.isDayOff && (
+                          <svg width="12" height="9" viewBox="0 0 14 10" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1,5 5,9 13,1" /></svg>
+                        )}
+                      </button>
+                      <span style={{ color: '#525252', fontSize: 14, fontFamily: 'Noto Sans, sans-serif', fontWeight: 700, lineHeight: '20px' }}>Nghỉ</span>
+                    </div>
+                  </div>
+                )
+              })}
+
+              {/* Đóng cửa ngày lễ */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <button
+                  onClick={() => setForm(f => ({ ...f, isClosedOnHolidays: !f.isClosedOnHolidays }))}
+                  style={{ width: 24, height: 24, borderRadius: 4, background: form.isClosedOnHolidays ? '#14422D' : 'white', border: form.isClosedOnHolidays ? 'none' : '1px solid #D6D3D1', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                >
+                  {form.isClosedOnHolidays && (
+                    <svg width="14" height="10" viewBox="0 0 16 11" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1,5.5 6,10 15,1" /></svg>
+                  )}
+                </button>
+                <span style={{ color: '#525252', fontSize: 14, fontFamily: 'Noto Sans, sans-serif', fontWeight: 700, lineHeight: '20px' }}>Đóng cửa vào ngày lễ</span>
+              </div>
+            </div>
+          </Section>
+
         </div>
 
-        {/* ── Action buttons ── */}
-        <div className="flex items-start justify-end gap-5 pt-16 self-stretch w-full border-t border-[#c0c9c14c]">
+        {/* ── Footer actions ── */}
+        <div style={{ marginTop: 64, paddingTop: 64, borderTop: '1px solid rgba(120,113,108,0.3)', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 20 }}>
+          {saveError && <p style={{ margin: 0, fontSize: 14, color: '#DC2626', fontFamily: 'Noto Sans, sans-serif' }}>{saveError}</p>}
           <button
-            type="button"
-            className="inline-flex items-center justify-center px-10 py-4 bg-white rounded-full border border-[#c0c9c180] hover:bg-[#f5f5f0] transition-colors"
+            onClick={() => router.back()}
+            style={{ padding: '16px 40px', background: 'white', borderRadius: 9999, border: 'none', outline: '1px solid rgba(120,113,108,0.5)', outlineOffset: -1, cursor: 'pointer', color: '#525252', fontSize: 16, fontFamily: 'Noto Sans, sans-serif', fontWeight: 700, lineHeight: '24px' }}
           >
-            <span className="font-['Noto_Sans'] font-bold text-[#414943] text-base leading-6 whitespace-nowrap">
-              Hủy
-            </span>
+            Hủy
           </button>
           <button
-            type="submit"
-            className="relative inline-flex items-center justify-center px-14 py-4.25 bg-[#1b4332] rounded-full hover:bg-[#163829] transition-colors shadow-[0px_8px_10px_-6px_#1b433233,0px_20px_25px_-5px_#1b433233]"
+            onClick={handleSave}
+            disabled={saving}
+            style={{ position: 'relative', padding: '16px 56px', background: saving ? '#5A8A72' : '#14422D', borderRadius: 9999, border: 'none', cursor: saving ? 'not-allowed' : 'pointer', color: 'white', fontSize: 16, fontFamily: 'Noto Sans, sans-serif', fontWeight: 700, lineHeight: '24px', boxShadow: '0 8px 10px -6px rgba(27,67,50,0.2), 0 20px 25px -5px rgba(27,67,50,0.2)', transition: 'background 0.2s' }}
           >
-            <span className="font-['Noto_Sans'] font-bold text-white text-base leading-6 whitespace-nowrap">
-              Lưu thay đổi
-            </span>
+            {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
           </button>
         </div>
-      </form>
-    </section>
-  );
-}
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
-
-export default function OwnerCafeProfilePage() {
-  return (
-    <main
-      className="bg-[#fafaf5] w-full min-w-7xl min-h-screen flex"
-      data-screen="OwnerCafeProfile"
-    >
-      <OwnerNavigationSection />
-      <CafeProfileDetailsSection />
-    </main>
-  );
+      </div>
+    </div>
+  )
 }
