@@ -8,16 +8,16 @@ export default function OwnerSidebar() {
   const pathname = usePathname();
 
   const menuItems = [
-    { name: 'Tổng quan', path: '/owner/dashboard', icon: LayoutDashboard },
-    { name: 'Đăng ký quán mới', path: '/owner/cafes/new', icon: Store },
-    { name: 'Hồ sơ cá nhân', path: '/owner/profile', icon: User },
+    { name: 'Tổng quan', path: '/dashboard', icon: LayoutDashboard },
+    { name: 'Đăng ký quán mới', path: '/cafes/create', icon: Store },
+    { name: 'Hồ sơ cá nhân', path: '/profile', icon: User },
   ];
 
   return (
     <aside
       style={{
         width: 288,
-        minHeight: '100vh',
+        height: '100vh',
         padding: 24,
         background: '#FAFAF5',
         display: 'flex',
@@ -35,11 +35,12 @@ export default function OwnerSidebar() {
         <h1
           style={{
             color: '#1A1C19',
-            fontSize: 20,
+            fontSize: 24,
             fontFamily: 'Manrope, sans-serif',
             fontWeight: 700,
             margin: 0,
             lineHeight: '28px',
+            letterSpacing: '-0.5px',
           }}
         >
           WorkSpot Owner
@@ -101,6 +102,7 @@ export default function OwnerSidebar() {
       {/* User Info */}
       <div
         style={{
+          marginTop: 'auto',
           paddingTop: 24,
           borderTop: '1px solid #E7E5E4',
         }}
@@ -133,7 +135,7 @@ export default function OwnerSidebar() {
               style={{
                 color: '#1A1C19',
                 fontSize: 14,
-                fontFamily: 'Be Vietnam Pro, sans-serif',
+                fontFamily: 'Roboto, sans-serif',
                 fontWeight: 500,
                 lineHeight: '20px',
               }}
