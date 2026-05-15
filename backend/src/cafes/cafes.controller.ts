@@ -12,6 +12,7 @@ import {
   UseGuards,
   ParseUUIDPipe,
   ParseFloatPipe,
+  Req,
 } from '@nestjs/common';
 import { CafesService } from './cafes.service';
 import { CreateCafeDto } from './dto/create-cafe.dto';
@@ -57,8 +58,9 @@ export class CafesController {
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateCafeDto: UpdateCafeDto,
+    @Req() req: { user: { id: string } },
   ): Promise<CafeDetailResponseDto> {
-    return this.cafesService.update(id, updateCafeDto);
+    return this.cafesService.update(id, updateCafeDto, req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)

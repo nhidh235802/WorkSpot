@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Cafe, CafeStatus } from './entities/cafe.entity';
@@ -97,7 +97,13 @@ export class CafesService {
 
     if (operatingHours?.length) {
       const hours = operatingHours.map((h) =>
-        this.operatingHoursRepository.create({ ...h, cafe: savedCafe }),
+        this.operatingHoursRepository.create({
+          dayOfWeek: h.dayOfWeek,
+          openTime: h.openTime ?? undefined,
+          closeTime: h.closeTime ?? undefined,
+          isDayOff: h.isDayOff,
+          cafe: savedCafe,
+        }),
       );
       await this.operatingHoursRepository.save(hours);
     }
@@ -202,39 +208,52 @@ export class CafesService {
     };
   }
 
+  /**
+   * Cập nhật thông tin quán.
+   * @param id         UUID của quán cần cập nhật
+   * @param updateDto  Dữ liệu cập nhật (tất cả field optional)
+   * @param requesterId UUID của người dùng đang thực hiện request
+   */
   async update(
     id: string,
-    updateCafeDto: UpdateCafeDto,
+    updateDto: UpdateCafeDto,
+    requesterId: string,
   ): Promise<CafeDetailResponseDto> {
     const cafe = await this.findOneEntity(id);
-    const { ownerId, operatingHours, ...cafeData } = updateCafeDto;
+
+    // Chỉ owner của quán mới được chỉnh sửa
+    if (cafe.owner.id !== requesterId) {
+      throw new ForbiddenException('Bạn không có quyền chỉnh sửa quán này');
+    }
+
+    const { operatingHours, ...cafeData } = updateDto;
 
     const updatedCafe = await this.cafesRepository.manager.transaction(
       async (manager) => {
-        if (ownerId) {
-          const owner = await manager.findOne(User, { where: { id: ownerId } });
-          if (!owner) {
-            throw new NotFoundException(`Người dùng ${ownerId} không tìm thấy`);
-          }
-          cafe.owner = owner;
-        }
-
+        // Nếu truyền operatingHours → xoá cũ, lưu mới (replace strategy)
         if (operatingHours !== undefined) {
           await manager.delete(OperatingHour, { cafe: { id } });
           if (operatingHours.length) {
             const hours = operatingHours.map((h) =>
-              manager.create(OperatingHour, { ...h, cafe }),
+              manager.create(OperatingHour, {
+                dayOfWeek: h.dayOfWeek,
+                openTime: h.openTime ?? undefined,
+                closeTime: h.closeTime ?? undefined,
+                isDayOff: h.isDayOff,
+                cafe,
+              }),
             );
             await manager.save(OperatingHour, hours);
           }
         }
 
+        // Ghi đè các field còn lại
         Object.assign(cafe, cafeData);
-        return manager.save(Cafe, cafe); // trả về Cafe entity
+        return manager.save(Cafe, cafe);
       },
     );
 
-    return this.findOne(updatedCafe.id); // rồi map sang DTO
+    return this.findOne(updatedCafe.id);
   }
 
   async remove(id: string): Promise<void> {
