@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import React from 'react';
 import Sidebar from '@/components/OwnerSidebar';
+import CancelConfirmDialog from '@/components/CancelCreateDialog';
 import {
   Info,
   Image as ImageIcon,
@@ -196,6 +197,7 @@ export default function CreateCafeForm() {
   // ── Submit state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
 
   // ─── Handlers ────────────────────────────────────────────────────────────
 
@@ -761,7 +763,7 @@ export default function CreateCafeForm() {
           }}
         >
           <button
-            onClick={() => router.back()}
+            onClick={() => setShowCancelDialog(true)}
             style={{
               paddingLeft: 48,
               paddingRight: 48,
@@ -804,6 +806,10 @@ export default function CreateCafeForm() {
           </button>
         </div>
       </div>
+            <CancelConfirmDialog
+        isOpen={showCancelDialog}
+        onClose={() => setShowCancelDialog(false)}
+      />
     </div>
   );
 }
