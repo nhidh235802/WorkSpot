@@ -1,7 +1,7 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Cafe, CafeStatus } from './entities/cafe.entity';
+import { Cafe, CafeStatus, RealtimeStatus } from './entities/cafe.entity';
 import { OperatingHour } from './entities/operating-hour.entity';
 import { Review } from '../reviews/entities/review.entity';
 import { User } from '../users/entities/user.entity';
@@ -260,6 +260,57 @@ export class CafesService {
     const cafe = await this.findOneEntity(id);
     await this.cafesRepository.remove(cafe);
   }
+  // LẤY DANH SÁCH QUÁN CỦA OWNER (Dành cho Dashboard)
+  async getCafesByOwner(ownerId: string): Promise<any[]> {
+    // Tìm các quán có ownerId trùng khớp và lấy kèm bảng reviews để tính sao
+    const cafes = await this.cafesRepository.find({
+      where: { owner: { id: ownerId } },
+      relations: {
+        reviews: true,
+      },
+      order: { updatedAt: 'DESC' }, // Sắp xếp quán mới cập nhật lên đầu
+    });
+
+    // Map dữ liệu chuẩn hóa trả về cho Frontend Dashboard
+    return cafes.map((cafe) => {
+      const reviewCount = cafe.reviews?.length || 0;
+      const averageRating =
+        reviewCount > 0
+          ? Number((cafe.reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount).toFixed(1))
+          : null;
+
+      return {
+        id: cafe.id,
+        name: cafe.name,
+        address: cafe.address,
+        // Nếu quán chưa có avatar thì trả về ảnh mặc định
+        image: cafe.avatar || 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400',
+        status: cafe.status, // 'pending' | 'approved' | 'rejected'
+        realtimeStatus: 'available', // Thuộc tính giả lập cho frontend (Còn chỗ / Đang đông)
+        updatedAt: cafe.updatedAt,
+        rating: averageRating,
+      };
+    });
+  }
+  // CẬP NHẬT TRẠNG THÁI REALTIME
+  async updateRealtimeStatus(id: string, realtimeStatus: RealtimeStatus, ownerId: string) {
+    // 1. Tìm quán và lấy thông tin owner (Dùng lại hàm findOneEntity bạn đã viết)
+    const cafe = await this.findOneEntity(id);
+
+    // 2. Chặn cập nhật trái phép (Bảo vệ quyền lợi chủ quán khác)
+    if (cafe.owner.id !== ownerId) {
+      throw new ForbiddenException('Bạn không có quyền cập nhật quán của người khác');
+    }
+
+    // 3. Cập nhật và lưu vào DB
+    cafe.realtimeStatus = realtimeStatus;
+    await this.cafesRepository.save(cafe);
+
+    return { 
+      message: 'Cập nhật trạng thái thành công',
+      realtimeStatus: cafe.realtimeStatus 
+    };
+  }
 
   async patchStatus(id: string, status: CafeStatus): Promise<CafeDetailResponseDto> {
     const cafe = await this.findOneEntity(id);
@@ -342,3 +393,4 @@ export class CafesService {
     }));
   }
 }
+

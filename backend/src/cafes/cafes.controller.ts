@@ -25,6 +25,7 @@ import { UserRole } from '../users/entities/user.entity';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { SearchCafeDto } from './dto/search-cafe.dto';
+import { RealtimeStatus } from './entities/cafe.entity';
 
 @Controller('cafes')
 export class CafesController {
@@ -52,6 +53,22 @@ export class CafesController {
     return this.cafesService.searchCafes(searchCafeDto);
   }
 
+  // API Route: GET http://localhost:3001/cafes/owner/me?ownerId=...
+  @Get('owner/me')
+  async getMyCafes(@Query('ownerId') ownerId: string) {
+    return this.cafesService.getCafesByOwner(ownerId);
+  }
+
+  @Patch(':id/realtime-status')
+  async updateRealtimeStatus(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('realtimeStatus') realtimeStatus: RealtimeStatus,
+    @Body('ownerId') ownerId: string,
+  ) {
+    return this.cafesService.updateRealtimeStatus(id, realtimeStatus, ownerId);
+  }
+
+  // HÀM FIND ONE PHẢI NẰM DƯỚI HÀM SEARCH VÀ OWNER/ME
   @Get(':id')
   findOne(
     @Param('id', ParseUUIDPipe) id: string,

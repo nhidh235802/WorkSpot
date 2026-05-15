@@ -16,9 +16,16 @@ export enum CafeStatus {
   PENDING = 'pending',
   APPROVED = 'approved',
   REJECTED = 'rejected',
+  HIDDEN = 'hidden',
 }
 
-// Định nghĩa sẵn các tiện ích để lưu dạng mảng
+// BỔ SUNG: Enum cho trạng thái hoạt động theo thời gian thực
+export enum RealtimeStatus {
+  AVAILABLE = 'available',
+  NORMAL = 'normal',
+  BUSY = 'busy',
+}
+
 export enum FacilityType {
   WIFI = 'wifi',
   SOCKET = 'socket',
@@ -44,32 +51,35 @@ export class Cafe {
   @Column({ type: 'varchar', length: 255 })
   address!: string;
 
-  // Lưu riêng kinh, vĩ độ cho hàm tính khoảng cách
   @Column({ type: 'float', nullable: true })
   latitude!: number;
 
   @Column({ type: 'float', nullable: true })
   longitude!: number;
 
-  // Một ảnh đại diện và tối đa 10 ảnh quán
   @Column({ type: 'text', nullable: true })
   avatar!: string;
 
   @Column({ type: 'text', array: true, default: [] })
   images!: string[];
 
-  // Các tiện ích của quán (wifi, ổ cắm, chỗ ngồi...)
   @Column({ type: 'enum', enum: FacilityType, array: true, default: [] })
   facilities!: FacilityType[];
 
-  // Các trạng thái
   @Column({ type: 'boolean', default: false })
-  isClosedOnHolidays!: boolean; // Nút tick "Đóng cửa vào ngày lễ"
+  isClosedOnHolidays!: boolean; 
 
   @Column({ type: 'enum', enum: CafeStatus, default: CafeStatus.PENDING })
   status!: CafeStatus;
 
-  // Quan hệ với các bảng khác
+  // LÝ DO TỪ CHỐI (Dành cho Admin)
+  @Column({ type: 'text', nullable: true })
+  rejectionReason!: string;
+
+  // TRẠNG THÁI REALTIME (Dành cho Owner báo cáo Đang đông / Còn chỗ)
+  @Column({ type: 'enum', enum: RealtimeStatus, default: RealtimeStatus.NORMAL })
+  realtimeStatus!: RealtimeStatus;
+
   @OneToMany(() => OperatingHour, (operatingHour) => operatingHour.cafe, {
     cascade: true,
   })
@@ -82,7 +92,6 @@ export class Cafe {
   @OneToMany(() => Review, (review) => review.cafe)
   reviews!: Review[];
 
-  // Thông tin về thời gian tạo và cập nhật quán
   @CreateDateColumn()
   createdAt!: Date;
 

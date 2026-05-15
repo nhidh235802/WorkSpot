@@ -17,11 +17,37 @@ export class InitSchema1778069640310 implements MigrationInterface {
       `CREATE TYPE "public"."cafes_facilities_enum" AS ENUM('wifi', 'socket', 'workspace', 'desk', 'snack', 'cleanliness', 'smoking_rule','flexible_hours')`,
     );
     await queryRunner.query(
-      `CREATE TYPE "public"."cafes_status_enum" AS ENUM('pending', 'approved', 'rejected')`,
+      `CREATE TYPE "public"."cafes_status_enum" AS ENUM('pending', 'approved', 'rejected', 'hidden')`,
     );
+    
+    // BỔ SUNG TYPE MỚI CHO REALTIME STATUS
     await queryRunner.query(
-      `CREATE TABLE "cafes" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying(255) NOT NULL, "description" text, "address" character varying(255) NOT NULL, "latitude" double precision, "longitude" double precision, "avatar" text, "images" text array NOT NULL DEFAULT '{}', "facilities" "public"."cafes_facilities_enum" array NOT NULL DEFAULT '{}', "isClosedOnHolidays" boolean NOT NULL DEFAULT false, "status" "public"."cafes_status_enum" NOT NULL DEFAULT 'pending', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "owner_id" uuid, CONSTRAINT "PK_1e8e00a60bc4dd368d8d55a1d7e" PRIMARY KEY ("id"))`,
+      `CREATE TYPE "public"."cafes_realtimestatus_enum" AS ENUM('available', 'normal', 'busy')`,
     );
+
+    // CẬP NHẬT BẢNG CAFES: THÊM rejectionReason VÀ realtimeStatus
+    await queryRunner.query(
+      `CREATE TABLE "cafes" (
+        "id" uuid NOT NULL DEFAULT uuid_generate_v4(), 
+        "name" character varying(255) NOT NULL, 
+        "description" text, 
+        "address" character varying(255) NOT NULL, 
+        "latitude" double precision, 
+        "longitude" double precision, 
+        "avatar" text, 
+        "images" text array NOT NULL DEFAULT '{}', 
+        "facilities" "public"."cafes_facilities_enum" array NOT NULL DEFAULT '{}', 
+        "isClosedOnHolidays" boolean NOT NULL DEFAULT false, 
+        "status" "public"."cafes_status_enum" NOT NULL DEFAULT 'pending', 
+        "rejectionReason" text,
+        "realtimeStatus" "public"."cafes_realtimestatus_enum" NOT NULL DEFAULT 'normal',
+        "createdAt" TIMESTAMP NOT NULL DEFAULT now(), 
+        "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), 
+        "owner_id" uuid, 
+        CONSTRAINT "PK_1e8e00a60bc4dd368d8d55a1d7e" PRIMARY KEY ("id")
+      )`,
+    );
+    
     await queryRunner.query(
       `CREATE TYPE "public"."users_role_enum" AS ENUM('customer', 'owner', 'admin')`,
     );
@@ -58,6 +84,7 @@ export class InitSchema1778069640310 implements MigrationInterface {
     await queryRunner.query(`DROP TABLE "users"`);
     await queryRunner.query(`DROP TYPE "public"."users_role_enum"`);
     await queryRunner.query(`DROP TABLE "cafes"`);
+    await queryRunner.query(`DROP TYPE "public"."cafes_realtimestatus_enum"`); // DROP TYPE MỚI
     await queryRunner.query(`DROP TYPE "public"."cafes_status_enum"`);
     await queryRunner.query(`DROP TYPE "public"."cafes_facilities_enum"`);
     await queryRunner.query(`DROP TABLE "reviews"`);
@@ -65,5 +92,6 @@ export class InitSchema1778069640310 implements MigrationInterface {
     await queryRunner.query(
       `DROP TYPE "public"."operating_hours_dayofweek_enum"`,
     );
+    
   }
 }
