@@ -2,15 +2,16 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { CafeService } from '@/services/cafe.service'
 import axios from 'axios'
+import OwnerSidebar from '@/components/OwnerSidebar'
+import { ArrowLeft, MapPin, ImagePlus, X, Check, Loader2 } from 'lucide-react'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 type Facility = 'wifi' | 'socket' | 'desk' | 'snack' | 'cleanliness' | 'workspace' | 'smoking_rule'
 
 interface OperatingHour {
   label: string
-  days: string[]
+  days: string[] // Chứa mảng các ngày (vd: ['monday', 'tuesday', ...])
   openTime: string
   closeTime: string
   isDayOff: boolean
@@ -28,105 +29,25 @@ interface CafeForm {
 
 // ─── Facility config ────────────────────────────────────────────────────────────
 const FACILITIES: { key: Facility; label: string; icon: React.ReactNode }[] = [
-  {
-    key: 'wifi', label: 'Wi-Fi',
-    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M5 12.55a11 11 0 0 1 14.08 0" /><path d="M1.42 9a16 16 0 0 1 21.16 0" /><path d="M8.53 16.11a6 6 0 0 1 6.95 0" /><circle cx="12" cy="20" r="1" fill="currentColor" stroke="none" /></svg>
-  },
-  {
-    key: 'socket', label: 'Ổ cắm điện',
-    icon: <svg width="10" height="14" viewBox="0 0 14 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="5" y1="1" x2="5" y2="5" /><line x1="9" y1="1" x2="9" y2="5" /><rect x="2" y="5" width="10" height="9" rx="4" /><line x1="7" y1="14" x2="7" y2="19" /></svg>
-  },
-  {
-    key: 'desk', label: 'Bàn làm việc',
-    icon: <svg width="14" height="10" viewBox="0 0 20 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="1" y="1" width="18" height="5" rx="1" /><line x1="4" y1="6" x2="4" y2="13" /><line x1="16" y1="6" x2="16" y2="13" /><line x1="4" y1="10" x2="16" y2="10" /></svg>
-  },
-  {
-    key: 'snack', label: 'Đồ ăn nhẹ',
-    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10" /><circle cx="9" cy="9.5" r="1.5" fill="currentColor" stroke="none" /><circle cx="14.5" cy="11" r="1" fill="currentColor" stroke="none" /><circle cx="10.5" cy="15" r="1" fill="currentColor" stroke="none" /></svg>
-  },
-  {
-    key: 'cleanliness', label: 'Độ sạch sẽ',
-    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="10" y="2" width="4" height="6" rx="2" /><rect x="3" y="8" width="18" height="10" rx="2" /><line x1="8" y1="11" x2="8" y2="16" /><line x1="12" y1="11" x2="12" y2="16" /><line x1="16" y1="11" x2="16" y2="16" /></svg>
-  },
-  {
-    key: 'workspace', label: 'Không gian làm việc',
-    icon: <svg width="16" height="12" viewBox="0 0 22 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="1" y="1" width="20" height="11" rx="2" /><line x1="7" y1="15" x2="15" y2="15" /><line x1="11" y1="12" x2="11" y2="15" /></svg>
-  },
-  {
-    key: 'smoking_rule', label: 'Quy định hút thuốc',
-    icon: <svg width="16" height="14" viewBox="0 0 22 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="2" y1="12" x2="14" y2="12" /><line x1="16" y1="12" x2="20" y2="12" /><path d="M14 9 c3 0 3 3 3 3" /><path d="M12 6 c3 0 4 2 4 6" /><line x1="2" y1="2" x2="20" y2="16" /></svg>
-  },
+  { key: 'wifi', label: 'Wi-Fi', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M5 12.55a11 11 0 0 1 14.08 0" /><path d="M1.42 9a16 16 0 0 1 21.16 0" /><path d="M8.53 16.11a6 6 0 0 1 6.95 0" /><circle cx="12" cy="20" r="1" fill="currentColor" stroke="none" /></svg> },
+  { key: 'socket', label: 'Ổ cắm điện', icon: <svg width="10" height="14" viewBox="0 0 14 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="5" y1="1" x2="5" y2="5" /><line x1="9" y1="1" x2="9" y2="5" /><rect x="2" y="5" width="10" height="9" rx="4" /><line x1="7" y1="14" x2="7" y2="19" /></svg> },
+  { key: 'desk', label: 'Bàn làm việc', icon: <svg width="14" height="10" viewBox="0 0 20 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="1" y="1" width="18" height="5" rx="1" /><line x1="4" y1="6" x2="4" y2="13" /><line x1="16" y1="6" x2="16" y2="13" /><line x1="4" y1="10" x2="16" y2="10" /></svg> },
+  { key: 'snack', label: 'Đồ ăn nhẹ', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10" /><circle cx="9" cy="9.5" r="1.5" fill="currentColor" stroke="none" /><circle cx="14.5" cy="11" r="1" fill="currentColor" stroke="none" /><circle cx="10.5" cy="15" r="1" fill="currentColor" stroke="none" /></svg> },
+  { key: 'cleanliness', label: 'Độ sạch sẽ', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="10" y="2" width="4" height="6" rx="2" /><rect x="3" y="8" width="18" height="10" rx="2" /><line x1="8" y1="11" x2="8" y2="16" /><line x1="12" y1="11" x2="12" y2="16" /><line x1="16" y1="11" x2="16" y2="16" /></svg> },
+  { key: 'workspace', label: 'Không gian làm việc', icon: <svg width="14" height="10" viewBox="0 0 22 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="1" y="1" width="20" height="11" rx="2" /><line x1="7" y1="15" x2="15" y2="15" /><line x1="11" y1="12" x2="11" y2="15" /></svg> },
+  { key: 'smoking_rule', label: 'Quy định hút thuốc', icon: <svg width="14" height="12" viewBox="0 0 22 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="2" y1="12" x2="14" y2="12" /><line x1="16" y1="12" x2="20" y2="12" /><path d="M14 9 c3 0 3 3 3 3" /><path d="M12 6 c3 0 4 2 4 6" /><line x1="2" y1="2" x2="20" y2="16" /></svg> },
 ]
 
-// ─── Sidebar ────────────────────────────────────────────────────────────────────
-function Sidebar({ userName = 'Minh Anh' }: { userName?: string }) {
-  const navItems = [
-    { label: 'Tổng quan', active: true, icon: <svg width="14" height="14" viewBox="0 0 18 18" fill="currentColor"><rect x="1" y="1" width="7" height="7" rx="1.5" /><rect x="10" y="1" width="7" height="7" rx="1.5" /><rect x="1" y="10" width="7" height="7" rx="1.5" /><rect x="10" y="10" width="7" height="7" rx="1.5" /></svg> },
-    { label: 'Đăng ký quán mới', active: false, icon: <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2H5a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h7" /><polyline points="12,2 12,6 16,6" /><path d="M16 2h-4" /><path d="M13 13.5l3.5-3.5a1.2 1.2 0 0 1 1.7 1.7L14.7 15l-2.2.5.5-2z" /><line x1="7" y1="8" x2="11" y2="8" /><line x1="7" y1="11" x2="10" y2="11" /></svg> },
-    { label: 'Hồ sơ cá nhân', active: false, icon: <svg width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="9" cy="6" r="3.5" /><path d="M2 16c0-3.3 3.1-6 7-6s7 2.7 7 6" /></svg> },
-  ]
-
-  return (
-    <div style={{ width: 288, minHeight: '100vh', background: '#FAFAF5', borderRight: '1px solid rgba(120,113,108,0.1)', padding: 24, display: 'flex', flexDirection: 'column', position: 'fixed', left: 0, top: 0, bottom: 0, zIndex: 10 }}>
-      {/* Brand */}
-      <div style={{ paddingBottom: 40 }}>
-        <div style={{ color: '#1C1917', fontSize: 20, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '28px' }}>WorkSpot Owner</div>
-        <div style={{ color: '#A8A29E', fontSize: 10, fontFamily: 'Be Vietnam Pro, sans-serif', letterSpacing: '0.08em', lineHeight: '16px', marginTop: 2 }}>Cổng thông tin Hà Nội</div>
-      </div>
-
-      {/* Nav */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
-        {navItems.map(item => (
-          <button key={item.label} style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, background: item.active ? '#14422D' : 'transparent', color: item.active ? 'white' : '#78716C', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: item.active ? 700 : 500, lineHeight: '20px', textAlign: 'left', boxShadow: item.active ? '0 1px 2px rgba(0,0,0,0.05)' : 'none' }}>
-            <span style={{ color: item.active ? 'white' : '#78716C', flexShrink: 0 }}>{item.icon}</span>
-            {item.label}
-          </button>
-        ))}
-      </div>
-
-      {/* User */}
-      <div style={{ borderTop: '1px solid #E7E5E4', paddingTop: 24 }}>
-        <div style={{ padding: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#D6D3D1', flexShrink: 0, overflow: 'hidden' }}>
-            <img src="https://placehold.co/40x40" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          </div>
-          <div>
-            <div style={{ color: '#1C1917', fontSize: 14, fontFamily: 'Roboto, sans-serif', fontWeight: 500, lineHeight: '20px' }}>{userName}</div>
-            <div style={{ color: '#78716C', fontSize: 10, fontFamily: 'Be Vietnam Pro, sans-serif', lineHeight: '16px' }}>Chủ quán</div>
-          </div>
-        </div>
-      </div>
+// ─── Component Section Layout ───────────────────────────────────────────────────
+const Section = ({ title, desc, children }: { title: string, desc: string, children: React.ReactNode }) => (
+  <div className="flex flex-col xl:flex-row gap-10 lg:gap-16 items-start w-full">
+    <div className="w-full xl:w-[280px] shrink-0 pt-2">
+      <h2 className="text-[20px] font-bold text-[#14422D] font-['Manrope'] mb-3">{title}</h2>
+      <p className="text-[14px] text-[#78716C] leading-relaxed font-['Be_Vietnam_Pro']">{desc}</p>
     </div>
-  )
-}
-
-// ─── Section wrapper ────────────────────────────────────────────────────────────
-function Section({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
-  return (
-    <div style={{ display: 'flex', gap: 48, alignItems: 'flex-start' }}>
-      {/* Left label */}
-      <div style={{ width: 240, flexShrink: 0, paddingTop: 4 }}>
-        <div style={{ color: '#14422D', fontSize: 24, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '32px', marginBottom: 12 }}>{title}</div>
-        <div style={{ color: '#525252', fontSize: 14, fontFamily: 'Noto Sans, sans-serif', fontWeight: 400, lineHeight: '24px' }}>{description}</div>
-      </div>
-      {/* Right content */}
-      <div style={{ flex: 1 }}>{children}</div>
-    </div>
-  )
-}
-
-const labelStyle: React.CSSProperties = {
-  color: '#92400E', fontSize: 12, fontFamily: 'Noto Sans, sans-serif',
-  fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', lineHeight: '16px',
-}
-
-const inputBase: React.CSSProperties = {
-  width: '100%', boxSizing: 'border-box', background: 'white',
-  border: 'none', outline: '1px solid rgba(120,113,108,0.3)', outlineOffset: -1,
-  borderRadius: 8, padding: '12px 16px',
-  color: '#1C1917', fontSize: 16, fontFamily: 'Noto Sans, sans-serif',
-  fontWeight: 400, lineHeight: '24px',
-}
+    <div className="flex-1 w-full max-w-[800px]">{children}</div>
+  </div>
+)
 
 // ─── Main page ──────────────────────────────────────────────────────────────────
 export default function EditCafePage() {
@@ -135,18 +56,16 @@ export default function EditCafePage() {
   const cafeId = params.id as string
 
   const [form, setForm] = useState<CafeForm>({
-    name: '',
-    address: '',
-    description: '',
-    facilities: [],
-    images: [],
-    isClosedOnHolidays: false,
-    operatingHours: [],
+    name: '', address: '', description: '', facilities: [], images: [], isClosedOnHolidays: false,
+    operatingHours: [
+      { label: 'Thứ Hai - Thứ Sáu', days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'], openTime: '08:00', closeTime: '22:00', isDayOff: false },
+      { label: 'Thứ Bảy', days: ['saturday'], openTime: '08:00', closeTime: '22:00', isDayOff: false },
+      { label: 'Chủ Nhật', days: ['sunday'], openTime: '08:00', closeTime: '22:00', isDayOff: false },
+    ]
   })
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [saveError, setSaveError] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -154,39 +73,35 @@ export default function EditCafePage() {
       try {
         const userStr = localStorage.getItem('user')
         const user = userStr ? JSON.parse(userStr) : null
-        
-        if (!user) {
-          router.push('/login')
-          return
-        }
+        if (!user) return router.push('/login')
 
-        const data = await CafeService.getCafeById(cafeId)
-        
-        // Ownership check
-        if (data.owner?.id !== user.id) {
-          router.push('/dashboard')
-          return
-        }
+        const res = await axios.get(`http://localhost:3001/cafes/${cafeId}`)
+        const data = res.data
+        if (data.owner?.id !== user.id) return router.push('/owner/dashboard')
 
-        // Map backend data to form state
+        // Tái cấu trúc giờ hoạt động từ Backend thành 3 block
+        const oh = data.operatingHours || []
+        const getHoursForDay = (day: string) => oh.find((h: any) => h.dayOfWeek === day) || { openTime: '08:00', closeTime: '22:00', isDayOff: false }
+        
+        const mon = getHoursForDay('monday')
+        const sat = getHoursForDay('saturday')
+        const sun = getHoursForDay('sunday')
+
         setForm({
-          name: data.name,
-          address: data.address,
+          name: data.name || '',
+          address: data.address || '',
           description: data.description || '',
           facilities: data.facilities || [],
           images: data.images || [],
           isClosedOnHolidays: data.isClosedOnHolidays || false,
-          operatingHours: data.operatingHours.map((oh: any) => ({
-            label: oh.dayOfWeek === 'weekday' ? 'Thứ Hai - Thứ Sáu' : oh.dayOfWeek === 'saturday' ? 'Thứ Bảy' : 'Chủ Nhật',
-            days: [oh.dayOfWeek],
-            openTime: oh.openTime || '08:00',
-            closeTime: oh.closeTime || '22:00',
-            isDayOff: oh.isDayOff
-          }))
+          operatingHours: [
+            { label: 'Thứ Hai - Thứ Sáu', days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'], openTime: mon.openTime, closeTime: mon.closeTime, isDayOff: mon.isDayOff },
+            { label: 'Thứ Bảy', days: ['saturday'], openTime: sat.openTime, closeTime: sat.closeTime, isDayOff: sat.isDayOff },
+            { label: 'Chủ Nhật', days: ['sunday'], openTime: sun.openTime, closeTime: sun.closeTime, isDayOff: sun.isDayOff },
+          ]
         })
       } catch (err) {
-        console.error(err)
-        setSaveError('Không thể tải thông tin quán.')
+        alert('Không thể tải thông tin quán.')
       } finally {
         setLoading(false)
       }
@@ -194,337 +109,278 @@ export default function EditCafePage() {
     fetchCafe()
   }, [cafeId, router])
 
-  // Toggle facility
-  function toggleFacility(key: Facility) {
-    setForm(f => ({
-      ...f,
-      facilities: f.facilities.includes(key)
-        ? f.facilities.filter(k => k !== key)
-        : [...f.facilities, key],
-    }))
-  }
+  // Handlers
+  const toggleFacility = (key: Facility) => setForm(f => ({
+    ...f, facilities: f.facilities.includes(key) ? f.facilities.filter(k => k !== key) : [...f.facilities, key],
+  }))
 
-  // Toggle day off
-  function toggleDayOff(idx: number) {
-    setForm(f => {
-      const hours = [...f.operatingHours]
-      hours[idx] = { ...hours[idx], isDayOff: !hours[idx].isDayOff }
-      return { ...f, operatingHours: hours }
-    })
-  }
+  const toggleDayOff = (idx: number) => setForm(f => {
+    const hours = [...f.operatingHours]; hours[idx] = { ...hours[idx], isDayOff: !hours[idx].isDayOff }; return { ...f, operatingHours: hours }
+  })
 
-  function setTime(idx: number, field: 'openTime' | 'closeTime', val: string) {
-    setForm(f => {
-      const hours = [...f.operatingHours]
-      hours[idx] = { ...hours[idx], [field]: val }
-      return { ...f, operatingHours: hours }
-    })
-  }
+  const setTime = (idx: number, field: 'openTime' | 'closeTime', val: string) => setForm(f => {
+    const hours = [...f.operatingHours]; hours[idx] = { ...hours[idx], [field]: val }; return { ...f, operatingHours: hours }
+  })
 
-  // Add image
-  function handleAddImage(e: React.ChangeEvent<HTMLInputElement>) {
+  const handleAddImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
-    reader.onload = () => {
-      setForm(f => ({ ...f, images: [...f.images, reader.result as string] }))
-    }
+    reader.onload = () => setForm(f => ({ ...f, images: [...f.images, reader.result as string] }))
     reader.readAsDataURL(file)
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  function removeImage(idx: number) {
-    setForm(f => ({ ...f, images: f.images.filter((_, i) => i !== idx) }))
-  }
+  const removeImage = (idx: number) => setForm(f => ({ ...f, images: f.images.filter((_, i) => i !== idx) }))
 
-  // Save
-  async function handleSave() {
+  const handleSave = async () => {
     setSaving(true)
-    setSaveError('')
     try {
       const token = localStorage.getItem('access_token')
       
-      const payload = {
-        name: form.name,
-        address: form.address,
-        description: form.description,
-        facilities: form.facilities,
-        images: form.images,
-        isClosedOnHolidays: form.isClosedOnHolidays,
-        operatingHours: form.operatingHours.map(oh => ({
-          dayOfWeek: oh.days[0],
-          openTime: oh.openTime,
-          closeTime: oh.closeTime,
-          isDayOff: oh.isDayOff
-        }))
-      }
+      // Bung 3 block thành 7 ngày cho Backend
+      const expandedHours: any[] = []
+      form.operatingHours.forEach(oh => {
+        oh.days.forEach(day => {
+          expandedHours.push({ dayOfWeek: day, openTime: oh.openTime, closeTime: oh.closeTime, isDayOff: oh.isDayOff })
+        })
+      })
+
+      const payload = { ...form, operatingHours: expandedHours }
 
       await axios.patch(`http://localhost:3001/cafes/${cafeId}`, payload, {
         headers: { Authorization: `Bearer ${token}` }
       })
-
-      router.push('/dashboard')
+      router.push('/owner/dashboard')
     } catch (e: any) {
-      setSaveError(e.response?.data?.message || e.message)
-    } finally {
+      alert(e.response?.data?.message || 'Có lỗi xảy ra khi lưu.')
       setSaving(false)
     }
   }
 
-  // Format time display: "08:00" → "08 : 00  AM"
-  function formatTime(t: string) {
-    const [h, m] = t.split(':').map(Number)
-    const ampm = h < 12 ? 'AM' : 'PM'
-    const h12 = h % 12 === 0 ? 12 : h % 12
-    return { h: String(h12).padStart(2, '0'), m: String(m).padStart(2, '0'), ampm }
+  // Tiện ích format hiển thị giờ 12 tiếng (AM/PM) cho input type="time"
+  const formatTime12h = (time24h: string) => {
+    if (!time24h) return '-- : --'
+    const [h, m] = time24h.split(':')
+    const hour = parseInt(h)
+    const ampm = hour >= 12 ? 'PM' : 'AM'
+    const hour12 = hour % 12 || 12
+    return `${hour12.toString().padStart(2, '0')}:${m} ${ampm}`
   }
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#FAFAF5' }}>
-        <p style={{ color: '#14422D', fontSize: 18, fontWeight: 500 }}>Đang tải thông tin quán...</p>
+      <div className="flex h-screen items-center justify-center bg-[#FAFAF5]">
+        <Loader2 className="w-10 h-10 animate-spin text-[#14422D]" />
       </div>
     )
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#FAFAF5', display: 'flex' }}>
-      <Sidebar />
+    <div className="flex h-screen bg-[#FAFAF5] font-['Be_Vietnam_Pro'] overflow-hidden">
+      <OwnerSidebar />
 
-      {/* Main content */}
-      <div style={{ marginLeft: 288, flex: 1, padding: '64px 48px 112px', maxWidth: 1280 - 288, boxSizing: 'border-box' }}>
-
-        {/* Back link */}
-        <button onClick={() => router.back()} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', color: '#14422D', fontSize: 14, fontFamily: 'Noto Sans, sans-serif', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', lineHeight: '20px', padding: 0, marginBottom: 20 }}>
-          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#14422D" strokeWidth="2.5" strokeLinecap="round"><path d="M14 8H2M2 8l5-5M2 8l5 5" /></svg>
+      <main className="flex-1 overflow-y-auto px-10 py-12 lg:px-16 w-full">
+        
+        {/* Nút Quay lại */}
+        <button 
+          onClick={() => router.push('/owner/dashboard')}
+          className="flex items-center gap-2 text-[#14422D] hover:text-[#0d2e1f] font-bold text-[12px] uppercase tracking-widest mb-6 transition-colors group"
+        >
+          <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> 
           Quay lại Dashboard
         </button>
 
-        {/* Page title */}
-        <div style={{ marginBottom: 56 }}>
-          <h1 style={{ margin: 0, color: '#14422D', fontSize: 48, fontFamily: 'Manrope, sans-serif', fontWeight: 800, lineHeight: '48px', marginBottom: 20 }}>
+        {/* Tiêu đề trang */}
+        <div className="mb-16">
+          <h1 className="text-[36px] font-bold text-[#14422D] font-['Manrope'] mb-2">
             Chỉnh sửa thông tin của quán
           </h1>
-          <p style={{ margin: 0, maxWidth: 672, color: '#525252', fontSize: 20, fontFamily: 'Noto Sans, sans-serif', fontWeight: 400, lineHeight: '32px' }}>
+          <p className="text-[#57534E] text-[16px]">
             Cập nhật thông tin chi tiết của quán để khách hàng có thông tin chính xác nhất.
           </p>
         </div>
 
-        {/* Sections */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 80 }}>
-
-          {/* ── Thông tin cơ bản ── */}
-          <Section title="Thông tin cơ bản" description={'Tên quán và địa chỉ chính xác giúp khách hàng dễ dàng tìm thấy bạn trên bản đồ.'}>
-            <div style={{ background: '#FAFAF5', borderRadius: 16, outline: '1px solid rgba(120,113,108,0.2)', outlineOffset: -1, padding: 32, display: 'flex', flexDirection: 'column', gap: 24 }}>
-
-              {/* Tên quán */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <div style={labelStyle}>Tên quán</div>
-                <input
-                  value={form.name}
-                  onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                  style={inputBase}
+        {/* Vùng Content (Trải rộng màn hình) */}
+        <div className="flex flex-col gap-16 pb-24">
+          
+          {/* 1. THÔNG TIN CƠ BẢN */}
+          <Section 
+            title="Thông tin cơ bản" 
+            desc="Tên quán và địa chỉ chính xác giúp khách hàng dễ dàng tìm thấy bạn trên bản đồ."
+          >
+            <div className="bg-white rounded-[16px] border border-[#E7E5E4] p-8 flex flex-col gap-6 shadow-sm">
+              <div className="space-y-2">
+                <label className="text-[11px] font-bold text-[#904C18] uppercase tracking-wider block">Tên quán</label>
+                <input 
+                  value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                  className="w-full bg-white border border-[#E7E5E4] rounded-[8px] px-4 py-3 text-[15px] text-[#1A1C19] focus:outline-none focus:border-[#14422D] transition-colors"
                 />
               </div>
 
-              {/* Địa chỉ */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <div style={labelStyle}>Địa chỉ</div>
-                <div style={{ position: 'relative' }}>
-                  <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: '#A8A29E', display: 'flex', alignItems: 'center' }}>
-                    <svg width="16" height="20" viewBox="0 0 16 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 0C4.686 0 2 2.686 2 6c0 4.5 6 13 6 13s6-8.5 6-13c0-3.314-2.686-6-6-6z" fill="#A8A29E" /><circle cx="8" cy="6" r="2.2" fill="white" /></svg>
-                  </span>
-                  <input
-                    value={form.address}
-                    onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
-                    style={{ ...inputBase, paddingLeft: 40 }}
+              <div className="space-y-2">
+                <label className="text-[11px] font-bold text-[#904C18] uppercase tracking-wider block">Địa chỉ</label>
+                <div className="relative">
+                  <MapPin size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#A8A29E]" />
+                  <input 
+                    value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
+                    className="w-full bg-white border border-[#E7E5E4] rounded-[8px] pl-12 pr-4 py-3 text-[15px] text-[#1A1C19] focus:outline-none focus:border-[#14422D] transition-colors"
                   />
                 </div>
               </div>
 
-              {/* Mô tả */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <div style={labelStyle}>Mô tả quán</div>
-                <textarea
-                  value={form.description}
-                  onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                  rows={5}
-                  style={{ ...inputBase, resize: 'vertical', paddingTop: 12, paddingBottom: 56 }}
+              <div className="space-y-2">
+                <label className="text-[11px] font-bold text-[#904C18] uppercase tracking-wider block">Mô tả quán</label>
+                <textarea 
+                  value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={4}
+                  className="w-full bg-white border border-[#E7E5E4] rounded-[8px] px-4 py-3 text-[15px] text-[#1A1C19] focus:outline-none focus:border-[#14422D] transition-colors resize-none leading-relaxed"
                 />
               </div>
             </div>
           </Section>
 
-          {/* ── Bộ sưu tập ── */}
-          <Section title="Bộ sưu tập" description={'Hình ảnh đẹp và rõ nét về không gian làm việc sẽ thu hút nhiều khách hàng hơn.'}>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
-              {/* Add button */}
-              <button
+          {/* 2. BỘ SƯU TẬP */}
+          <Section 
+            title="Bộ sưu tập" 
+            desc="Hình ảnh đẹp và rõ nét về không gian làm việc sẽ thu hút nhiều khách hàng hơn."
+          >
+            <div className="flex flex-wrap gap-4">
+              <button 
                 onClick={() => fileInputRef.current?.click()}
-                style={{ width: 208, height: 208, borderRadius: 16, outline: '2px dashed rgba(120,113,108,0.5)', outlineOffset: -2, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, color: 'rgba(20,66,45,0.7)' }}
+                className="w-[200px] h-[140px] rounded-[16px] border border-dashed border-[#D6D3D1] flex flex-col items-center justify-center gap-2 text-[#78716C] hover:text-[#14422D] hover:border-[#14422D] hover:bg-[#FAFAF5] transition-all cursor-pointer bg-transparent"
               >
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(20,66,45,0.6)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  {/* Khung ảnh */}
-                  <rect x="2" y="4" width="17" height="14" rx="2" />
-                  {/* Mặt trời */}
-                  <circle cx="7.5" cy="9" r="1.5" />
-                  {/* Núi */}
-                  <polyline points="2,16 7,10 11,14 14,11 19,16" />
-                  {/* Dấu + góc trên phải */}
-                  <line x1="20" y1="2" x2="20" y2="8" />
-                  <line x1="17" y1="5" x2="23" y2="5" />
-                </svg>
-                <span style={{ fontSize: 12, fontFamily: 'Noto Sans, sans-serif', fontWeight: 700, color: 'rgba(20,66,45,0.7)' }}>Thêm ảnh</span>
+                <ImagePlus size={24} strokeWidth={1.5} />
+                <span className="font-bold text-[13px]">Thêm ảnh</span>
               </button>
-              <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAddImage} style={{ display: 'none' }} />
+              <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAddImage} className="hidden" />
 
-              {/* Images */}
               {form.images.map((src, idx) => (
-                <div key={idx} style={{ position: 'relative', width: 300, height: 208, borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 4px -2px rgba(0,0,0,0.1), 0 4px 6px -1px rgba(0,0,0,0.08)' }}>
-                  <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  <button
+                <div key={idx} className="relative w-[200px] h-[140px] rounded-[16px] overflow-hidden border border-[#E7E5E4] group shadow-sm">
+                  <img src={src} alt="Cafe" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                  <button 
                     onClick={() => removeImage(idx)}
-                    style={{ position: 'absolute', top: 12, right: 12, width: 28, height: 28, borderRadius: '50%', background: 'rgba(0,0,0,0.5)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(2px)' }}
+                    className="absolute top-2 right-2 bg-black/50 text-white p-1.5 rounded-full backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/70"
                   >
-                    <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><line x1="2" y1="2" x2="12" y2="12" /><line x1="12" y1="2" x2="2" y2="12" /></svg>
+                    <X size={14} strokeWidth={3} />
                   </button>
                 </div>
               ))}
             </div>
           </Section>
 
-          {/* ── Tiện ích ── */}
-          <Section title="Tiện ích & Không gian" description="Chọn các tiện ích nổi bật nhất mà quán của bạn đang cung cấp cho khách hàng.">
-            <div style={{ background: '#FAFAF5', borderRadius: 16, outline: '1px solid rgba(120,113,108,0.2)', outlineOffset: -1, padding: 32, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
-                {FACILITIES.map(({ key, label, icon }) => {
-                  const active = form.facilities.includes(key)
-                  return (
-                    <button
-                      key={key}
-                      onClick={() => toggleFacility(key)}
-                      style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 8,
-                        padding: '10px 20px', borderRadius: 9999, border: 'none', cursor: 'pointer',
-                        background: active ? '#14422D' : '#FAFAF5',
-                        outline: active ? 'none' : '1px solid rgba(120,113,108,0.3)',
-                        outlineOffset: -1,
-                        color: active ? 'white' : '#1C1917',
-                        fontSize: 14, fontFamily: 'Noto Sans, sans-serif', fontWeight: 700, lineHeight: '20px',
-                        boxShadow: active ? '0 2px 4px -2px rgba(27,67,50,0.1), 0 4px 6px -1px rgba(27,67,50,0.1)' : 'none',
-                        transition: 'all 0.15s ease',
-                      }}
-                    >
-                      <span style={{ display: 'flex', alignItems: 'center', color: active ? 'white' : '#1C1917' }}>{icon}</span>
-                      {label}
-                    </button>
-                  )
-                })}
-              </div>
+          {/* 3. TIỆN ÍCH & KHÔNG GIAN */}
+          <Section 
+            title="Tiện ích & Không gian" 
+            desc="Chọn các tiện ích nổi bật nhất mà quán của bạn đang cung cấp cho khách hàng."
+          >
+            <div className="bg-[#FAFAF5] p-8 rounded-[16px] border border-[#E7E5E4] flex flex-wrap gap-3">
+              {FACILITIES.map(({ key, label, icon }) => {
+                const active = form.facilities.includes(key);
+                return (
+                  <button
+                    key={key} onClick={() => toggleFacility(key)}
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-[14px] font-bold transition-all border ${
+                      active 
+                        ? 'bg-[#14422D] text-white border-[#14422D] shadow-sm' 
+                        : 'bg-white text-[#1A1C19] border-[#D6D3D1] hover:border-[#A8A29E]'
+                    }`}
+                  >
+                    {icon} {label}
+                  </button>
+                )
+              })}
             </div>
           </Section>
 
-          {/* ── Giờ hoạt động ── */}
-          <Section title="Giờ hoạt động" description={'Thiết lập thời gian đóng mở cửa chính xác cho từng giai đoạn trong tuần.'}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {form.operatingHours.map((row, idx) => {
-                const open = formatTime(row.openTime)
-                const close = formatTime(row.closeTime)
-                return (
-                  <div
-                    key={row.label}
-                    style={{ padding: 24, background: '#FAFAF5', borderRadius: 16, outline: '1px solid rgba(120,113,108,0.2)', outlineOffset: -1, display: 'flex', alignItems: 'center', gap: 16, opacity: row.isDayOff ? 0.5 : 1, transition: 'opacity 0.2s' }}
-                  >
-                    {/* Day label */}
-                    <div style={{ width: 160, flexShrink: 0, color: '#14422D', fontSize: 16, fontFamily: 'Noto Sans, sans-serif', fontWeight: 700, lineHeight: '24px' }}>
-                      {row.label}
-                    </div>
-
-                    {/* Time inputs – ngang hàng */}
-                    <div style={{ flex: 1, display: 'flex', gap: 8 }}>
-                      {/* Open */}
-                      <div style={{ flex: 1, padding: '10px 14px', background: 'white', borderRadius: 8, outline: '1px solid rgba(120,113,108,0.3)', outlineOffset: -1, display: 'flex', alignItems: 'center' }}>
-                        {row.isDayOff ? (
-                          <div style={{ width: 20, height: 1.5, background: '#A8A29E', borderRadius: 2 }} />
-                        ) : (
-                          <input
-                            type="time"
-                            value={row.openTime}
-                            disabled={row.isDayOff}
-                            onChange={e => setTime(idx, 'openTime', e.target.value)}
-                            style={{ border: 'none', outline: 'none', background: 'transparent', color: '#1C1917', fontSize: 14, fontFamily: 'Noto Sans, sans-serif', cursor: row.isDayOff ? 'not-allowed' : 'text', width: '100%' }}
-                          />
-                        )}
-                      </div>
-                      {/* Close */}
-                      <div style={{ flex: 1, padding: '10px 14px', background: 'white', borderRadius: 8, outline: '1px solid rgba(120,113,108,0.3)', outlineOffset: -1, display: 'flex', alignItems: 'center' }}>
-                        {row.isDayOff ? (
-                          <div style={{ width: 20, height: 1.5, background: '#A8A29E', borderRadius: 2 }} />
-                        ) : (
-                          <input
-                            type="time"
-                            value={row.closeTime}
-                            disabled={row.isDayOff}
-                            onChange={e => setTime(idx, 'closeTime', e.target.value)}
-                            style={{ border: 'none', outline: 'none', background: 'transparent', color: '#1C1917', fontSize: 14, fontFamily: 'Noto Sans, sans-serif', cursor: row.isDayOff ? 'not-allowed' : 'text', width: '100%' }}
-                          />
-                        )}
-                      </div>
-                    </div>
-
-
-                    {/* Day off checkbox */}
-                    <div style={{ paddingLeft: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <button
-                        onClick={() => toggleDayOff(idx)}
-                        style={{ width: 20, height: 20, borderRadius: 4, background: row.isDayOff ? '#14422D' : 'white', border: row.isDayOff ? 'none' : '1px solid #D6D3D1', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, outline: row.isDayOff ? '1px solid rgba(0,0,0,0)' : 'none' }}
-                      >
-                        {row.isDayOff && (
-                          <svg width="12" height="9" viewBox="0 0 14 10" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1,5 5,9 13,1" /></svg>
-                        )}
-                      </button>
-                      <span style={{ color: '#525252', fontSize: 14, fontFamily: 'Noto Sans, sans-serif', fontWeight: 700, lineHeight: '20px' }}>Nghỉ</span>
-                    </div>
+          {/* 4. GIỜ HOẠT ĐỘNG */}
+          <Section 
+            title="Giờ hoạt động" 
+            desc="Thiết lập thời gian đóng mở cửa chính xác cho từng giai đoạn trong tuần."
+          >
+            <div className="flex flex-col gap-4">
+              {form.operatingHours.map((row, idx) => (
+                <div key={row.label} className="bg-white px-6 py-5 rounded-[12px] border border-[#E7E5E4] flex items-center justify-between shadow-sm">
+                  
+                  {/* Nhãn Thứ */}
+                  <div className={`font-bold text-[15px] w-40 ${row.isDayOff ? 'text-[#A8A29E]' : 'text-[#14422D]'}`}>
+                    {row.label}
                   </div>
-                )
-              })}
+                  
+                  {/* Cụm input giờ */}
+                  <div className="flex items-center gap-6">
+                    {row.isDayOff ? (
+                      <>
+                        <div className="w-[120px] text-center text-[#A8A29E] font-bold">--</div>
+                        <div className="w-[120px] text-center text-[#A8A29E] font-bold">--</div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="relative">
+                          <input 
+                            type="time" value={row.openTime} onChange={e => setTime(idx, 'openTime', e.target.value)}
+                            className="w-[120px] border border-[#E7E5E4] rounded-[8px] px-3 py-2 text-[14px] font-medium focus:outline-none focus:border-[#14422D] text-center"
+                          />
+                        </div>
+                        <div className="relative">
+                          <input 
+                            type="time" value={row.closeTime} onChange={e => setTime(idx, 'closeTime', e.target.value)}
+                            className="w-[120px] border border-[#E7E5E4] rounded-[8px] px-3 py-2 text-[14px] font-medium focus:outline-none focus:border-[#14422D] text-center"
+                          />
+                        </div>
+                      </>
+                    )}
+                    
+                    {/* Checkbox Nghỉ */}
+                    <label className="flex items-center gap-2 cursor-pointer ml-4">
+                      <div className={`w-[18px] h-[18px] rounded-[4px] flex items-center justify-center transition-colors border ${row.isDayOff ? 'bg-[#14422D] border-[#14422D]' : 'bg-white border-[#D6D3D1]'}`}>
+                        {row.isDayOff && <Check size={14} className="text-white" strokeWidth={3} />}
+                      </div>
+                      <input 
+                        type="checkbox" className="hidden"
+                        checked={row.isDayOff} onChange={() => toggleDayOff(idx)}
+                      />
+                      <span className={`text-[14px] font-bold ${row.isDayOff ? 'text-[#1A1C19]' : 'text-[#78716C]'}`}>Nghỉ</span>
+                    </label>
+                  </div>
 
-              {/* Đóng cửa ngày lễ */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <button
-                  onClick={() => setForm(f => ({ ...f, isClosedOnHolidays: !f.isClosedOnHolidays }))}
-                  style={{ width: 24, height: 24, borderRadius: 4, background: form.isClosedOnHolidays ? '#14422D' : 'white', border: form.isClosedOnHolidays ? 'none' : '1px solid #D6D3D1', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
-                >
-                  {form.isClosedOnHolidays && (
-                    <svg width="14" height="10" viewBox="0 0 16 11" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1,5.5 6,10 15,1" /></svg>
-                  )}
-                </button>
-                <span style={{ color: '#525252', fontSize: 14, fontFamily: 'Noto Sans, sans-serif', fontWeight: 700, lineHeight: '20px' }}>Đóng cửa vào ngày lễ</span>
+                </div>
+              ))}
+              
+              {/* Checkbox Đóng cửa Lễ */}
+              <div className="mt-4 flex items-center">
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <div className={`w-[20px] h-[20px] rounded-[6px] flex items-center justify-center transition-colors border ${form.isClosedOnHolidays ? 'bg-[#14422D] border-[#14422D]' : 'bg-[#FAFAF5] border-[#D6D3D1] group-hover:border-[#14422D]'}`}>
+                    {form.isClosedOnHolidays && <Check size={14} className="text-white" strokeWidth={3} />}
+                  </div>
+                  <input 
+                    type="checkbox" className="hidden" 
+                    checked={form.isClosedOnHolidays} onChange={() => setForm(f => ({ ...f, isClosedOnHolidays: !f.isClosedOnHolidays }))}
+                  />
+                  <span className="font-bold text-[15px] text-[#1A1C19]">Đóng cửa vào ngày lễ</span>
+                </label>
               </div>
             </div>
           </Section>
 
         </div>
 
-        {/* ── Footer actions ── */}
-        <div style={{ marginTop: 64, paddingTop: 64, borderTop: '1px solid rgba(120,113,108,0.3)', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 20 }}>
-          {saveError && <p style={{ margin: 0, fontSize: 14, color: '#DC2626', fontFamily: 'Noto Sans, sans-serif' }}>{saveError}</p>}
-          <button
-            onClick={() => router.back()}
-            style={{ padding: '16px 40px', background: 'white', borderRadius: 9999, border: 'none', outline: '1px solid rgba(120,113,108,0.5)', outlineOffset: -1, cursor: 'pointer', color: '#525252', fontSize: 16, fontFamily: 'Noto Sans, sans-serif', fontWeight: 700, lineHeight: '24px' }}
+        {/* Footer Actions */}
+        <div className="mt-auto border-t border-[#E7E5E4] pt-8 flex items-center justify-end gap-4 pb-10">
+          <button 
+            onClick={() => router.push('/owner/dashboard')}
+            className="px-8 py-3 rounded-full font-bold text-[#57534E] border border-[#E7E5E4] bg-white hover:bg-[#F5F5F0] transition-colors text-[15px] min-w-[120px]"
           >
             Hủy
           </button>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            style={{ position: 'relative', padding: '16px 56px', background: saving ? '#5A8A72' : '#14422D', borderRadius: 9999, border: 'none', cursor: saving ? 'not-allowed' : 'pointer', color: 'white', fontSize: 16, fontFamily: 'Noto Sans, sans-serif', fontWeight: 700, lineHeight: '24px', boxShadow: '0 8px 10px -6px rgba(27,67,50,0.2), 0 20px 25px -5px rgba(27,67,50,0.2)', transition: 'background 0.2s' }}
+          <button 
+            onClick={handleSave} disabled={saving}
+            className="flex items-center justify-center gap-2 px-10 py-3 rounded-full font-bold text-white bg-[#14422D] hover:bg-[#0d2e1f] transition-all disabled:opacity-70 disabled:cursor-not-allowed text-[15px] min-w-[180px]"
           >
-            {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
+            {saving ? <><Loader2 size={18} className="animate-spin" /> Đang lưu...</> : 'Lưu thay đổi'}
           </button>
         </div>
 
-      </div>
+      </main>
     </div>
   )
 }
