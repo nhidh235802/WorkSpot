@@ -103,156 +103,9 @@ function PhotoGalleryModal({ images, initialIndex, onClose }: {
   );
 }
 
-// ── Review Modal ───────────────────────────────────────────────────
-function ReviewModal({ cafeId, onClose, onSuccess }: {
-  cafeId: string;
-  onClose: () => void;
-  onSuccess: () => void;
-}) {
-  const [rating, setRating] = useState(0);
-  const [hovered, setHovered] = useState(0);
-  const [comment, setComment] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
 
-  const handleSubmit = async () => {
-    if (rating === 0) { setError('星の数を選択してください'); return; }
-    if (!comment.trim()) { setError('コメントを入力してください'); return; }
 
-    const userStr = localStorage.getItem('user');
-    if (!userStr) { setError('レビューを投稿するにはログインが必要です'); return; }
-    const user = JSON.parse(userStr);
 
-    setSubmitting(true);
-    setError('');
-    const payload = { rating, comment: comment.trim(), userId: user.id, cafeId };
-    console.log('[ReviewModal] payload:', payload);
-    try {
-      await axios.post('http://localhost:3001/reviews', payload);
-      onSuccess();
-    } catch (err: any) {
-      const msg = err?.response?.data?.message;
-      const detail = Array.isArray(msg) ? msg.join(', ') : (msg ?? '投稿に失敗しました。もう一度お試しください。');
-      setError(detail);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  // Close on backdrop click
-  const handleBackdrop = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) onClose();
-  };
-
-  return (
-    <div
-      onClick={handleBackdrop}
-      style={{
-        position: 'fixed', inset: 0, zIndex: 9000,
-        background: 'rgba(26,28,25,0.45)', backdropFilter: 'blur(3px)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
-      }}
-    >
-      <div style={{
-        width: '100%', maxWidth: 520,
-        background: '#FAFAF5', borderRadius: 20,
-        padding: '36px 40px 32px',
-        boxShadow: '0 24px 80px rgba(0,0,0,0.20)',
-        display: 'flex', flexDirection: 'column', gap: 24,
-      }}>
-        {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: '#14422D', fontFamily: 'Manrope, sans-serif' }}>
-            レビューを書く
-          </h2>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#737770', fontSize: 24, lineHeight: 1, padding: 4 }}>×</button>
-        </div>
-
-        {/* Star picker */}
-        <div>
-          <p style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 500, color: '#1a1c19', fontFamily: 'Manrope, sans-serif' }}>評価</p>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {[1, 2, 3, 4, 5].map((s) => (
-              <button
-                key={s}
-                onMouseEnter={() => setHovered(s)}
-                onMouseLeave={() => setHovered(0)}
-                onClick={() => setRating(s)}
-                style={{
-                  background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-                  fontSize: 40, lineHeight: 1,
-                  color: s <= (hovered || rating) ? '#D97706' : '#D1D5DB',
-                  transition: 'color 0.1s',
-                }}
-              >★</button>
-            ))}
-            {rating > 0 && (
-              <span style={{ alignSelf: 'center', marginLeft: 8, fontSize: 14, color: '#737770', fontFamily: 'Manrope, sans-serif' }}>
-                {['', '★ 最悪', '★★ 悪い', '★★★ 普通', '★★★★ 良い', '★★★★★ 最高'][rating]}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Comment */}
-        <div>
-          <p style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 500, color: '#1a1c19', fontFamily: 'Manrope, sans-serif' }}>コメント</p>
-          <textarea
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            placeholder="このカフェの雰囲気、Wi-Fi、席数など感じたことを書いてください..."
-            rows={4}
-            style={{
-              width: '100%', boxSizing: 'border-box',
-              padding: '14px 16px',
-              background: '#E3E3DE', borderRadius: 10, border: 'none', outline: 'none',
-              fontSize: 15, color: '#1a1c19', fontFamily: 'Manrope, sans-serif',
-              resize: 'vertical', lineHeight: 1.6,
-            }}
-          />
-        </div>
-
-        {/* Error */}
-        {error && (
-          <div style={{ padding: '10px 14px', background: '#FFDAD6', borderRadius: 8, color: '#BA1A1A', fontSize: 13, fontFamily: 'Manrope, sans-serif' }}>
-            {error}
-          </div>
-        )}
-
-        {/* Buttons */}
-        <div style={{ display: 'flex', gap: 12 }}>
-          <button
-            onClick={onClose}
-            style={{
-              flex: 1, height: 48, background: 'none',
-              border: '1.5px solid #C0C9C1', borderRadius: 9999,
-              fontSize: 15, fontWeight: 500, color: '#14422D',
-              cursor: 'pointer', fontFamily: 'Manrope, sans-serif',
-            }}
-          >
-            キャンセル
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={submitting}
-            style={{
-              flex: 2, height: 48,
-              background: 'linear-gradient(135deg, #14422D 0%, #2D5A43 100%)',
-              border: 'none', borderRadius: 9999,
-              fontSize: 15, fontWeight: 600, color: 'white',
-              cursor: submitting ? 'not-allowed' : 'pointer',
-              opacity: submitting ? 0.7 : 1,
-              fontFamily: 'Manrope, sans-serif',
-              boxShadow: '0 4px 12px rgba(20,66,45,0.25)',
-            }}
-          >
-            {submitting ? '投稿中...' : 'レビューを投稿する'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ── Main Page ──────────────────────────────────────────────────────
 export default function CafeDetailPage() {
@@ -262,7 +115,6 @@ export default function CafeDetailPage() {
   const [error, setError] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalStartIndex, setModalStartIndex] = useState(0);
-  const [reviewModalOpen, setReviewModalOpen] = useState(false);
 
   const openModal = (index: number) => {
     setModalStartIndex(index);
@@ -320,13 +172,7 @@ export default function CafeDetailPage() {
           onClose={() => setModalOpen(false)}
         />
       )}
-      {reviewModalOpen && (
-        <ReviewModal
-          cafeId={id}
-          onClose={() => setReviewModalOpen(false)}
-          onSuccess={() => { setReviewModalOpen(false); fetchCafe(); }}
-        />
-      )}
+
 
       <div style={{
         background: '#FAFAF5',
@@ -582,18 +428,25 @@ export default function CafeDetailPage() {
               }}>
                 ユーザーレビュー
               </h2>
-              <button
-                onClick={() => setReviewModalOpen(true)}
+              <Link
+                href={`/cafes/${id}/reviews`} // Đường dẫn tới trang review mới của bạn
                 style={{
                   background: 'linear-gradient(135deg, #14422D 0%, #2D5A43 100%)',
-                  color: 'white', border: 'none',
-                  borderRadius: 9999, padding: '12px 28px',
-                  fontSize: 14, fontWeight: 500, cursor: 'pointer',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 9999,
+                  padding: '12px 28px',
+                  fontSize: 14,
+                  fontWeight: 500,
+                  cursor: 'pointer',
                   fontFamily: 'Manrope, sans-serif',
                   boxShadow: '0 4px 12px rgba(20,66,45,0.25)',
+                  textDecoration: 'none',       // Xóa gạch chân mặc định của thẻ a
+                  display: 'inline-flex',       // Căn giữa text trong thẻ Link
+                  alignItems: 'center',
                 }}>
                 レビューを書く
-              </button>
+              </Link>
             </div>
 
             {/* Review list */}

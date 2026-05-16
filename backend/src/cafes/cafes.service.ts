@@ -1,14 +1,19 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+
 import { Cafe, CafeStatus, RealtimeStatus } from './entities/cafe.entity';
 import { OperatingHour } from './entities/operating-hour.entity';
+
 import { Review } from '../reviews/entities/review.entity';
 import { User } from '../users/entities/user.entity';
+
 import { CreateCafeDto } from './dto/create-cafe.dto';
 import { UpdateCafeDto } from './dto/update-cafe.dto';
 import { CafeDetailResponseDto } from './dto/cafe-detail-response.dto';
 import { SearchCafeDto } from './dto/search-cafe.dto';
+
+import { CreateReviewDto } from '../reviews/dto/create-review.dto';
 
 @Injectable()
 export class CafesService {
@@ -27,9 +32,8 @@ export class CafesService {
   ) {}
 
   async getRecommended(userLat: number, userLng: number): Promise<any[]> {
-    const maxDist = 10; // Bán kính chuẩn hóa 10km
+    const maxDist = 10;
 
-    // Công thức Haversine tính khoảng cách (km)
     const haversineExpr = [
       '(6371 * acos(',
       '  LEAST(1, cos(radians(:lat)) * cos(radians(cafe.latitude))',
@@ -38,10 +42,8 @@ export class CafesService {
       '))',
     ].join('');
 
-    // Điểm đánh giá tính động: AVG từ bảng reviews, quán chưa có review = 0
     const avgRatingExpr = 'COALESCE(AVG(review.rating), 0)';
 
-    // Công thức tổng điểm: 60% khoảng cách (đã chuẩn hóa) + 40% điểm đánh giá
     const scoreExpr = [
       '((GREATEST(0, :maxDist - ',
       haversineExpr,
@@ -51,48 +53,57 @@ export class CafesService {
 
     const result: { entities: Cafe[]; raw: any[] } = await this.cafesRepository
       .createQueryBuilder('cafe')
-      // JOIN với bảng reviews để tính AVG rating (LEFT JOIN để giữ quán chưa có review)
       .leftJoin('cafe.reviews', 'review')
-      // Lọc trạng thái "Đang hiển thị" (approved)
-      .where('cafe.status = :status', { status: CafeStatus.APPROVED })
-      // GROUP BY để AVG hoạt động đúng
+      .where('cafe.status = :status', {
+        status: CafeStatus.APPROVED,
+      })
       .groupBy('cafe.id')
-      // Gắn khoảng cách và điểm rating trung bình vào kết quả
       .addSelect(haversineExpr, 'distance')
       .addSelect(avgRatingExpr, 'avg_rating')
       .addSelect(scoreExpr, 'total_score')
-      // Sắp xếp theo tổng điểm từ cao xuống thấp (dùng raw expr thay alias vì TypeORM không hỗ trợ alias trong orderBy)
       .orderBy(scoreExpr, 'DESC')
-      // Chỉ lấy đúng 6 quán
       .limit(6)
-      .setParameters({ lat: userLat, lng: userLng, maxDist })
+      .setParameters({
+        lat: userLat,
+        lng: userLng,
+        maxDist,
+      })
       .getRawAndEntities();
 
-    // Kết hợp dữ liệu quán, rating động và khoảng cách trả về cho Frontend
     return result.entities.map((entity, index) => {
       const rawItem = result.raw[index] as {
         avg_rating: number;
         distance: number;
       };
+
       return {
         ...entity,
-        rating: Math.round(rawItem.avg_rating * 10) / 10, // Làm tròn 1 chữ số thập phân
+        rating: Math.round(rawItem.avg_rating * 10) / 10,
         distance: Math.round(rawItem.distance * 10) / 10,
       };
     });
   }
 
-  async create(createCafeDto: CreateCafeDto): Promise<CafeDetailResponseDto> {
+  async create(
+    createCafeDto: CreateCafeDto,
+  ): Promise<CafeDetailResponseDto> {
     const { ownerId, operatingHours, ...cafeData } = createCafeDto;
 
     const owner = await this.usersRepository.findOne({
       where: { id: ownerId },
     });
+
     if (!owner) {
-      throw new NotFoundException(`Người dùng #${ownerId} không tìm thấy`);
+      throw new NotFoundException(
+        `Người dùng #${ownerId} không tìm thấy`,
+      );
     }
 
-    const cafe = this.cafesRepository.create({ ...cafeData, owner });
+    const cafe = this.cafesRepository.create({
+      ...cafeData,
+      owner,
+    });
+
     const savedCafe = await this.cafesRepository.save(cafe);
 
     if (operatingHours?.length) {
@@ -105,6 +116,7 @@ export class CafesService {
           cafe: savedCafe,
         }),
       );
+
       await this.operatingHoursRepository.save(hours);
     }
 
@@ -119,9 +131,13 @@ export class CafesService {
         operatingHours: true,
       },
     });
+
     if (!cafe) {
-      throw new NotFoundException(`Quán cà phê ${id} không tìm thấy`);
+      throw new NotFoundException(
+        `Quán cà phê ${id} không tìm thấy`,
+      );
     }
+
     return cafe;
   }
 
@@ -138,7 +154,9 @@ export class CafesService {
     });
 
     if (!cafe) {
-      throw new NotFoundException(`Quán cà phê ${id} không tìm thấy`);
+      throw new NotFoundException(
+        `Quán cà phê ${id} không tìm thấy`,
+      );
     }
 
     const reviews = cafe.reviews || [];
@@ -150,7 +168,8 @@ export class CafesService {
       reviewCount > 0
         ? Number(
             (
-              reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount
+              reviews.reduce((sum, r) => sum + r.rating, 0) /
+              reviewCount
             ).toFixed(1),
           )
         : 0;
@@ -164,7 +183,6 @@ export class CafesService {
       longitude: cafe.longitude ?? null,
 
       images: cafe.images || [],
-
       facilities: cafe.facilities || [],
 
       owner: cafe.owner
@@ -195,7 +213,8 @@ export class CafesService {
               id: review.user.id,
               fullName: review.user.fullName,
               avatar: review.user.avatar,
-              jobTitle: review.user.bio || 'Người dùng WorkSpot',
+              jobTitle:
+                review.user.bio || 'Người dùng WorkSpot',
             }
           : null,
       })),
@@ -208,12 +227,6 @@ export class CafesService {
     };
   }
 
-  /**
-   * Cập nhật thông tin quán.
-   * @param id         UUID của quán cần cập nhật
-   * @param updateDto  Dữ liệu cập nhật (tất cả field optional)
-   * @param requesterId UUID của người dùng đang thực hiện request
-   */
   async update(
     id: string,
     updateDto: UpdateCafeDto,
@@ -221,18 +234,21 @@ export class CafesService {
   ): Promise<CafeDetailResponseDto> {
     const cafe = await this.findOneEntity(id);
 
-    // Chỉ owner của quán mới được chỉnh sửa
     if (cafe.owner.id !== requesterId) {
-      throw new ForbiddenException('Bạn không có quyền chỉnh sửa quán này');
+      throw new ForbiddenException(
+        'Bạn không có quyền chỉnh sửa quán này',
+      );
     }
 
     const { operatingHours, ...cafeData } = updateDto;
 
     const updatedCafe = await this.cafesRepository.manager.transaction(
       async (manager) => {
-        // Nếu truyền operatingHours → xoá cũ, lưu mới (replace strategy)
         if (operatingHours !== undefined) {
-          await manager.delete(OperatingHour, { cafe: { id } });
+          await manager.delete(OperatingHour, {
+            cafe: { id },
+          });
+
           if (operatingHours.length) {
             const hours = operatingHours.map((h) =>
               manager.create(OperatingHour, {
@@ -243,12 +259,13 @@ export class CafesService {
                 cafe,
               }),
             );
+
             await manager.save(OperatingHour, hours);
           }
         }
 
-        // Ghi đè các field còn lại
         Object.assign(cafe, cafeData);
+
         return manager.save(Cafe, cafe);
       },
     );
@@ -260,70 +277,89 @@ export class CafesService {
     const cafe = await this.findOneEntity(id);
     await this.cafesRepository.remove(cafe);
   }
-  // LẤY DANH SÁCH QUÁN CỦA OWNER (Dành cho Dashboard)
+
   async getCafesByOwner(ownerId: string): Promise<any[]> {
-    // Tìm các quán có ownerId trùng khớp và lấy kèm bảng reviews để tính sao
     const cafes = await this.cafesRepository.find({
-      where: { owner: { id: ownerId } },
+      where: {
+        owner: { id: ownerId },
+      },
       relations: {
         reviews: true,
       },
-      order: { updatedAt: 'DESC' }, // Sắp xếp quán mới cập nhật lên đầu
+      order: {
+        updatedAt: 'DESC',
+      },
     });
 
-    // Map dữ liệu chuẩn hóa trả về cho Frontend Dashboard
     return cafes.map((cafe) => {
       const reviewCount = cafe.reviews?.length || 0;
+
       const averageRating =
         reviewCount > 0
-          ? Number((cafe.reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount).toFixed(1))
+          ? Number(
+              (
+                cafe.reviews.reduce(
+                  (sum, r) => sum + r.rating,
+                  0,
+                ) / reviewCount
+              ).toFixed(1),
+            )
           : null;
 
       return {
         id: cafe.id,
         name: cafe.name,
         address: cafe.address,
-        // Nếu quán chưa có avatar thì trả về ảnh mặc định
-        image: cafe.avatar || 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400',
-        status: cafe.status, // 'pending' | 'approved' | 'rejected'
-        realtimeStatus: 'available', // Thuộc tính giả lập cho frontend (Còn chỗ / Đang đông)
+        image:
+          cafe.avatar ||
+          'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400',
+        status: cafe.status,
+        realtimeStatus: 'available',
         updatedAt: cafe.updatedAt,
         rating: averageRating,
       };
     });
   }
-  // CẬP NHẬT TRẠNG THÁI REALTIME
-  async updateRealtimeStatus(id: string, realtimeStatus: RealtimeStatus, ownerId: string) {
-    // 1. Tìm quán và lấy thông tin owner (Dùng lại hàm findOneEntity bạn đã viết)
+
+  async updateRealtimeStatus(
+    id: string,
+    realtimeStatus: RealtimeStatus,
+    ownerId: string,
+  ) {
     const cafe = await this.findOneEntity(id);
 
-    // 2. Chặn cập nhật trái phép (Bảo vệ quyền lợi chủ quán khác)
     if (cafe.owner.id !== ownerId) {
-      throw new ForbiddenException('Bạn không có quyền cập nhật quán của người khác');
+      throw new ForbiddenException(
+        'Bạn không có quyền cập nhật quán của người khác',
+      );
     }
 
-    // 3. Cập nhật và lưu vào DB
     cafe.realtimeStatus = realtimeStatus;
+
     await this.cafesRepository.save(cafe);
 
-    return { 
+    return {
       message: 'Cập nhật trạng thái thành công',
-      realtimeStatus: cafe.realtimeStatus 
+      realtimeStatus: cafe.realtimeStatus,
     };
   }
 
-  async patchStatus(id: string, status: CafeStatus): Promise<CafeDetailResponseDto> {
+  async patchStatus(
+    id: string,
+    status: CafeStatus,
+  ): Promise<CafeDetailResponseDto> {
     const cafe = await this.findOneEntity(id);
+
     cafe.status = status;
+
     const saved = await this.cafesRepository.save(cafe);
+
     return this.findOne(saved.id);
   }
 
-  // TÌM KIẾM VÀ LỌC QUÁN CAFE
   async searchCafes(query: SearchCafeDto): Promise<any[]> {
     const { lat, lng, radius, keyword } = query;
 
-    // Haversine distance expression – uses named params (no interpolation → no SQL injection)
     const distanceSql = [
       '(6371 * acos(',
       '  LEAST(1, cos(radians(:searchLat)) * cos(radians(cafe.latitude))',
@@ -337,21 +373,26 @@ export class CafesService {
     const queryBuilder = this.cafesRepository
       .createQueryBuilder('cafe')
       .leftJoin('cafe.reviews', 'review')
-      .where('cafe.status = :status', { status: 'approved' })
+      .where('cafe.status = :status', {
+        status: 'approved',
+      })
       .groupBy('cafe.id')
       .addSelect(distanceSql, 'distance')
       .addSelect(avgRatingExpr, 'avg_rating')
-      .setParameters({ searchLat: lat, searchLng: lng });
+      .setParameters({
+        searchLat: lat,
+        searchLng: lng,
+      });
 
-    // 1. Lọc theo Keyword (Tên/Địa chỉ)
     if (keyword) {
       queryBuilder.andWhere(
         '(cafe.name ILIKE :keyword OR cafe.address ILIKE :keyword)',
-        { keyword: `%${keyword}%` },
+        {
+          keyword: `%${keyword}%`,
+        },
       );
     }
 
-    // 2. XỬ LÝ FILTER FACILITIES (AND logic – tất cả filter được chọn phải khớp)
     const filterMapping: Record<string, string> = {
       hasWifi: 'wifi',
       hasPower: 'socket',
@@ -364,19 +405,23 @@ export class CafesService {
     };
 
     let filterIndex = 0;
+
     for (const key of Object.keys(filterMapping)) {
       if (query[key as keyof SearchCafeDto] === true) {
         const paramName = `facility${filterIndex++}`;
+
         queryBuilder.andWhere(
           `cafe.facilities @> ARRAY[:${paramName}]::public.cafes_facilities_enum[]`,
-          { [paramName]: filterMapping[key] },
+          {
+            [paramName]: filterMapping[key],
+          },
         );
       }
     }
 
-    // 3. Lọc bán kính — chỉ áp dụng khi KHÔNG có keyword
     if (!keyword) {
       const effectiveRadius = radius ?? 5;
+
       queryBuilder.having(`${distanceSql} <= :radius`, {
         radius: effectiveRadius,
       });
@@ -384,7 +429,8 @@ export class CafesService {
 
     queryBuilder.orderBy(distanceSql, 'ASC');
 
-    const { entities, raw } = await queryBuilder.getRawAndEntities();
+    const { entities, raw } =
+      await queryBuilder.getRawAndEntities();
 
     return entities.map((entity, i) => ({
       ...entity,
@@ -392,5 +438,130 @@ export class CafesService {
       rating: Math.round(raw[i].avg_rating * 10) / 10,
     }));
   }
-}
 
+  // ─── REVIEWS ─────────────────────────────────────────────
+
+  async createReview(
+    cafeId: string,
+    dto: CreateReviewDto,
+    userId: string,
+  ): Promise<any> {
+    const cafe = await this.cafesRepository.findOne({
+      where: { id: cafeId },
+    });
+
+    if (!cafe) {
+      throw new NotFoundException(`Không tìm thấy quán #${cafeId}`);
+    }
+
+    const user = await this.usersRepository.findOne({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`Không tìm thấy người dùng #${userId}`);
+    }
+
+    // Nếu dto.images có phần tử thì lấy, nếu không hoặc trống thì gán là null
+    // (Postgres sẽ hiểu đây là giá trị trống của cột array)
+    const reviewImages = dto.images && dto.images.length > 0 ? dto.images : null;
+
+    // Sử dụng ép kiểu rõ ràng (as any) hoặc truyền thẳng để TypeORM không hiểu nhầm sang mảng Entity
+    const review = this.reviewRepository.create({
+      rating: dto.rating,
+      comment: dto.comment,
+      images: reviewImages,
+      cafe,
+      user,
+    });
+
+    const saved = await this.reviewRepository.save(review);
+
+    return {
+      id: saved.id,
+      rating: saved.rating,
+      comment: saved.comment,
+      images: saved.images ?? [], // Trả về mảng rỗng cho Frontend dễ map giao diện
+      createdAt: saved.createdAt,
+
+      user: {
+        id: user.id,
+        fullName: user.fullName,
+        avatar: user.avatar ?? null,
+        jobTitle: user.bio || 'Người dùng WorkSpot',
+      },
+    };
+  }
+
+  async getReviews(cafeId: string): Promise<any[]> {
+    const cafe = await this.cafesRepository.findOne({
+      where: { id: cafeId },
+    });
+
+    if (!cafe) {
+      throw new NotFoundException(
+        `Không tìm thấy quán #${cafeId}`,
+      );
+    }
+
+    const reviews = await this.reviewRepository.find({
+      where: {
+        cafe: { id: cafeId },
+      },
+      relations: {
+        user: true,
+      },
+      order: {
+        createdAt: 'DESC',
+      },
+    });
+
+    return reviews.map((r) => ({
+      id: r.id,
+      rating: r.rating,
+      comment: r.comment,
+      images: r.images ?? [],
+      createdAt: r.createdAt,
+
+      user: r.user
+        ? {
+            id: r.user.id,
+            fullName: r.user.fullName,
+            avatar: r.user.avatar ?? null,
+            jobTitle:
+              r.user.bio || 'Người dùng WorkSpot',
+          }
+        : null,
+    }));
+  }
+
+  async removeReview(
+    cafeId: string,
+    reviewId: string,
+    requesterId: string,
+  ): Promise<void> {
+    const review = await this.reviewRepository.findOne({
+      where: {
+        id: reviewId,
+        cafe: { id: cafeId },
+      },
+      relations: {
+        user: true,
+      },
+    });
+
+    if (!review) {
+      throw new NotFoundException(
+        `Không tìm thấy đánh giá #${reviewId}`,
+      );
+    }
+
+    if (review.user.id !== requesterId) {
+      throw new ForbiddenException(
+        'Bạn không có quyền xoá đánh giá này',
+      );
+    }
+
+    await this.reviewRepository.remove(review);
+  }
+}
