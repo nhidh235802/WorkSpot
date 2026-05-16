@@ -26,6 +26,7 @@ import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { SearchCafeDto } from './dto/search-cafe.dto';
 import { RealtimeStatus } from './entities/cafe.entity';
+import { CreateReviewDto } from '../reviews/dto/create-review.dto';
 
 @Controller('cafes')
 export class CafesController {
@@ -67,6 +68,43 @@ export class CafesController {
   ) {
     return this.cafesService.updateRealtimeStatus(id, realtimeStatus, ownerId);
   }
+
+// ─── REVIEWS ────────────────────────────────────────────────────────────────
+
+  // POST /cafes/:id/reviews  →  Đăng đánh giá (chỉ WORKER đã đăng nhập)
+  // Guest → 401 → Frontend redirect sang màn hình đăng nhập (ID.12)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.CUSTOMER)
+  @Post(':id/reviews')
+  @HttpCode(HttpStatus.CREATED)
+  createReview(
+    @Param('id', ParseUUIDPipe) cafeId: string,
+    @Body() body: CreateReviewDto,
+    @Req() req: { user: { id: string } },
+  ) {
+    // userId lấy từ JWT, không tin body
+    return this.cafesService.createReview(cafeId, body, req.user.id);
+  }
+
+  // GET /cafes/:id/reviews  →  Lấy danh sách review của quán (public, sort mới nhất)
+  @Get(':id/reviews')
+  getReviews(@Param('id', ParseUUIDPipe) cafeId: string) {
+    return this.cafesService.getReviews(cafeId);
+  }
+
+  // DELETE /cafes/:cafeId/reviews/:reviewId  →  Xoá review (chỉ chủ review)
+  @UseGuards(JwtAuthGuard)
+  @Delete(':id/reviews/:reviewId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  removeReview(
+    @Param('id', ParseUUIDPipe) cafeId: string,
+    @Param('reviewId', ParseUUIDPipe) reviewId: string,
+    @Req() req: { user: { id: string } },
+  ): Promise<void> {
+    return this.cafesService.removeReview(cafeId, reviewId, req.user.id);
+  }
+
+  // ────────────────────────────────────────────────────────────────────────────
 
   // HÀM FIND ONE PHẢI NẰM DƯỚI HÀM SEARCH VÀ OWNER/ME
   @Get(':id')

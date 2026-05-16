@@ -20,8 +20,10 @@ export class Review {
   @Column({ type: 'text', nullable: true })
   comment!: string;
 
-  @Column({ type: 'text', array: true, default: [] })
-  images!: string[];
+  // 🛠️ SỬA ĐOẠN NÀY: Thêm nullable và default null để Postgres chấp nhận giá trị trống,
+  // đồng thời khai báo kiểu dữ liệu 'string[] | null' để dập tắt hoàn toàn lỗi TS2769.
+  @Column({ type: 'text', array: true, nullable: true, default: null })
+  images?: string[] | null;
 
   // --- QUAN HỆ (RELATIONS) ---
   @ManyToOne(() => User, (user) => user.reviews, { onDelete: 'CASCADE' })
