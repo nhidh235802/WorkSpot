@@ -184,6 +184,7 @@ export class CafesService {
 
       images: cafe.images || [],
       facilities: cafe.facilities || [],
+      realtimeStatus: cafe.realtimeStatus,
 
       owner: cafe.owner
         ? {
@@ -314,7 +315,8 @@ export class CafesService {
           cafe.avatar ||
           'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400',
         status: cafe.status,
-        realtimeStatus: 'available',
+        realtimeStatus: cafe.realtimeStatus,
+        rejectionReason: cafe.rejectionReason ?? null,
         updatedAt: cafe.updatedAt,
         rating: averageRating,
       };

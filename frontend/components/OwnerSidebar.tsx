@@ -9,7 +9,7 @@ const navigationItems = [
   // Sửa lại path cho khớp với cấu trúc thư mục thực tế
   { id: 'overview', label: 'Tổng quan', path: '/dashboard', icon: LayoutGrid },
   { id: 'new-venue', label: 'Đăng ký quán mới', path: '/cafes/create', icon: FileSignature },
-  { id: 'profile', label: 'Hồ sơ cá nhân', path: '/owner/profile', icon: User },
+  { id: 'profile', label: 'Hồ sơ cá nhân', path: '/profile', icon: User },
 ];
 
 export default function OwnerSidebar() {

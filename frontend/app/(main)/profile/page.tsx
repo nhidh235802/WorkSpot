@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { userService } from '@/services/user.service'
+import OwnerSidebar from '@/components/OwnerSidebar'
 
 interface UserProfile {
   id: string
@@ -102,6 +103,17 @@ const inputStyle: React.CSSProperties = {
 
 export default function ProfilePage() {
   const router = useRouter()
+
+  const [userRole] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const userStr = localStorage.getItem('user')
+        if (userStr) return JSON.parse(userStr).role || 'customer'
+      } catch { /* ignore */ }
+    }
+    return 'customer'
+  })
+
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
@@ -250,45 +262,8 @@ export default function ProfilePage() {
     </div>
   )
 
-  return (
-    <div style={{ minHeight: '100vh', background: '#FAFAF5' }}>
-
-      {/* ── Navbar ── */}
-      <nav style={{ position: 'sticky', top: 0, zIndex: 1500, width: '100%', background: 'rgba(250,250,245,0.85)', backdropFilter: 'blur(12px)', boxShadow: '0 8px 30px 0 rgba(0,0,0,0.04)', borderBottom: '1px solid rgba(20,66,45,0.05)' }}>
-        <div style={{ maxWidth: 1536, margin: '0 auto', padding: '0 32px', height: 80, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Link href="/" style={{ color: '#14422D', fontSize: 24, fontFamily: 'Acme', fontWeight: 400, textDecoration: 'none', lineHeight: '32px' }}>WorkSpot</Link>
-          <div ref={menuRef} style={{ position: 'relative' }}>
-            <button onClick={() => setDropdownOpen(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}>
-              {profile?.avatar ? (
-                <img
-                  src={profile.avatar.startsWith('blob:') || profile.avatar.startsWith('http') ? profile.avatar : `${API}${profile.avatar}`}
-                  alt={profile?.fullName}
-                  style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', border: '2px solid #14422D' }}
-                />
-              ) : (
-                <div style={{ width: 40, height: 40, borderRadius: '50%', border: '2px solid #14422D', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#14422D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-                  </svg>
-                </div>
-              )}
-            </button>
-            {dropdownOpen && (
-              <div style={{ position: 'absolute', top: 'calc(100% + 12px)', right: 0, background: '#EEEEE9', borderRadius: 8, boxShadow: '0 4px 20px rgba(0,0,0,0.08)', minWidth: 140, zIndex: 1600, padding: '14px 16px' }}>
-                <button onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: '#14422D', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'Manrope, sans-serif', width: '100%' }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#14422D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
-                  </svg>
-                  <span style={{ lineHeight: '20px' }}>ログアウト</span>
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </nav>
-
-      {/* ── Page content ── */}
-      <div style={{ paddingLeft: 65, paddingRight: 65 }}>
+  const profileContent = (
+      <div style={{ paddingLeft: userRole === 'owner' ? 40 : 65, paddingRight: 65 }}>
         <div style={{ maxWidth: 1152, margin: '0 auto', paddingTop: 64, paddingLeft: 24, paddingRight: 24, paddingBottom: 80, display: 'flex', flexDirection: 'column', gap: 64 }}>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -404,7 +379,7 @@ export default function ProfilePage() {
                       <button onClick={() => setIsEditing(true)} style={{ width: 120, padding: '8px 16px', background: '#14422D', borderRadius: 8, border: 'none', cursor: 'pointer', color: 'white', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 500 }}>
                         編集
                       </button>
-                      <button onClick={() => router.push('/')} style={{ padding: '8px 16px', background: '#FDFFFE', borderRadius: 8, outline: '1px rgba(20,66,45,0.25) solid', outlineOffset: '-1px', border: 'none', cursor: 'pointer', color: '#14422D', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 500 }}>
+                      <button onClick={() => router.push(userRole === 'owner' ? '/dashboard' : '/')} style={{ padding: '8px 16px', background: '#FDFFFE', borderRadius: 8, outline: '1px rgba(20,66,45,0.25) solid', outlineOffset: '-1px', border: 'none', cursor: 'pointer', color: '#14422D', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 500 }}>
                         ホームに戻る
                       </button>
                     </>
@@ -450,6 +425,52 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+  )
+
+  if (userRole === 'owner') {
+    return (
+      <div style={{ display: 'flex', minHeight: '100vh', background: '#FAFAF5' }}>
+        <OwnerSidebar />
+        {profileContent}
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ minHeight: '100vh', background: '#FAFAF5' }}>
+      <nav style={{ position: 'sticky', top: 0, zIndex: 1500, width: '100%', background: 'rgba(250,250,245,0.85)', backdropFilter: 'blur(12px)', boxShadow: '0 8px 30px 0 rgba(0,0,0,0.04)', borderBottom: '1px solid rgba(20,66,45,0.05)' }}>
+        <div style={{ maxWidth: 1536, margin: '0 auto', padding: '0 32px', height: 80, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Link href="/" style={{ color: '#14422D', fontSize: 24, fontFamily: 'Acme', fontWeight: 400, textDecoration: 'none', lineHeight: '32px' }}>WorkSpot</Link>
+          <div ref={menuRef} style={{ position: 'relative' }}>
+            <button onClick={() => setDropdownOpen(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}>
+              {profile?.avatar ? (
+                <img
+                  src={profile.avatar.startsWith('blob:') || profile.avatar.startsWith('http') ? profile.avatar : `${API}${profile.avatar}`}
+                  alt={profile?.fullName}
+                  style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', border: '2px solid #14422D' }}
+                />
+              ) : (
+                <div style={{ width: 40, height: 40, borderRadius: '50%', border: '2px solid #14422D', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#14422D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                  </svg>
+                </div>
+              )}
+            </button>
+            {dropdownOpen && (
+              <div style={{ position: 'absolute', top: 'calc(100% + 12px)', right: 0, background: '#EEEEE9', borderRadius: 8, boxShadow: '0 4px 20px rgba(0,0,0,0.08)', minWidth: 140, zIndex: 1600, padding: '14px 16px' }}>
+                <button onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: '#14422D', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'Manrope, sans-serif', width: '100%' }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#14422D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+                  </svg>
+                  <span style={{ lineHeight: '20px' }}>ログアウト</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </nav>
+      {profileContent}
     </div>
   )
 }

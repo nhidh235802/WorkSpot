@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"e:\\\\New folder\\\\ProjectITSSjp\\\\WorkSpot\\\\frontend\\\\src\\\\app\" -Recurse -Directory)",
+      "Bash(Get-ChildItem -Recurse -Directory \"e:\\\\New folder\\\\ProjectITSSjp\\\\WorkSpot\\\\frontend\\\\app\")",
+      "Bash(Select-Object FullName)"
+    ]
+  }
+}

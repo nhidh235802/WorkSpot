@@ -77,7 +77,7 @@ export default function EditCafePage() {
 
         const res = await axios.get(`http://localhost:3001/cafes/${cafeId}`)
         const data = res.data
-        if (data.owner?.id !== user.id) return router.push('/owner/dashboard')
+        if (data.owner?.id !== user.id) return router.push('/dashboard')
 
         // Tái cấu trúc giờ hoạt động từ Backend thành 3 block
         const oh = data.operatingHours || []
@@ -151,22 +151,13 @@ export default function EditCafePage() {
       await axios.patch(`http://localhost:3001/cafes/${cafeId}`, payload, {
         headers: { Authorization: `Bearer ${token}` }
       })
-      router.push('/owner/dashboard')
+      router.push('/dashboard')
     } catch (e: any) {
       alert(e.response?.data?.message || 'Có lỗi xảy ra khi lưu.')
       setSaving(false)
     }
   }
 
-  // Tiện ích format hiển thị giờ 12 tiếng (AM/PM) cho input type="time"
-  const formatTime12h = (time24h: string) => {
-    if (!time24h) return '-- : --'
-    const [h, m] = time24h.split(':')
-    const hour = parseInt(h)
-    const ampm = hour >= 12 ? 'PM' : 'AM'
-    const hour12 = hour % 12 || 12
-    return `${hour12.toString().padStart(2, '0')}:${m} ${ampm}`
-  }
 
   if (loading) {
     return (
@@ -184,7 +175,7 @@ export default function EditCafePage() {
         
         {/* Nút Quay lại */}
         <button 
-          onClick={() => router.push('/owner/dashboard')}
+          onClick={() => router.push('/dashboard')}
           className="flex items-center gap-2 text-[#14422D] hover:text-[#0d2e1f] font-bold text-[12px] uppercase tracking-widest mb-6 transition-colors group"
         >
           <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> 
@@ -367,7 +358,7 @@ export default function EditCafePage() {
         {/* Footer Actions */}
         <div className="mt-auto border-t border-[#E7E5E4] pt-8 flex items-center justify-end gap-4 pb-10">
           <button 
-            onClick={() => router.push('/owner/dashboard')}
+            onClick={() => router.push('/dashboard')}
             className="px-8 py-3 rounded-full font-bold text-[#57534E] border border-[#E7E5E4] bg-white hover:bg-[#F5F5F0] transition-colors text-[15px] min-w-[120px]"
           >
             Hủy
