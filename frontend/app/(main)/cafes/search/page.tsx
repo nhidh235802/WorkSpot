@@ -65,6 +65,25 @@ const FILTERS = [
 const DEFAULT_LAT = 21.0285;
 const DEFAULT_LNG = 105.8542;
 
+const REALTIME_CONFIG: Record<string, { label: string; dot: string; bg: string; text: string }> = {
+  available: { label: 'Còn chỗ',    dot: '#10B981', bg: '#D1FAE5', text: '#065F46' },
+  normal:    { label: 'Bình thường', dot: '#F59E0B', bg: '#FEF3C7', text: '#92400E' },
+  busy:      { label: 'Đông đúc',    dot: '#EF4444', bg: '#FEE2E2', text: '#991B1B' },
+};
+
+function RealtimeBadge({ status, className = '' }: { status?: string; className?: string }) {
+  const rt = REALTIME_CONFIG[status ?? ''] ?? REALTIME_CONFIG['normal'];
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold ${className}`}
+      style={{ background: rt.bg, color: rt.text, border: `1px solid ${rt.dot}33` }}
+    >
+      <span style={{ width: 6, height: 6, borderRadius: '50%', background: rt.dot, display: 'inline-block', flexShrink: 0 }} />
+      {rt.label}
+    </span>
+  );
+}
+
 export default function CafesSearchPage() {
   const [isExpanded, setIsExpanded] = useState(false);
   const searchParams = useSearchParams();
@@ -298,11 +317,14 @@ export default function CafesSearchPage() {
                       <div>
                         <div className="flex justify-between items-start mb-2">
                           <h2 className="text-[#14422d] text-xl font-bold leading-tight">{cafe.name}</h2>
-                          <div className="flex items-center gap-1">
-                            <Star size={18} fill="#904C18" color="#904C18" />
-                            <span className="text-[#904C18] text-lg font-bold font-serif">
-                              {cafe.rating || '4.5'}
-                            </span>
+                          <div className="flex flex-col items-end gap-1.5">
+                            <div className="flex items-center gap-1">
+                              <Star size={18} fill="#904C18" color="#904C18" />
+                              <span className="text-[#904C18] text-lg font-bold font-serif">
+                                {cafe.rating || '4.5'}
+                              </span>
+                            </div>
+                            <RealtimeBadge status={cafe.realtimeStatus} />
                           </div>
                         </div>
                         <p className="text-[#414943] text-sm leading-relaxed line-clamp-2">
@@ -428,6 +450,7 @@ export default function CafesSearchPage() {
                         <span className="text-[#904C18] font-bold text-sm">{cafe.rating || '4.9'}</span>
                         <span className="text-[#717973] text-xs ml-1">(120+ レビュー)</span>
                       </div>
+                      <RealtimeBadge status={cafe.realtimeStatus} className="mt-2" />
                     </div>
                   </div>
 

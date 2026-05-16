@@ -264,18 +264,24 @@ export default function CafeDetailPage() {
               }}>
                 {cafe.name}
               </h1>
-              <span style={{
-                background: '#FFDBC7',
-                border: '1px solid rgba(49,19,0,0.12)',
-                borderRadius: 9999,
-                padding: '5px 14px',
-                fontSize: 11, fontWeight: 500,
-                letterSpacing: 1.2, color: '#311300',
-                display: 'flex', alignItems: 'center', gap: 5,
-                flexShrink: 0,
-              }}>
-                <span style={{ fontSize: 8, lineHeight: 1 }}>⬥</span> 混雑中
-              </span>
+              {(() => {
+                const rt = REALTIME_CONFIG[cafe.realtimeStatus] ?? REALTIME_CONFIG['normal'];
+                return (
+                  <span style={{
+                    background: rt.bg,
+                    border: `1px solid ${rt.dot}33`,
+                    borderRadius: 9999,
+                    padding: '5px 14px',
+                    fontSize: 11, fontWeight: 600,
+                    letterSpacing: 0.8, color: rt.text,
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    flexShrink: 0,
+                  }}>
+                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: rt.dot, display: 'inline-block', flexShrink: 0 }} />
+                    {rt.label}
+                  </span>
+                );
+              })()}
             </div>
 
             {/* Meta: rating · địa chỉ · giờ */}
