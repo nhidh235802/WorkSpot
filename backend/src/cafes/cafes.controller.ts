@@ -54,25 +54,31 @@ export class CafesController {
     return this.cafesService.searchCafes(searchCafeDto);
   }
 
-  // API Route: GET http://localhost:3001/cafes/owner/me?ownerId=...
+  // 1. ĐÃ SỬA: Lấy danh sách quán của Owner (Bảo mật bằng Token)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.OWNER)
   @Get('owner/me')
-  async getMyCafes(@Query('ownerId') ownerId: string) {
-    return this.cafesService.getCafesByOwner(ownerId);
+  async getMyCafes(@Req() req: { user: { id: string } }) {
+    // Lấy ID từ token, bỏ qua Query param
+    return this.cafesService.getCafesByOwner(req.user.id);
   }
 
+  // 2. ĐÃ SỬA: Cập nhật trạng thái realtime (Bảo mật bằng Token)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.OWNER)
   @Patch(':id/realtime-status')
   async updateRealtimeStatus(
     @Param('id', ParseUUIDPipe) id: string,
     @Body('realtimeStatus') realtimeStatus: RealtimeStatus,
-    @Body('ownerId') ownerId: string,
+    @Req() req: { user: { id: string } },
   ) {
-    return this.cafesService.updateRealtimeStatus(id, realtimeStatus, ownerId);
+    // Lấy ID từ token, bỏ qua Body param
+    return this.cafesService.updateRealtimeStatus(id, realtimeStatus, req.user.id);
   }
 
 // ─── REVIEWS ────────────────────────────────────────────────────────────────
 
-  // POST /cafes/:id/reviews  →  Đăng đánh giá (chỉ WORKER đã đăng nhập)
-  // Guest → 401 → Frontend redirect sang màn hình đăng nhập (ID.12)
+  // POST /cafes/:id/reviews  →  Đăng đánh giá (chỉ WORKER/CUSTOMER đã đăng nhập)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.CUSTOMER)
   @Post(':id/reviews')

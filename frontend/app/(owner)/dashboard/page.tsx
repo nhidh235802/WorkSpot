@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import OwnerSidebar from '@/components/OwnerSidebar';
 import { ListFilter, Pen, ChevronDown, Star, Store, Plus, Loader2, CheckCircle2, XCircle, X, AlertCircle } from 'lucide-react';
 
@@ -22,8 +22,9 @@ const REALTIME_CONFIG: Record<string, { label: string, color: string }> = {
 
 export default function DashboardOwnerPage() {
   const router = useRouter();
-  const params = useParams();
-  const ownerId = params.ownerId as string;
+
+  // STATE LƯU ID CHỦ QUÁN SAU KHI LẤY TỪ LOCALSTORAGE
+  const [ownerId, setOwnerId] = useState<string | null>(null);
 
   const [cafes, setCafes] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -34,7 +35,6 @@ export default function DashboardOwnerPage() {
   
   const [reasonModalCafe, setReasonModalCafe] = useState<any | null>(null);
 
-  // STATE CHO CHỨC NĂNG LỌC
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
 
@@ -43,16 +43,33 @@ export default function DashboardOwnerPage() {
     setTimeout(() => setToast(null), 3000);
   };
 
+  // 1. LẤY THÔNG TIN USER TỪ LOCALSTORAGE
+  useEffect(() => {
+    const userInfoStr = localStorage.getItem('user');
+    if (userInfoStr) {
+      const user = JSON.parse(userInfoStr);
+      setOwnerId(user.id);
+    } else {
+      router.push('/login'); // Nếu không có thông tin, đẩy về trang đăng nhập
+    }
+  }, [router]);
+
+  // 2. FETCH DỮ LIỆU TỪ BACKEND KHI ĐÃ CÓ OWNER ID
   useEffect(() => {
     if (!ownerId) return;
 
     const fetchMyCafes = async () => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
+      const token = localStorage.getItem('access_token'); // Lấy token để gọi API
 
       try {
         const response = await fetch(`http://localhost:3001/cafes/owner/me?ownerId=${ownerId}`, {
-          signal: controller.signal
+          signal: controller.signal,
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
         });
         
         clearTimeout(timeoutId);
@@ -79,8 +96,9 @@ export default function DashboardOwnerPage() {
     fetchMyCafes();
   }, [ownerId]);
 
+  // 3. XỬ LÝ CẬP NHẬT TRẠNG THÁI (KÈM TOKEN)
   const handleUpdateStatus = async (cafeId: string, newStatus: string) => {
-    if (updatingId) return;
+    if (updatingId || !ownerId) return;
     setOpenDropdownId(null);
     
     const targetCafe = cafes.find(c => c.id === cafeId);
@@ -89,12 +107,17 @@ export default function DashboardOwnerPage() {
     const previousStatus = targetCafe.realtimeStatus;
     setUpdatingId(cafeId);
 
+    // Optimistic Update
     setCafes(prev => prev.map(cafe => cafe.id === cafeId ? { ...cafe, realtimeStatus: newStatus } : cafe));
 
     try {
+      const token = localStorage.getItem('access_token');
       const res = await fetch(`http://localhost:3001/cafes/${cafeId}/realtime-status`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json' 
+        },
         body: JSON.stringify({ realtimeStatus: newStatus, ownerId }),
       });
 
@@ -102,6 +125,7 @@ export default function DashboardOwnerPage() {
       showToast('Đã cập nhật trạng thái', 'success');
 
     } catch (error) {
+      // Rollback
       setCafes(prev => prev.map(cafe => cafe.id === cafeId ? { ...cafe, realtimeStatus: previousStatus } : cafe));
       showToast('Cập nhật thất bại', 'error');
     } finally {
@@ -113,7 +137,7 @@ export default function DashboardOwnerPage() {
     if (cafe.status === 'approved') {
       router.push(`/cafes/${cafe.id}`);
     } else {
-      router.push(`/owner/cafes/${cafe.id}/edit`);
+      router.push(`/cafes/${cafe.id}/edit`);
     }
   };
 
@@ -123,7 +147,6 @@ export default function DashboardOwnerPage() {
     return `Cập nhật ${date.toLocaleDateString('vi-VN')} ${date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`;
   };
 
-  // MẢNG DỮ LIỆU ĐÃ ĐƯỢC LỌC
   const filteredCafes = cafes.filter(cafe => {
     if (filterStatus === 'all') return true;
     return cafe.status === filterStatus;
@@ -132,6 +155,7 @@ export default function DashboardOwnerPage() {
   return (
     <div className="flex h-screen bg-[#FAFAF5] w-full min-w-[1280px] overflow-hidden relative">
       
+      {/* TOAST */}
       {toast && (
         <div className={`fixed bottom-10 right-10 z-[100] flex items-center gap-3 px-6 py-4 rounded-xl shadow-lg border font-['Be_Vietnam_Pro'] animate-in slide-in-from-bottom-5 fade-in duration-300 ${
           toast.type === 'success' ? 'bg-[#E8F0EB] border-[#A7F3D0] text-[#14422D]' : 'bg-[#FEE2E2] border-[#FECACA] text-[#DC2626]'
@@ -141,6 +165,7 @@ export default function DashboardOwnerPage() {
         </div>
       )}
 
+      {/* MODAL LÝ DO TỪ CHỐI */}
       {reasonModalCafe && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl w-[500px] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 font-['Be_Vietnam_Pro']">
@@ -187,7 +212,6 @@ export default function DashboardOwnerPage() {
             </p>
           </div>
           
-          {/* NÚT LỌC TRẠNG THÁI */}
           <div className="relative z-40">
             <button 
               onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
@@ -234,12 +258,11 @@ export default function DashboardOwnerPage() {
               <Store size={48} className="text-[#A8A29E] mb-4" />
               <h3 className="text-xl font-bold text-[#1A1C19] mb-2 font-['Manrope']">Chưa có quán nào được đăng ký</h3>
               <p className="text-[#78716C] mb-6">Hãy bắt đầu thêm địa điểm kinh doanh của bạn lên hệ thống.</p>
-              <Link href="/owner/cafes/new" className="bg-[#14422D] text-white px-6 py-3 rounded-xl font-bold hover:bg-[#0d2e1f] transition-colors flex items-center gap-2">
+              <Link href="/cafes/create" className="bg-[#14422D] text-white px-6 py-3 rounded-xl font-bold hover:bg-[#0d2e1f] transition-colors flex items-center gap-2">
                 <Plus size={18} strokeWidth={3} /> Đăng ký quán mới
               </Link>
             </div>
           ) : filteredCafes.length === 0 ? (
-            // TRƯỜNG HỢP LỌC KHÔNG CÓ KẾT QUẢ
             <div className="col-span-full py-20 flex flex-col items-center justify-center border-2 border-dashed border-[#E7E5E4] rounded-[24px] bg-white/50">
               <ListFilter size={48} className="text-[#A8A29E] mb-4 opacity-50" />
               <h3 className="text-xl font-bold text-[#1A1C19] mb-2 font-['Manrope']">Không tìm thấy kết quả</h3>
@@ -295,7 +318,7 @@ export default function DashboardOwnerPage() {
                       )}
 
                       <button 
-                        onClick={(e) => { e.stopPropagation(); router.push(`/owner/cafes/${cafe.id}/edit`); }}
+                        onClick={(e) => { e.stopPropagation(); router.push(`/cafes/${cafe.id}/edit`); }}
                         className="flex items-center gap-1.5 text-xs font-bold hover:underline text-[#14422D]"
                       >
                         <Pen size={12} strokeWidth={3} /> Chỉnh sửa thông tin quán
@@ -385,7 +408,7 @@ export default function DashboardOwnerPage() {
           )}
 
           {!isLoading && cafes.length > 0 && (
-            <Link href="/owner/cafes/new" className="block">
+            <Link href="/cafes/create" className="block">
               <div className="h-full min-h-[320px] rounded-[24px] border-2 border-dashed border-[#E7E5E4] bg-transparent hover:bg-white/50 transition-all flex flex-col items-center justify-center p-8 group cursor-pointer">
                 <div className="w-16 h-16 bg-[#E8F0EB] rounded-full flex items-center justify-center text-[#14422D] mb-5 relative group-hover:scale-110 transition-transform">
                   <Store size={28} />
