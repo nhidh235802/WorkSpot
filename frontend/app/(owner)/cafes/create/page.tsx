@@ -39,12 +39,12 @@ type Amenity = {
 
 const AMENITIES: Amenity[] = [
   { id: 'wifi', label: 'Wi-Fi', icon: <Wifi size={16} /> },
-  { id: 'power', label: 'Ổ cắm điện', icon: <Zap size={16} /> },
+  { id: 'socket', label: 'Ổ cắm điện', icon: <Zap size={16} /> },
   { id: 'desk', label: 'Bàn làm việc', icon: <Monitor size={16} /> },
   { id: 'snack', label: 'Đồ ăn nhẹ', icon: <UtensilsCrossed size={16} /> },
-  { id: 'clean', label: 'Độ sạch sẽ', icon: <Sparkles size={16} /> },
+  { id: 'cleanliness', label: 'Độ sạch sẽ', icon: <Sparkles size={16} /> },
   { id: 'workspace', label: 'Không gian làm việc', icon: <Laptop size={16} /> },
-  { id: 'smoking', label: 'Quy định hút thuốc', icon: <Cigarette size={16} /> },
+  { id: 'smoking_rule', label: 'Quy định hút thuốc', icon: <Cigarette size={16} /> },
 ];
 
 const DAY_GROUPS = [
@@ -78,11 +78,13 @@ function TextInput({
   value,
   onChange,
   prefix,
+  error,
 }: {
   placeholder: string;
   value: string;
   onChange: (v: string) => void;
   prefix?: React.ReactNode;
+  error?: string;
 }) {
   return (
     <div style={{ position: 'relative', width: '100%' }}>
@@ -123,6 +125,12 @@ function TextInput({
           color: '#1A1C19',
         }}
       />
+      {/* 3. Hiển thị chữ đỏ dưới input */}
+      {error && (
+        <span style={{ color: '#DC2626', fontSize: 12, marginTop: 4, display: 'block', fontFamily: 'Be Vietnam Pro, sans-serif' }}>
+          {error}
+        </span>
+      )}
     </div>
   );
 }
@@ -197,7 +205,14 @@ export default function CreateCafeForm() {
   // ── Submit state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [toast, setToast] = useState('');
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(''), 4000);
+  };
 
   // ─── Handlers ────────────────────────────────────────────────────────────
 
@@ -211,11 +226,34 @@ export default function CreateCafeForm() {
 
   const handleAddPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    const newPhotos = files.map((file) => ({
-      file,
-      preview: URL.createObjectURL(file),
-    }));
-    setPhotos((prev) => [...prev, ...newPhotos]);
+    const errs: string[] = [];
+
+    if (photos.length + files.length > 5) {
+      setFieldErrors(prev => ({ ...prev, photos: 'Chỉ được tải lên tối đa 5 ảnh.' }));
+      e.target.value = '';
+      return;
+    }
+
+    const validPhotos: { file: File; preview: string }[] = [];
+    for (const file of files) {
+      if (file.type !== 'image/jpeg' && file.type !== 'image/jpg' && file.type !== 'image/png') {
+        errs.push(`"${file.name}" không hợp lệ. Chỉ chấp nhận .JPG, .JPEG, .PNG.`);
+        continue;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        errs.push(`"${file.name}" quá lớn. Tối đa 10MB.`);
+        continue;
+      }
+      validPhotos.push({ file, preview: URL.createObjectURL(file) });
+    }
+
+    if (errs.length > 0) {
+      setFieldErrors(prev => ({ ...prev, photos: errs.join(' ') }));
+    } else {
+      setFieldErrors(prev => { const n = { ...prev }; delete n.photos; return n; });
+    }
+
+    setPhotos((prev) => [...prev, ...validPhotos]);
     e.target.value = '';
   };
 
@@ -239,72 +277,105 @@ export default function CreateCafeForm() {
 
   const handleSubmit = async () => {
     setError('');
+    const errors: Record<string, string> = {};
 
-    if (!name.trim()) return setError('Vui lòng nhập tên quán.');
-    if (!address.trim()) return setError('Vui lòng nhập địa chỉ quán.');
+    // 1. Validate Tên quán
+    if (!name.trim()) errors.name = 'Vui lòng nhập tên quán.';
+    else if (name.trim().length > 50) errors.name = 'Tên quán không được vượt quá 50 ký tự.';
 
+    // 2. Validate Địa chỉ
+    if (!address.trim()) errors.address = 'Vui lòng nhập địa chỉ quán.';
+    else if (address.trim().length > 100) errors.address = 'Địa chỉ không được vượt quá 100 ký tự.';
+
+    // 3. Validate Mô tả
+    if (!description.trim()) errors.description = 'Vui lòng nhập mô tả quán.';
+    else if (description.trim().length > 300) errors.description = 'Mô tả không được vượt quá 300 ký tự.';
+
+    // 4. Validate Ảnh (1-5)
+    if (photos.length === 0) errors.photos = 'Vui lòng tải lên ít nhất 1 hình ảnh của quán.';
+    else if (photos.length > 5) errors.photos = 'Chỉ được tải lên tối đa 5 ảnh.';
+
+    // 5. Validate Tiện ích
+    if (selectedAmenities.size === 0) errors.amenities = 'Vui lòng chọn ít nhất 1 tiện ích.';
+
+    // 6. Validate Giờ hoạt động
+    DAY_GROUPS.forEach(day => {
+      const s = schedule[day.key];
+      if (!s.isClosed && s.open >= s.close) {
+        errors[`schedule_${day.key}`] = 'Giờ kết thúc phải sau giờ mở cửa.';
+      }
+    });
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+
+    setFieldErrors({});
     setIsSubmitting(true);
 
     try {
-      // 1. Geocode address → coordinates via Nominatim
-      const searchQuery = `${address.trim()}, Hà Nội, Việt Nam`;
+      // 1. Geocode
       const geocodeRes = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(
-          searchQuery
-        )}`,
+        `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(address.trim() + ', Việt Nam')}`,
         { headers: { 'Accept-Language': 'vi' } }
       );
       const geocodeData = await geocodeRes.json();
+      const lat = geocodeData?.[0] ? parseFloat(geocodeData[0].lat) : undefined;
+      const lng = geocodeData?.[0] ? parseFloat(geocodeData[0].lon) : undefined;
 
-      if (!geocodeData || geocodeData.length === 0) {
-        setError(
-          'Không thể xác định tọa độ từ địa chỉ này. Vui lòng nhập rõ hơn (VD: Số nhà, Tên đường, Quận).'
-        );
-        setIsSubmitting(false);
-        return;
-      }
+      // 2. Chuyển schedule → mảng OperatingHours cho backend
+      const operatingHours: { dayOfWeek: string; openTime: string | null; closeTime: string | null; isDayOff: boolean }[] = [];
+      const dayMap: Record<string, string[]> = {
+        weekday: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+        saturday: ['saturday'],
+        sunday: ['sunday'],
+      };
+      DAY_GROUPS.forEach(({ key }) => {
+        const s = schedule[key];
+        dayMap[key].forEach(d => {
+          operatingHours.push({
+            dayOfWeek: d,
+            openTime: s.isClosed ? null : s.open,
+            closeTime: s.isClosed ? null : s.close,
+            isDayOff: s.isClosed,
+          });
+        });
+      });
 
-      const lat = parseFloat(geocodeData[0].lat);
-      const lng = parseFloat(geocodeData[0].lon);
-
-      // 2. Build payload
+      // 3. Build FormData
+      const token = localStorage.getItem('access_token');
       const payload = {
         name: name.trim(),
         address: address.trim(),
         description: description.trim(),
-        latitude: lat,
-        longitude: lng,
-        amenities: Array.from(selectedAmenities),
-        schedule: {
-          weekday: schedule.weekday,
-          saturday: schedule.saturday,
-          sunday: schedule.sunday,
-          closedOnHolidays,
-        },
+        ...(lat !== undefined && { latitude: lat }),
+        ...(lng !== undefined && { longitude: lng }),
+        facilities: Array.from(selectedAmenities),
+        isClosedOnHolidays: closedOnHolidays,
+        operatingHours,
       };
 
-      // 3. Send to backend
-      // If photos are needed, use FormData:
-      // const formData = new FormData();
-      // formData.append('data', JSON.stringify(payload));
-      // photos.forEach((p) => formData.append('photos', p.file));
+      const formData = new FormData();
+      formData.append('data', JSON.stringify(payload));
+      photos.forEach(p => formData.append('photos', p.file));
 
-      const backendRes = await fetch('/api/cafes', {
+      const res = await fetch('http://localhost:3001/cafes', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
       });
 
-      if (!backendRes.ok) {
-        const msg = await backendRes.text();
-        throw new Error(msg || 'Lỗi từ server');
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.message || 'Lỗi từ server');
       }
 
-      // 4. Success
-      router.push('/dashboard');
-    } catch (err) {
+      showToast("Đăng ký thành công! Quán đang ở trạng thái 'Chờ duyệt'.");
+      setTimeout(() => router.push('/dashboard'), 1500);
+    } catch (err: any) {
       console.error(err);
-      setError('Có lỗi xảy ra, vui lòng thử lại.');
+      setError(err.message || 'Có lỗi xảy ra, vui lòng thử lại.');
     } finally {
       setIsSubmitting(false);
     }
@@ -314,6 +385,19 @@ export default function CreateCafeForm() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#FAFAF5' }}>
+      {/* Toast */}
+      {toast && (
+        <div style={{
+          position: 'fixed', top: 24, right: 24, zIndex: 9999,
+          background: '#14422D', color: 'white', borderRadius: 12,
+          padding: '14px 20px', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif',
+          fontWeight: 600, boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+          display: 'flex', alignItems: 'center', gap: 10, maxWidth: 380,
+        }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke="white" strokeWidth="2" strokeLinecap="round" /><polyline points="22 4 12 14.01 9 11.01" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          {toast}
+        </div>
+      )}
       <Sidebar />
       <div
         style={{
@@ -370,6 +454,7 @@ export default function CreateCafeForm() {
                     placeholder="Ví dụ: Cafe Studio"
                     value={name}
                     onChange={setName}
+                    error={fieldErrors.name}
                   />
                 </div>
 
@@ -380,6 +465,7 @@ export default function CreateCafeForm() {
                     value={address}
                     onChange={setAddress}
                     prefix={<MapPin size={16} />}
+                    error={fieldErrors.address}
                   />
                 </div>
 
@@ -406,6 +492,11 @@ export default function CreateCafeForm() {
                       resize: 'vertical',
                     }}
                   />
+                  {fieldErrors.description && (
+                    <span style={{ color: '#DC2626', fontSize: 12, marginTop: 4 }}>
+                      {fieldErrors.description}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -470,6 +561,11 @@ export default function CreateCafeForm() {
                   );
                 })}
               </div>
+              {fieldErrors?.amenities && (
+                <span style={{ color: '#DC2626', fontSize: 12, marginTop: 4, display: 'block', fontFamily: 'Be Vietnam Pro, sans-serif' }}>
+                  {fieldErrors.amenities}
+                </span>
+              )}
             </div>
           </div>
 
@@ -558,11 +654,17 @@ export default function CreateCafeForm() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/jpg,image/png"
                 multiple
                 style={{ display: 'none' }}
                 onChange={handleAddPhoto}
               />
+
+              {fieldErrors?.photos && (
+                <span style={{ color: '#DC2626', fontSize: 12, marginTop: 4, display: 'block', fontFamily: 'Be Vietnam Pro, sans-serif' }}>
+                  {fieldErrors.photos}
+                </span>
+              )}
 
               <p
                 style={{
@@ -665,6 +767,11 @@ export default function CreateCafeForm() {
                           pointerEvents: s.isClosed ? 'none' : 'all',
                         }}
                       >
+                        {fieldErrors[`schedule_${day.key}`] && (
+                          <span style={{ color: '#DC2626', fontSize: 12, marginTop: 4 }}>
+                            {fieldErrors[`schedule_${day.key}`]}
+                          </span>
+                        )}
                         <TimeInput
                           value={s.open}
                           onChange={(v) => updateSchedule(day.key, 'open', v)}
@@ -806,7 +913,7 @@ export default function CreateCafeForm() {
           </button>
         </div>
       </div>
-            <CancelConfirmDialog
+      <CancelConfirmDialog
         isOpen={showCancelDialog}
         onClose={() => setShowCancelDialog(false)}
       />

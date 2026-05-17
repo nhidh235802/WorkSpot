@@ -18,12 +18,17 @@ export class CreateReviewDto {
 
   @IsString()
   @MinLength(20, { message: 'Nội dung đánh giá phải từ 20 ký tự trở lên' })
-  @MaxLength(500, { message: 'Nội dung đánh giá không được vượt quá 500 ký tự' })
+  @MaxLength(500, {
+    message: 'Nội dung đánh giá không được vượt quá 500 ký tự',
+  })
   comment!: string;
 
   @IsOptional()
   @IsArray()
   @ArrayMaxSize(10, { message: 'Tối đa 10 ảnh' })
-  @IsString({ each: true, message: 'Mỗi phần tử phải là một chuỗi đường dẫn ảnh' }) // 🛠️ Thay đổi từ IsUrl thành IsString
+  @IsString({
+    each: true,
+    message: 'Mỗi phần tử phải là một chuỗi đường dẫn ảnh',
+  }) // 🛠️ Thay đổi từ IsUrl thành IsString
   images?: string[];
 }

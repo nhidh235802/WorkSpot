@@ -67,17 +67,25 @@ export class Cafe {
   facilities!: FacilityType[];
 
   @Column({ type: 'boolean', default: false })
-  isClosedOnHolidays!: boolean; 
+  isClosedOnHolidays!: boolean;
 
   @Column({ type: 'enum', enum: CafeStatus, default: CafeStatus.PENDING })
   status!: CafeStatus;
+
+  /** Dữ liệu chờ duyệt (lưu snapshot khi Owner sửa - chưa được duyệt) */
+  @Column({ type: 'jsonb', nullable: true })
+  pendingData!: any;
 
   // LÝ DO TỪ CHỐI (Dành cho Admin)
   @Column({ type: 'text', nullable: true })
   rejectionReason!: string;
 
   // TRẠNG THÁI REALTIME (Dành cho Owner báo cáo Đang đông / Còn chỗ)
-  @Column({ type: 'enum', enum: RealtimeStatus, default: RealtimeStatus.NORMAL })
+  @Column({
+    type: 'enum',
+    enum: RealtimeStatus,
+    default: RealtimeStatus.NORMAL,
+  })
   realtimeStatus!: RealtimeStatus;
 
   @OneToMany(() => OperatingHour, (operatingHour) => operatingHour.cafe, {

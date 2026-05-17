@@ -1,4 +1,10 @@
-import { IsBoolean, IsEnum, IsOptional, IsString, Matches } from 'class-validator';
+import {
+  IsBoolean,
+  IsEnum,
+  IsOptional,
+  IsString,
+  Matches,
+} from 'class-validator';
 import { DayOfWeek } from '../entities/operating-hour.entity';
 
 /** Định dạng giờ hợp lệ: HH:mm (00:00 – 23:59) */

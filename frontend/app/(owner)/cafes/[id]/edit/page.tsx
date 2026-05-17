@@ -2,9 +2,9 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import axios from 'axios'
 import OwnerSidebar from '@/components/OwnerSidebar'
-import { ArrowLeft, MapPin, ImagePlus, X, Check, Loader2 } from 'lucide-react'
+import CancelConfirmDialog from '@/components/CancelCreateDialog'
+import { ArrowLeft, MapPin, ImagePlus, X, Check, Loader2, Plus } from 'lucide-react'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 type Facility = 'wifi' | 'socket' | 'desk' | 'snack' | 'cleanliness' | 'workspace' | 'smoking_rule'
@@ -66,7 +66,16 @@ export default function EditCafePage() {
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [toast, setToast] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [showCancelDialog, setShowCancelDialog] = useState(false)
+  const [newPhotos, setNewPhotos] = useState<{ file: File; preview: string }[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(''), 4000);
+  };
 
   useEffect(() => {
     async function fetchCafe() {
@@ -75,8 +84,8 @@ export default function EditCafePage() {
         const user = userStr ? JSON.parse(userStr) : null
         if (!user) return router.push('/login')
 
-        const res = await axios.get(`http://localhost:3001/cafes/${cafeId}`)
-        const data = res.data
+        const res = await fetch(`http://localhost:3001/cafes/${cafeId}`)
+        const data = await res.json()
         if (data.owner?.id !== user.id) return router.push('/dashboard')
 
         // Tái cấu trúc giờ hoạt động từ Backend thành 3 block
@@ -122,41 +131,108 @@ export default function EditCafePage() {
     const hours = [...f.operatingHours]; hours[idx] = { ...hours[idx], [field]: val }; return { ...f, operatingHours: hours }
   })
 
-  const handleAddImage = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => setForm(f => ({ ...f, images: [...f.images, reader.result as string] }))
-    reader.readAsDataURL(file)
-    if (fileInputRef.current) fileInputRef.current.value = ''
-  }
+  const handleAddNewPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const totalAfter = form.images.length + newPhotos.length + files.length;
+    const errs: string[] = [];
 
-  const removeImage = (idx: number) => setForm(f => ({ ...f, images: f.images.filter((_, i) => i !== idx) }))
+    if (totalAfter > 5) {
+      setFieldErrors(p => ({ ...p, photos: 'Tổng số ảnh không được vượt quá 5.' }));
+      e.target.value = '';
+      return;
+    }
+    const valid: { file: File; preview: string }[] = [];
+    for (const f of files) {
+      if (!['image/jpeg', 'image/jpg', 'image/png'].includes(f.type)) {
+        errs.push(`"${f.name}" không hợp lệ.`);
+        continue;
+      }
+      if (f.size > 10 * 1024 * 1024) {
+        errs.push(`"${f.name}" quá lớn (tối đa 10MB).`);
+        continue;
+      }
+      valid.push({ file: f, preview: URL.createObjectURL(f) });
+    }
+    if (errs.length > 0) setFieldErrors(p => ({ ...p, photos: errs.join(' ') }));
+    else setFieldErrors(p => { const n = { ...p }; delete n.photos; return n; });
+    setNewPhotos(prev => [...prev, ...valid]);
+    e.target.value = '';
+  };
+
+  const removeExistingImage = (idx: number) => setForm(f => ({ ...f, images: f.images.filter((_, i) => i !== idx) }));
+  const removeNewPhoto = (idx: number) => setNewPhotos(prev => { URL.revokeObjectURL(prev[idx].preview); return prev.filter((_, i) => i !== idx); });
 
   const handleSave = async () => {
-    setSaving(true)
-    try {
-      const token = localStorage.getItem('access_token')
+    const errors: Record<string, string> = {};
 
-      // Bung 3 block thành 7 ngày cho Backend
-      const expandedHours: any[] = []
+    if (!form.name.trim()) errors.name = 'Vui lòng nhập tên quán.';
+    else if (form.name.trim().length > 50) errors.name = 'Tên quán không được vượt quá 50 ký tự.';
+
+    if (!form.address.trim()) errors.address = 'Vui lòng nhập địa chỉ.';
+    else if (form.address.trim().length > 100) errors.address = 'Địa chỉ không được vượt quá 100 ký tự.';
+
+    if (!form.description.trim()) errors.description = 'Vui lòng nhập mô tả.';
+    else if (form.description.trim().length > 300) errors.description = 'Mô tả không được vượt quá 300 ký tự.';
+
+    const totalImages = form.images.length + newPhotos.length;
+    if (totalImages === 0) errors.photos = 'Vui lòng có ít nhất 1 hình ảnh.';
+    else if (totalImages > 5) errors.photos = 'Tổng số ảnh không được vượt quá 5.';
+
+    if (form.facilities.length === 0) errors.amenities = 'Vui lòng chọn ít nhất 1 tiện ích.';
+
+    form.operatingHours.forEach((row, i) => {
+      if (!row.isDayOff && row.openTime >= row.closeTime) {
+        errors[`schedule_${i}`] = 'Giờ kết thúc phải sau giờ mở cửa.';
+      }
+    });
+
+    if (Object.keys(errors).length > 0) { setFieldErrors(errors); return; }
+    setFieldErrors({});
+    setSaving(true);
+
+    try {
+      const token = localStorage.getItem('access_token');
+
+      // Mở rộng 3 block → 7 ngày cho backend
+      const expandedHours: any[] = [];
       form.operatingHours.forEach(oh => {
         oh.days.forEach(day => {
-          expandedHours.push({ dayOfWeek: day, openTime: oh.openTime, closeTime: oh.closeTime, isDayOff: oh.isDayOff })
-        })
-      })
+          expandedHours.push({ dayOfWeek: day, openTime: oh.isDayOff ? null : oh.openTime, closeTime: oh.isDayOff ? null : oh.closeTime, isDayOff: oh.isDayOff });
+        });
+      });
 
-      const payload = { ...form, operatingHours: expandedHours }
+      const payload = {
+        name: form.name.trim(),
+        address: form.address.trim(),
+        description: form.description.trim(),
+        facilities: form.facilities,
+        isClosedOnHolidays: form.isClosedOnHolidays,
+        operatingHours: expandedHours,
+        images: form.images, // giữ lại ảnh cũ
+      };
 
-      await axios.patch(`http://localhost:3001/cafes/${cafeId}`, payload, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      router.push('/dashboard')
+      const formData = new FormData();
+      formData.append('data', JSON.stringify(payload));
+      newPhotos.forEach(p => formData.append('photos', p.file));
+
+      const res = await fetch(`http://localhost:3001/cafes/${cafeId}`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.message || 'Có lỗi xảy ra khi lưu.');
+      }
+
+      showToast('Cập nhật thành công! Quán đang chờ Admin duyệt lại.');
+      setTimeout(() => router.push('/dashboard'), 1500);
     } catch (e: any) {
-      alert(e.response?.data?.message || 'Có lỗi xảy ra khi lưu.')
-      setSaving(false)
+      alert(e.message || 'Có lỗi xảy ra khi lưu.');
+      setSaving(false);
     }
-  }
+  };
 
 
   if (loading) {
@@ -169,13 +245,27 @@ export default function EditCafePage() {
 
   return (
     <div className="flex h-screen bg-[#FAFAF5] font-['Be_Vietnam_Pro'] overflow-hidden">
+      {/* Toast */}
+      {toast && (
+        <div style={{
+          position: 'fixed', top: 24, right: 24, zIndex: 9999,
+          background: '#14422D', color: 'white', borderRadius: 12,
+          padding: '14px 20px', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif',
+          fontWeight: 600, boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+          display: 'flex', alignItems: 'center', gap: 10, maxWidth: 380,
+        }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke="white" strokeWidth="2" strokeLinecap="round"/><polyline points="22 4 12 14.01 9 11.01" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          {toast}
+        </div>
+      )}
+      <CancelConfirmDialog isOpen={showCancelDialog} onClose={() => setShowCancelDialog(false)} title="Hủy chỉnh sửa?" />
       <OwnerSidebar />
 
       <main className="flex-1 overflow-y-auto px-10 py-12 lg:px-16 w-full">
 
         {/* Nút Quay lại */}
-        <button
-          onClick={() => router.push('/dashboard')}
+        <button 
+          onClick={() => setShowCancelDialog(true)}
           className="flex items-center gap-2 text-[#14422D] hover:text-[#0d2e1f] font-bold text-[12px] uppercase tracking-widest mb-6 transition-colors group"
         >
           <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
@@ -205,8 +295,9 @@ export default function EditCafePage() {
                 <label className="text-[11px] font-bold text-[#904C18] uppercase tracking-wider block">Tên quán</label>
                 <input
                   value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                  className="w-full bg-white border border-[#E7E5E4] rounded-[8px] px-4 py-3 text-[15px] text-[#1A1C19] focus:outline-none focus:border-[#14422D] transition-colors"
+                  className={`w-full bg-white border rounded-[8px] px-4 py-3 text-[15px] text-[#1A1C19] focus:outline-none transition-colors ${fieldErrors.name ? 'border-red-400' : 'border-[#E7E5E4] focus:border-[#14422D]'}`}
                 />
+                {fieldErrors.name && <p className="text-red-600 text-[12px] mt-1">{fieldErrors.name}</p>}
               </div>
 
               <div className="space-y-2">
@@ -215,17 +306,19 @@ export default function EditCafePage() {
                   <MapPin size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#A8A29E]" />
                   <input
                     value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
-                    className="w-full bg-white border border-[#E7E5E4] rounded-[8px] pl-12 pr-4 py-3 text-[15px] text-[#1A1C19] focus:outline-none focus:border-[#14422D] transition-colors"
+                    className={`w-full bg-white border rounded-[8px] pl-12 pr-4 py-3 text-[15px] text-[#1A1C19] focus:outline-none transition-colors ${fieldErrors.address ? 'border-red-400' : 'border-[#E7E5E4] focus:border-[#14422D]'}`}
                   />
                 </div>
+                {fieldErrors.address && <p className="text-red-600 text-[12px] mt-1">{fieldErrors.address}</p>}
               </div>
 
               <div className="space-y-2">
                 <label className="text-[11px] font-bold text-[#904C18] uppercase tracking-wider block">Mô tả quán</label>
                 <textarea
                   value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={4}
-                  className="w-full bg-white border border-[#E7E5E4] rounded-[8px] px-4 py-3 text-[15px] text-[#1A1C19] focus:outline-none focus:border-[#14422D] transition-colors resize-none leading-relaxed"
+                  className={`w-full bg-white border rounded-[8px] px-4 py-3 text-[15px] text-[#1A1C19] focus:outline-none transition-colors resize-none leading-relaxed ${fieldErrors.description ? 'border-red-400' : 'border-[#E7E5E4] focus:border-[#14422D]'}`}
                 />
+                {fieldErrors.description && <p className="text-red-600 text-[12px] mt-1">{fieldErrors.description}</p>}
               </div>
             </div>
           </Section>
@@ -236,27 +329,39 @@ export default function EditCafePage() {
             desc="Hình ảnh đẹp và rõ nét về không gian làm việc sẽ thu hút nhiều khách hàng hơn."
           >
             <div className="flex flex-wrap gap-4">
-              <button
+              {(form.images.length + newPhotos.length) < 5 && (
+             <button
                 onClick={() => fileInputRef.current?.click()}
                 className="w-[200px] h-[140px] rounded-[16px] border border-dashed border-[#D6D3D1] flex flex-col items-center justify-center gap-2 text-[#78716C] hover:text-[#14422D] hover:border-[#14422D] hover:bg-[#FAFAF5] transition-all cursor-pointer bg-transparent"
               >
                 <ImagePlus size={24} strokeWidth={1.5} />
                 <span className="font-bold text-[13px]">Thêm ảnh</span>
               </button>
-              <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAddImage} className="hidden" />
+              )}
+              <input ref={fileInputRef} type="file" accept="image/jpeg,image/jpg,image/png" multiple onChange={handleAddNewPhoto} className="hidden" />
 
+              {/* Ảnh cũ (từ server) */}
               {form.images.map((src, idx) => (
-                <div key={idx} className="relative w-[200px] h-[140px] rounded-[16px] overflow-hidden border border-[#E7E5E4] group shadow-sm">
-                  <img src={src} alt="Cafe" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                  <button
-                    onClick={() => removeImage(idx)}
-                    className="absolute top-2 right-2 bg-black/50 text-white p-1.5 rounded-full backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/70"
-                  >
-                    <X size={14} strokeWidth={3} />
+                <div key={`old-${idx}`} className="relative w-[160px] h-[120px] rounded-[16px] overflow-hidden border border-[#E7E5E4] group shadow-sm">
+                  <img src={src.startsWith('http') ? src : `http://localhost:3001${src}`} alt="Cafe" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                  <button onClick={() => removeExistingImage(idx)} className="absolute top-2 right-2 bg-black/50 text-white p-1.5 rounded-full backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/70">
+                    <X size={12} strokeWidth={3} />
                   </button>
                 </div>
               ))}
+
+              {/* Ảnh mới chưa upload */}
+              {newPhotos.map((p, idx) => (
+                <div key={`new-${idx}`} className="relative w-[160px] h-[120px] rounded-[16px] overflow-hidden border-2 border-dashed border-[#14422D] group shadow-sm">
+                  <img src={p.preview} alt="New" className="w-full h-full object-cover" />
+                  <button onClick={() => removeNewPhoto(idx)} className="absolute top-2 right-2 bg-black/50 text-white p-1.5 rounded-full backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/70">
+                    <X size={12} strokeWidth={3} />
+                  </button>
+                  <div className="absolute bottom-0 left-0 right-0 bg-[#14422D]/80 text-white text-[10px] text-center py-1 font-bold">Mới</div>
+                </div>
+              ))}
             </div>
+            {fieldErrors.photos && <p className="text-red-600 text-[12px] mt-2">{fieldErrors.photos}</p>}
           </Section>
 
           {/* 3. TIỆN ÍCH & KHÔNG GIAN */}
@@ -280,6 +385,7 @@ export default function EditCafePage() {
                 )
               })}
             </div>
+            {fieldErrors.amenities && <p className="text-red-600 text-[12px] mt-2">{fieldErrors.amenities}</p>}
           </Section>
 
           {/* 4. GIỜ HOẠT ĐỘNG */}
@@ -289,50 +395,37 @@ export default function EditCafePage() {
           >
             <div className="flex flex-col gap-4">
               {form.operatingHours.map((row, idx) => (
-                <div key={row.label} className={`px-6 py-5 rounded-[12px] border border-[#E7E5E4] flex items-center justify-between shadow-sm ${row.isDayOff ? 'bg-[#FAFAF5]' : 'bg-white'}`}>
-
-                  {/* Nhãn Thứ */}
-                  <div className={`font-bold text-[15px] w-40 ${row.isDayOff ? 'text-[#A8A29E]' : 'text-[#14422D]'}`}>
-                    {row.label}
-                  </div>
-
-                  {/* Cụm input giờ */}
-                  <div className="flex items-center gap-6">
-                    {row.isDayOff ? (
-                      <>
-                        <div className="w-[120px] border border-[#E7E5E4] rounded-[8px] px-3 py-2 text-[14px] font-medium text-center text-[#A8A29E] bg-[#FAFAF5]">—</div>
-                        <div className="w-[120px] border border-[#E7E5E4] rounded-[8px] px-3 py-2 text-[14px] font-medium text-center text-[#A8A29E] bg-[#FAFAF5]">—</div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="relative">
-                          <input
-                            type="time" value={row.openTime} onChange={e => setTime(idx, 'openTime', e.target.value)}
-                            className="w-[120px] border border-[#E7E5E4] rounded-[8px] px-3 py-2 text-[14px] font-medium focus:outline-none focus:border-[#14422D] text-center"
-                          />
+                <div key={row.label} className="flex flex-col gap-1">
+                  <div className="bg-white px-6 py-5 rounded-[12px] border border-[#E7E5E4] flex items-center justify-between shadow-sm">
+                    <div className={`font-bold text-[15px] w-40 ${row.isDayOff ? 'text-[#A8A29E]' : 'text-[#14422D]'}`}>
+                      {row.label}
+                    </div>
+                    <div className="flex items-center gap-6">
+                      {row.isDayOff ? (
+                        <>
+                          <div className="w-[120px] text-center text-[#A8A29E] font-bold">--</div>
+                          <div className="w-[120px] text-center text-[#A8A29E] font-bold">--</div>
+                        </>
+                      ) : (
+                        <>
+                          <input type="time" value={row.openTime} onChange={e => setTime(idx, 'openTime', e.target.value)}
+                            className="w-[120px] border border-[#E7E5E4] rounded-[8px] px-3 py-2 text-[14px] font-medium focus:outline-none focus:border-[#14422D] text-center" />
+                          <input type="time" value={row.closeTime} onChange={e => setTime(idx, 'closeTime', e.target.value)}
+                            className="w-[120px] border border-[#E7E5E4] rounded-[8px] px-3 py-2 text-[14px] font-medium focus:outline-none focus:border-[#14422D] text-center" />
+                        </>
+                      )}
+                      <label className="flex items-center gap-2 cursor-pointer ml-4">
+                        <div className={`w-[18px] h-[18px] rounded-[4px] flex items-center justify-center transition-colors border ${row.isDayOff ? 'bg-[#14422D] border-[#14422D]' : 'bg-white border-[#D6D3D1]'}`}>
+                          {row.isDayOff && <Check size={14} className="text-white" strokeWidth={3} />}
                         </div>
-                        <div className="relative">
-                          <input
-                            type="time" value={row.closeTime} onChange={e => setTime(idx, 'closeTime', e.target.value)}
-                            className="w-[120px] border border-[#E7E5E4] rounded-[8px] px-3 py-2 text-[14px] font-medium focus:outline-none focus:border-[#14422D] text-center"
-                          />
-                        </div>
-                      </>
-                    )}
-
-                    {/* Checkbox Nghỉ */}
-                    <label className="flex items-center gap-2 cursor-pointer ml-4">
-                      <div className={`w-[18px] h-[18px] rounded-[4px] flex items-center justify-center transition-colors border ${row.isDayOff ? 'bg-[#14422D] border-[#14422D]' : 'bg-white border-[#D6D3D1]'}`}>
-                        {row.isDayOff && <Check size={14} className="text-white" strokeWidth={3} />}
-                      </div>
-                      <input
-                        type="checkbox" className="hidden"
-                        checked={row.isDayOff} onChange={() => toggleDayOff(idx)}
-                      />
-                      <span className={`text-[14px] font-bold ${row.isDayOff ? 'text-[#1A1C19]' : 'text-[#78716C]'}`}>Nghỉ</span>
-                    </label>
+                        <input type="checkbox" className="hidden" checked={row.isDayOff} onChange={() => toggleDayOff(idx)} />
+                        <span className={`text-[14px] font-bold ${row.isDayOff ? 'text-[#1A1C19]' : 'text-[#78716C]'}`}>Nghỉ</span>
+                      </label>
+                    </div>
                   </div>
-
+                  {fieldErrors[`schedule_${idx}`] && (
+                    <p className="text-red-600 text-[12px] px-1">{fieldErrors[`schedule_${idx}`]}</p>
+                  )}
                 </div>
               ))}
 
@@ -356,8 +449,8 @@ export default function EditCafePage() {
 
         {/* Footer Actions */}
         <div className="mt-auto border-t border-[#E7E5E4] pt-8 flex items-center justify-end gap-4 pb-10">
-          <button
-            onClick={() => router.push('/dashboard')}
+          <button 
+            onClick={() => setShowCancelDialog(true)}
             className="px-8 py-3 rounded-full font-bold text-[#57534E] border border-[#E7E5E4] bg-white hover:bg-[#F5F5F0] transition-colors text-[15px] min-w-[120px]"
           >
             Hủy
