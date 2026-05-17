@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { userService } from '@/services/user.service'
 import OwnerSidebar from '@/components/OwnerSidebar'
 
+type UserRole = 'customer' | 'owner' | 'admin'
+
 interface UserProfile {
   id: string
   fullName: string
@@ -14,14 +16,140 @@ interface UserProfile {
   avatar: string | null
   address: string | null
   bio: string | null
-  role: 'customer' | 'owner' | 'admin'
+  role: UserRole
   createdAt: string
 }
 
-const ROLE_LABEL_JP: Record<string, string> = {
+const ROLE_LABEL: Record<UserRole, string> = {
   customer: 'ユーザー',
-  owner: 'オーナー',
+  owner: 'Chủ quán',
   admin: '管理者',
+}
+
+const PROFILE_TEXT: Record<UserRole, {
+  locale: string
+  pageTitle: string
+  pageSubtitle: string
+  memberSinceSuffix: string
+  basicInfoTitle: string
+  securityTitle: string
+  fieldLabels: {
+    fullName: string
+    email: string
+    phone: string
+    address: string
+    bio: string
+    currentPassword: string
+    newPassword: string
+  }
+  save: string
+  saving: string
+  cancel: string
+  edit: string
+  backHome: string
+  logout: string
+  loading: string
+  loadErrorTitle: string
+  passwordSuccess: string
+  passwordRequired: string
+  passwordMinLength: string
+  avatarTypeError: string
+  avatarSizeError: string
+  profileUpdateFailed: string
+}> = {
+  customer: {
+    locale: 'ja-JP',
+    pageTitle: 'プロフィール',
+    pageSubtitle: 'アカウント情報を管理して、WorkSpotをより便利に利用しましょう。',
+    memberSinceSuffix: 'から利用中',
+    basicInfoTitle: '基本情報',
+    securityTitle: 'セキュリティ',
+    fieldLabels: {
+      fullName: '氏名',
+      email: 'メールアドレス',
+      phone: '電話番号',
+      address: '所在地',
+      bio: '自己紹介',
+      currentPassword: '現在のパスワード',
+      newPassword: '新しいパスワード',
+    },
+    save: '保存',
+    saving: '保存中...',
+    cancel: 'キャンセル',
+    edit: '編集',
+    backHome: 'ホームに戻る',
+    logout: 'ログアウト',
+    loading: '読み込み中...',
+    loadErrorTitle: 'プロフィールを読み込めませんでした',
+    passwordSuccess: 'パスワードを変更しました。',
+    passwordRequired: 'パスワードを入力してください。',
+    passwordMinLength: '新しいパスワードは6文字以上で入力してください。',
+    avatarTypeError: '画像ファイル (jpg, jpeg, png, gif) を選択してください。',
+    avatarSizeError: '5MB以下の画像を選択してください。',
+    profileUpdateFailed: 'プロフィールの更新に失敗しました。',
+  },
+  owner: {
+    locale: 'vi-VN',
+    pageTitle: 'Hồ sơ',
+    pageSubtitle: 'Quản lý thông tin tài khoản để sử dụng WorkSpot dễ dàng hơn.',
+    memberSinceSuffix: 'đã tham gia',
+    basicInfoTitle: 'Thông tin cơ bản',
+    securityTitle: 'Bảo mật',
+    fieldLabels: {
+      fullName: 'Họ và tên',
+      email: 'Email',
+      phone: 'Số điện thoại',
+      address: 'Địa chỉ',
+      bio: 'Giới thiệu bản thân',
+      currentPassword: 'Mật khẩu hiện tại',
+      newPassword: 'Mật khẩu mới',
+    },
+    save: 'Lưu',
+    saving: 'Đang lưu...',
+    cancel: 'Hủy',
+    edit: 'Chỉnh sửa',
+    backHome: 'Về trang chủ',
+    logout: 'Đăng xuất',
+    loading: 'Đang tải...',
+    loadErrorTitle: 'Không thể tải hồ sơ',
+    passwordSuccess: 'Đã đổi mật khẩu.',
+    passwordRequired: 'Vui lòng điền mật khẩu.',
+    passwordMinLength: 'Mật khẩu mới phải có ít nhất 6 ký tự.',
+    avatarTypeError: 'Vui lòng chọn tệp ảnh (jpg, jpeg, png, gif).',
+    avatarSizeError: 'Vui lòng chọn ảnh dưới 5MB.',
+    profileUpdateFailed: 'Cập nhật hồ sơ thất bại.',
+  },
+  admin: {
+    locale: 'ja-JP',
+    pageTitle: 'プロフィール',
+    pageSubtitle: 'アカウント情報を管理して、WorkSpotをより便利に利用しましょう。',
+    memberSinceSuffix: 'から利用中',
+    basicInfoTitle: '基本情報',
+    securityTitle: 'セキュリティ',
+    fieldLabels: {
+      fullName: '氏名',
+      email: 'メールアドレス',
+      phone: '電話番号',
+      address: '所在地',
+      bio: '自己紹介',
+      currentPassword: '現在のパスワード',
+      newPassword: '新しいパスワード',
+    },
+    save: '保存',
+    saving: '保存中...',
+    cancel: 'キャンセル',
+    edit: '編集',
+    backHome: 'ホームに戻る',
+    logout: 'ログアウト',
+    loading: '読み込み中...',
+    loadErrorTitle: 'プロフィールを読み込めませんでした',
+    passwordSuccess: 'パスワードを変更しました。',
+    passwordRequired: 'パスワードを入力してください。',
+    passwordMinLength: '新しいパスワードは6文字以上で入力してください。',
+    avatarTypeError: '画像ファイル (jpg, jpeg, png, gif) を選択してください。',
+    avatarSizeError: '5MB以下の画像を選択してください。',
+    profileUpdateFailed: 'プロフィールの更新に失敗しました。',
+  },
 }
 
 const API = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001').replace(/\/$/, '')
@@ -104,7 +232,7 @@ const inputStyle: React.CSSProperties = {
 export default function ProfilePage() {
   const router = useRouter()
 
-  const [userRole] = useState<string>(() => {
+  const [userRole] = useState<UserRole>(() => {
     if (typeof window !== 'undefined') {
       try {
         const userStr = localStorage.getItem('user')
@@ -113,6 +241,8 @@ export default function ProfilePage() {
     }
     return 'customer'
   })
+
+  const roleStrings = PROFILE_TEXT[userRole]
 
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
@@ -187,8 +317,8 @@ export default function ProfilePage() {
 
   async function handleChangePassword() {
     setPwdError(''); setPwdSuccess(false)
-    if (!currentPwd || !newPwd) { setPwdError('パスワードを入力してください。'); return }
-    if (newPwd.length < 6) { setPwdError('新しいパスワードは6文字以上で入力してください。'); return }
+    if (!currentPwd || !newPwd) { setPwdError(roleStrings.passwordRequired); return }
+    if (newPwd.length < 6) { setPwdError(roleStrings.passwordMinLength); return }
     setSavingPwd(true)
     try {
       await changePassword(currentPwd, newPwd)
@@ -204,10 +334,10 @@ export default function ProfilePage() {
     const file = event.target.files?.[0]
     if (!file) return
     if (!file.type.match(/image\/(jpeg|jpg|png|gif)/)) {
-      setAvatarError('画像ファイル (jpg, jpeg, png, gif) を選択してください。'); return
+      setAvatarError(roleStrings.avatarTypeError); return
     }
     if (file.size > 5 * 1024 * 1024) {
-      setAvatarError('5MB以下の画像を選択してください。'); return
+      setAvatarError(roleStrings.avatarSizeError); return
     }
 
     setUploadingAvatar(true); setAvatarError('')
@@ -244,19 +374,19 @@ export default function ProfilePage() {
   }
 
   const memberSince = profile
-    ? `${new Date(profile.createdAt).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long' })}から利用中`
+    ? `${new Date(profile.createdAt).toLocaleDateString(roleStrings.locale, { year: 'numeric', month: 'long' })} ${roleStrings.memberSinceSuffix}`
     : ''
 
   if (loading) return (
     <div style={{ minHeight: '100vh', background: '#FAFAF5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: '#414943', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif' }}>読み込み中...</p>
+      <p style={{ color: '#414943', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif' }}>{roleStrings.loading}</p>
     </div>
   )
 
   if (loadError) return (
     <div style={{ minHeight: '100vh', background: '#FAFAF5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ background: 'white', borderRadius: 12, padding: 32, boxShadow: '0 4px 12px rgba(0,0,0,0.08)', textAlign: 'center', maxWidth: 384 }}>
-        <p style={{ color: '#BA1A1A', fontWeight: 600, marginBottom: 8, fontFamily: 'Manrope, sans-serif' }}>プロフィールを読み込めませんでした</p>
+        <p style={{ color: '#BA1A1A', fontWeight: 600, marginBottom: 8, fontFamily: 'Manrope, sans-serif' }}>{roleStrings.loadErrorTitle}</p>
         <p style={{ color: '#78716C', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif' }}>{loadError}</p>
       </div>
     </div>
@@ -267,9 +397,9 @@ export default function ProfilePage() {
         <div style={{ maxWidth: 1152, margin: '0 auto', paddingTop: 64, paddingLeft: 24, paddingRight: 24, paddingBottom: 80, display: 'flex', flexDirection: 'column', gap: 64 }}>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <h1 style={{ margin: 0, color: '#14422D', fontSize: 48, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '48px' }}>プロフィール</h1>
+            <h1 style={{ margin: 0, color: '#14422D', fontSize: 48, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '48px' }}>{roleStrings.pageTitle}</h1>
             <p style={{ margin: 0, maxWidth: 512, color: '#414943', fontSize: 16, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 400, lineHeight: '24px' }}>
-              アカウント情報を管理して、WorkSpotをより便利に利用しましょう。
+              {roleStrings.pageSubtitle}
             </p>
           </div>
 
@@ -318,7 +448,7 @@ export default function ProfilePage() {
               <div style={{ color: '#78716C', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', lineHeight: '20px', textAlign: 'center', paddingLeft: 16, paddingRight: 16 }}>{memberSince}</div>
               <div style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 6, paddingBottom: 6, background: '#FFDBC7', borderRadius: 9999 }}>
                 <span style={{ color: '#311300', fontSize: 12, fontFamily: 'Be Vietnam Pro, sans-serif', textTransform: 'uppercase', lineHeight: '16px', letterSpacing: 0.30 }}>
-                  {ROLE_LABEL_JP[profile?.role ?? 'customer']}
+                  {ROLE_LABEL[profile?.role ?? 'customer']}
                 </span>
               </div>
             </div>
@@ -328,31 +458,31 @@ export default function ProfilePage() {
 
               {/* 基本情報 */}
               <div style={{ background: 'white', borderRadius: 12, paddingTop: 40, paddingBottom: 56, paddingLeft: 40, paddingRight: 40, display: 'flex', flexDirection: 'column', gap: 40 }}>
-                <h2 style={{ margin: 0, color: '#14422D', fontSize: 24, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '32px' }}>基本情報</h2>
+                <h2 style={{ margin: 0, color: '#14422D', fontSize: 24, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '32px' }}>{roleStrings.basicInfoTitle}</h2>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      <div style={fieldLabelStyle}>氏名</div>
+                      <div style={fieldLabelStyle}>{roleStrings.fieldLabels.fullName}</div>
                       {isEditing ? <input value={editForm.fullName} onChange={e => setEditForm(f => ({ ...f, fullName: e.target.value }))} style={inputStyle} /> : <div style={readOnlyBoxStyle}>{profile?.fullName}</div>}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      <div style={fieldLabelStyle}>メールアドレス</div>
+                      <div style={fieldLabelStyle}>{roleStrings.fieldLabels.email}</div>
                       {isEditing ? <input type="email" value={editForm.email} onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))} style={inputStyle} /> : <div style={readOnlyBoxStyle}>{profile?.email}</div>}
                     </div>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      <div style={fieldLabelStyle}>電話番号</div>
+                      <div style={fieldLabelStyle}>{roleStrings.fieldLabels.phone}</div>
                       {isEditing ? <input type="tel" value={editForm.phone} onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))} style={inputStyle} /> : <div style={readOnlyBoxStyle}>{profile?.phone || <span style={{ color: '#78716C' }}>—</span>}</div>}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      <div style={fieldLabelStyle}>所在地</div>
+                      <div style={fieldLabelStyle}>{roleStrings.fieldLabels.address}</div>
                       {isEditing ? <input value={editForm.address} onChange={e => setEditForm(f => ({ ...f, address: e.target.value }))} style={inputStyle} /> : <div style={readOnlyBoxStyle}>{profile?.address || <span style={{ color: '#78716C' }}>—</span>}</div>}
                     </div>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <div style={fieldLabelStyle}>自己紹介</div>
+                    <div style={fieldLabelStyle}>{roleStrings.fieldLabels.bio}</div>
                     {isEditing ? <textarea value={editForm.bio} onChange={e => setEditForm(f => ({ ...f, bio: e.target.value }))} rows={4} style={{ ...inputStyle, paddingTop: 16, paddingBottom: 40, resize: 'none' }} /> : <div style={{ ...readOnlyBoxStyle, paddingTop: 16, paddingBottom: 40 }}>{profile?.bio || <span style={{ color: '#78716C' }}>—</span>}</div>}
                   </div>
                 </div>
@@ -368,19 +498,19 @@ export default function ProfilePage() {
                   {isEditing ? (
                     <>
                       <button onClick={handleSaveProfile} disabled={savingProfile} style={{ width: 120, padding: '8px 16px', background: '#14422D', borderRadius: 8, border: 'none', cursor: savingProfile ? 'not-allowed' : 'pointer', color: 'white', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 500, opacity: savingProfile ? 0.6 : 1 }}>
-                        {savingProfile ? '保存中...' : '保存'}
+                        {savingProfile ? roleStrings.saving : roleStrings.save}
                       </button>
                       <button onClick={handleCancelEdit} style={{ padding: '8px 16px', background: '#FDFFFE', borderRadius: 8, outline: '1px rgba(20,66,45,0.25) solid', outlineOffset: '-1px', border: 'none', cursor: 'pointer', color: '#14422D', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 500 }}>
-                        キャンセル
+                        {roleStrings.cancel}
                       </button>
                     </>
                   ) : (
                     <>
                       <button onClick={() => setIsEditing(true)} style={{ width: 120, padding: '8px 16px', background: '#14422D', borderRadius: 8, border: 'none', cursor: 'pointer', color: 'white', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 500 }}>
-                        編集
+                        {roleStrings.edit}
                       </button>
                       <button onClick={() => router.push(userRole === 'owner' ? '/dashboard' : '/')} style={{ padding: '8px 16px', background: '#FDFFFE', borderRadius: 8, outline: '1px rgba(20,66,45,0.25) solid', outlineOffset: '-1px', border: 'none', cursor: 'pointer', color: '#14422D', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 500 }}>
-                        ホームに戻る
+                        {roleStrings.backHome}
                       </button>
                     </>
                   )}
@@ -389,11 +519,11 @@ export default function ProfilePage() {
 
               {/* セキュリティ */}
               <div style={{ background: 'white', borderRadius: 12, padding: 40, display: 'flex', flexDirection: 'column', gap: 40 }}>
-                <h2 style={{ margin: 0, color: '#14422D', fontSize: 24, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '32px' }}>セキュリティ</h2>
+                <h2 style={{ margin: 0, color: '#14422D', fontSize: 24, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '32px' }}>{roleStrings.securityTitle}</h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
                   <div style={{ display: 'flex', gap: 16 }}>
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      <div style={fieldLabelStyle}>現在のパスワード</div>
+                      <div style={fieldLabelStyle}>{roleStrings.fieldLabels.currentPassword}</div>
                       <div style={{ position: 'relative' }}>
                         <input type={showCurrent ? 'text' : 'password'} value={currentPwd} onChange={e => setCurrentPwd(e.target.value)} placeholder="••••••••" style={{ ...inputStyle, paddingTop: 18, paddingBottom: 18, paddingRight: 48 }} />
                         <button type="button" onClick={() => setShowCurrent(v => !v)} style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}>
@@ -402,7 +532,7 @@ export default function ProfilePage() {
                       </div>
                     </div>
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      <div style={fieldLabelStyle}>新しいパスワード</div>
+                      <div style={fieldLabelStyle}>{roleStrings.fieldLabels.newPassword}</div>
                       <div style={{ position: 'relative' }}>
                         <input type={showNew ? 'text' : 'password'} value={newPwd} onChange={e => setNewPwd(e.target.value)} placeholder="••••••••" style={{ ...inputStyle, paddingTop: 18, paddingBottom: 18, paddingRight: 48 }} />
                         <button type="button" onClick={() => setShowNew(v => !v)} style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}>
@@ -413,9 +543,9 @@ export default function ProfilePage() {
                   </div>
                   <div style={{ paddingTop: 24, borderTop: '1px #E8E8E3 solid', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
                     {pwdError && <p style={{ margin: 0, fontSize: 14, color: '#BA1A1A', fontFamily: 'Be Vietnam Pro, sans-serif' }}>{pwdError}</p>}
-                    {pwdSuccess && <p style={{ margin: 0, fontSize: 14, color: '#14422D', fontFamily: 'Be Vietnam Pro, sans-serif' }}>パスワードを変更しました。</p>}
+                    {pwdSuccess && <p style={{ margin: 0, fontSize: 14, color: '#14422D', fontFamily: 'Be Vietnam Pro, sans-serif' }}>{roleStrings.passwordSuccess}</p>}
                     <button onClick={handleChangePassword} disabled={savingPwd} style={{ padding: '10px 24px', background: '#E8E8E3', borderRadius: 9999, border: 'none', cursor: savingPwd ? 'not-allowed' : 'pointer', color: '#1A1C19', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 600, opacity: savingPwd ? 0.6 : 1 }}>
-                      {savingPwd ? '変更中...' : '変更する'}
+                      {savingPwd ? roleStrings.saving : roleStrings.save}
                     </button>
                   </div>
                 </div>
@@ -463,7 +593,7 @@ export default function ProfilePage() {
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#14422D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
                   </svg>
-                  <span style={{ lineHeight: '20px' }}>ログアウト</span>
+                  <span style={{ lineHeight: '20px' }}>{roleStrings.logout}</span>
                 </button>
               </div>
             )}
