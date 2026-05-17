@@ -247,29 +247,19 @@ export class CafesService {
 
     const updatedCafe = await this.cafesRepository.manager.transaction(
       async (manager) => {
-        if (operatingHours !== undefined) {
-          await manager.delete(OperatingHour, {
-            cafe: { id },
-          });
+        // 1. Snapshot giờ hoạt động mới vào pendingData (không ghi vào bảng operating_hours ngay)
+        const pendingHours = operatingHours !== undefined ? operatingHours : undefined;
 
-          if (operatingHours.length) {
-            const hours = operatingHours.map((h) =>
-              manager.create(OperatingHour, {
-                dayOfWeek: h.dayOfWeek,
-                openTime: h.openTime ?? undefined,
-                closeTime: h.closeTime ?? undefined,
-                isDayOff: h.isDayOff,
-                cafe,
-              }),
-            );
+        // 2. Lưu toàn bộ thay đổi vào pendingData (JSON snapshot)
+        //    Bản ghi chính (name, address, images...) KHÔNG bị thay đổi
+        //    → Public user vẫn thấy dữ liệu cũ đã được duyệt
+        cafe.pendingData = {
+          ...cafeData,
+          ...(pendingHours !== undefined && { operatingHours: pendingHours }),
+          submittedAt: new Date().toISOString(),
+        };
 
-            await manager.save(OperatingHour, hours);
-          }
-        }
-
-        Object.assign(cafe, cafeData);
-
-        // Sau khi chỉnh sửa → reset về Chờ duyệt để Admin duyệt lại
+        // 3. Chỉ reset status về PENDING
         cafe.status = CafeStatus.PENDING;
 
         return manager.save(Cafe, cafe);
@@ -354,8 +344,39 @@ export class CafesService {
   async patchStatus(
     id: string,
     status: CafeStatus,
+    rejectionReason?: string,
   ): Promise<CafeDetailResponseDto> {
     const cafe = await this.findOneEntity(id);
+
+    if (status === CafeStatus.APPROVED && cafe.pendingData) {
+      // ─── Admin DUYỆT: áp dụng dữ liệu từ pendingData lên bản ghi chính ───
+      const { operatingHours: pendingHours, submittedAt, ...pendingFields } = cafe.pendingData;
+
+      // Ghi đè các field cơ bản
+      Object.assign(cafe, pendingFields);
+
+      // Áp dụng giờ hoạt động nếu có
+      if (pendingHours?.length) {
+        await this.operatingHoursRepository.delete({ cafe: { id } });
+        const hours = pendingHours.map((h: any) =>
+          this.operatingHoursRepository.create({
+            dayOfWeek: h.dayOfWeek,
+            openTime: h.openTime ?? undefined,
+            closeTime: h.closeTime ?? undefined,
+            isDayOff: h.isDayOff ?? false,
+            cafe,
+          }),
+        );
+        await this.operatingHoursRepository.save(hours);
+      }
+
+      // Xóa snapshot sau khi đã áp dụng
+      cafe.pendingData = null;
+    } else if (status === CafeStatus.REJECTED) {
+      // ─── Admin TỪ CHỐI: chỉ ghi lý do, xóa snapshot, giữ nguyên dữ liệu cũ ───
+      cafe.pendingData = null;
+      if (rejectionReason !== undefined) cafe.rejectionReason = rejectionReason;
+    }
 
     cafe.status = status;
 

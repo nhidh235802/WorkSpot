@@ -72,7 +72,7 @@ export class Cafe {
   @Column({ type: 'enum', enum: CafeStatus, default: CafeStatus.PENDING })
   status!: CafeStatus;
 
-  // LƯU NHÁP CHỜ DUYỆT
+  /** Dữ liệu chờ duyệt (lưu snapshot khi Owner sửa - chưa được duyệt) */
   @Column({ type: 'jsonb', nullable: true })
   pendingData!: any;
 
