@@ -78,11 +78,13 @@ function TextInput({
   value,
   onChange,
   prefix,
+  error,
 }: {
   placeholder: string;
   value: string;
   onChange: (v: string) => void;
   prefix?: React.ReactNode;
+  error?: string;
 }) {
   return (
     <div style={{ position: 'relative', width: '100%' }}>
@@ -123,6 +125,12 @@ function TextInput({
           color: '#1A1C19',
         }}
       />
+      {/* 3. Hiển thị chữ đỏ dưới input */}
+      {error && (
+        <span style={{ color: '#DC2626', fontSize: 12, marginTop: 4, display: 'block', fontFamily: 'Be Vietnam Pro, sans-serif' }}>
+          {error}
+        </span>
+      )}
     </div>
   );
 }
@@ -198,6 +206,7 @@ export default function CreateCafeForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // ─── Handlers ────────────────────────────────────────────────────────────
 
@@ -211,12 +220,37 @@ export default function CreateCafeForm() {
 
   const handleAddPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    const newPhotos = files.map((file) => ({
-      file,
-      preview: URL.createObjectURL(file),
-    }));
-    setPhotos((prev) => [...prev, ...newPhotos]);
-    e.target.value = '';
+    
+    // 1. Kiểm tra tổng số lượng (Cũ + Mới không được vượt 5)
+    if (photos.length + files.length > 5) {
+      alert("Chỉ được tải lên tối đa 5 ảnh!"); // Có thể thay bằng thư viện Toast cho đẹp
+      e.target.value = '';
+      return;
+    }
+
+    const validPhotos: { file: File; preview: string }[] = [];
+
+    for (const file of files) {
+      // 2. Kiểm tra định dạng (Chỉ JPEG/PNG)
+      if (file.type !== 'image/jpeg' && file.type !== 'image/png') {
+        alert(`File "${file.name}" không hợp lệ. Chỉ chấp nhận định dạng .JPG, .JPEG, .PNG!`);
+        continue; // Bỏ qua file lỗi, xét tiếp file sau
+      }
+
+      // 3. (Tùy chọn) Kiểm tra dung lượng - giới hạn 10MB
+      if (file.size > 10 * 1024 * 1024) {
+        alert(`File "${file.name}" quá lớn. Dung lượng tối đa là 10MB!`);
+        continue;
+      }
+
+      validPhotos.push({
+        file,
+        preview: URL.createObjectURL(file),
+      });
+    }
+
+    setPhotos((prev) => [...prev, ...validPhotos]);
+    e.target.value = ''; // Reset input
   };
 
   const removePhoto = (index: number) => {
@@ -239,10 +273,52 @@ export default function CreateCafeForm() {
 
   const handleSubmit = async () => {
     setError('');
+    const errors: Record<string, string> = {};
 
-    if (!name.trim()) return setError('Vui lòng nhập tên quán.');
-    if (!address.trim()) return setError('Vui lòng nhập địa chỉ quán.');
+    // 1. Validate Tên quán (Bắt buộc, max 50)
+    if (!name.trim()) errors.name = 'Vui lòng nhập tên quán.';
+    else if (name.trim().length > 50) errors.name = 'Tên quán không được vượt quá 50 ký tự.';
 
+    // 2. Validate Địa chỉ (Bắt buộc, max 100)
+    if (!address.trim()) errors.address = 'Vui lòng nhập địa chỉ quán.';
+    else if (address.trim().length > 100) errors.address = 'Địa chỉ không được vượt quá 100 ký tự.';
+
+    // 3. Validate Mô tả (Bắt buộc, max 300)
+    if (!description.trim()) errors.description = 'Vui lòng nhập mô tả quán.';
+    else if (description.trim().length > 300) errors.description = 'Mô tả không được vượt quá 300 ký tự.';
+
+    // 4. Validate Số lượng ảnh (Từ 1 đến 5)
+    if (photos.length === 0) {
+      setError('Vui lòng tải lên ít nhất 1 hình ảnh của quán.');
+      return;
+    }
+    if (photos.length >= 11) {
+      setError('Vui lòng chỉ tải lên tối đa 10 hình ảnh của quán.');
+      return;
+    }
+
+    // 5. Validate Giờ hoạt động (Giờ kết thúc phải sau giờ bắt đầu)
+    let isScheduleValid = true;
+    DAY_GROUPS.forEach(day => {
+      const s = schedule[day.key];
+      if (!s.isClosed) {
+        // So sánh chuỗi giờ '08:00' < '22:00'
+        if (s.open >= s.close) {
+          errors[`schedule_${day.key}`] = 'Giờ kết thúc phải sau giờ mở cửa.';
+          isScheduleValid = false;
+        }
+      }
+    });
+
+    // NẾU CÓ LỖI -> Đổ vào State, dừng lại không submit nữa
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      if (!isScheduleValid) setError('Có lỗi ở phần thiết lập Giờ hoạt động. Vui lòng kiểm tra lại!');
+      return; 
+    }
+
+    // Nếu mọi thứ đều đúng, xóa giỏ lỗi cũ và bắt đầu tiến trình Submit
+    setFieldErrors({});
     setIsSubmitting(true);
 
     try {
@@ -301,7 +377,8 @@ export default function CreateCafeForm() {
       }
 
       // 4. Success
-      router.push('/dashboard');
+      alert("Đăng ký quán thành công! Quán đang ở trạng thái 'Chờ duyệt'.");
+      router.push('/owner/dashboard');
     } catch (err) {
       console.error(err);
       setError('Có lỗi xảy ra, vui lòng thử lại.');
@@ -370,6 +447,7 @@ export default function CreateCafeForm() {
                     placeholder="Ví dụ: Cafe Studio"
                     value={name}
                     onChange={setName}
+                    error={fieldErrors.name}
                   />
                 </div>
 
@@ -380,6 +458,7 @@ export default function CreateCafeForm() {
                     value={address}
                     onChange={setAddress}
                     prefix={<MapPin size={16} />}
+                    error={fieldErrors.address}
                   />
                 </div>
 
@@ -406,6 +485,11 @@ export default function CreateCafeForm() {
                       resize: 'vertical',
                     }}
                   />
+                    {fieldErrors.description && (
+                      <span style={{ color: '#DC2626', fontSize: 12, marginTop: 4 }}>
+                        {fieldErrors.description}
+                      </span>
+                    )}
                 </div>
               </div>
             </div>
@@ -665,6 +749,11 @@ export default function CreateCafeForm() {
                           pointerEvents: s.isClosed ? 'none' : 'all',
                         }}
                       >
+                        {fieldErrors[`schedule_${day.key}`] && (
+                          <span style={{ color: '#DC2626', fontSize: 12, marginTop: 4 }}>
+                            {fieldErrors[`schedule_${day.key}`]}
+                          </span>
+                        )}
                         <TimeInput
                           value={s.open}
                           onChange={(v) => updateSchedule(day.key, 'open', v)}
