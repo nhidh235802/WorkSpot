@@ -91,7 +91,7 @@ export default function EditCafePage() {
         // Tái cấu trúc giờ hoạt động từ Backend thành 3 block
         const oh = data.operatingHours || []
         const getHoursForDay = (day: string) => oh.find((h: any) => h.dayOfWeek === day) || { openTime: '08:00', closeTime: '22:00', isDayOff: false }
-        
+
         const mon = getHoursForDay('monday')
         const sat = getHoursForDay('saturday')
         const sun = getHoursForDay('sunday')
@@ -262,13 +262,13 @@ export default function EditCafePage() {
       <OwnerSidebar />
 
       <main className="flex-1 overflow-y-auto px-10 py-12 lg:px-16 w-full">
-        
+
         {/* Nút Quay lại */}
         <button 
           onClick={() => setShowCancelDialog(true)}
           className="flex items-center gap-2 text-[#14422D] hover:text-[#0d2e1f] font-bold text-[12px] uppercase tracking-widest mb-6 transition-colors group"
         >
-          <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> 
+          <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
           Quay lại Dashboard
         </button>
 
@@ -284,16 +284,16 @@ export default function EditCafePage() {
 
         {/* Vùng Content (Trải rộng màn hình) */}
         <div className="flex flex-col gap-16 pb-24">
-          
+
           {/* 1. THÔNG TIN CƠ BẢN */}
-          <Section 
-            title="Thông tin cơ bản" 
+          <Section
+            title="Thông tin cơ bản"
             desc="Tên quán và địa chỉ chính xác giúp khách hàng dễ dàng tìm thấy bạn trên bản đồ."
           >
             <div className="bg-white rounded-[16px] border border-[#E7E5E4] p-8 flex flex-col gap-6 shadow-sm">
               <div className="space-y-2">
                 <label className="text-[11px] font-bold text-[#904C18] uppercase tracking-wider block">Tên quán</label>
-                <input 
+                <input
                   value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                   className={`w-full bg-white border rounded-[8px] px-4 py-3 text-[15px] text-[#1A1C19] focus:outline-none transition-colors ${fieldErrors.name ? 'border-red-400' : 'border-[#E7E5E4] focus:border-[#14422D]'}`}
                 />
@@ -304,7 +304,7 @@ export default function EditCafePage() {
                 <label className="text-[11px] font-bold text-[#904C18] uppercase tracking-wider block">Địa chỉ</label>
                 <div className="relative">
                   <MapPin size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#A8A29E]" />
-                  <input 
+                  <input
                     value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
                     className={`w-full bg-white border rounded-[8px] pl-12 pr-4 py-3 text-[15px] text-[#1A1C19] focus:outline-none transition-colors ${fieldErrors.address ? 'border-red-400' : 'border-[#E7E5E4] focus:border-[#14422D]'}`}
                   />
@@ -314,7 +314,7 @@ export default function EditCafePage() {
 
               <div className="space-y-2">
                 <label className="text-[11px] font-bold text-[#904C18] uppercase tracking-wider block">Mô tả quán</label>
-                <textarea 
+                <textarea
                   value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={4}
                   className={`w-full bg-white border rounded-[8px] px-4 py-3 text-[15px] text-[#1A1C19] focus:outline-none transition-colors resize-none leading-relaxed ${fieldErrors.description ? 'border-red-400' : 'border-[#E7E5E4] focus:border-[#14422D]'}`}
                 />
@@ -324,19 +324,19 @@ export default function EditCafePage() {
           </Section>
 
           {/* 2. BỘ SƯU TẬP */}
-          <Section 
-            title="Bộ sưu tập" 
+          <Section
+            title="Bộ sưu tập"
             desc="Hình ảnh đẹp và rõ nét về không gian làm việc sẽ thu hút nhiều khách hàng hơn."
           >
             <div className="flex flex-wrap gap-4">
               {(form.images.length + newPhotos.length) < 5 && (
-                <button 
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-[160px] h-[120px] rounded-[16px] border border-dashed border-[#D6D3D1] flex flex-col items-center justify-center gap-2 text-[#78716C] hover:text-[#14422D] hover:border-[#14422D] hover:bg-[#FAFAF5] transition-all cursor-pointer bg-transparent"
-                >
-                  <Plus size={20} strokeWidth={1.5} />
-                  <span className="font-bold text-[12px]">Thêm ảnh</span>
-                </button>
+             <button
+                onClick={() => fileInputRef.current?.click()}
+                className="w-[200px] h-[140px] rounded-[16px] border border-dashed border-[#D6D3D1] flex flex-col items-center justify-center gap-2 text-[#78716C] hover:text-[#14422D] hover:border-[#14422D] hover:bg-[#FAFAF5] transition-all cursor-pointer bg-transparent"
+              >
+                <ImagePlus size={24} strokeWidth={1.5} />
+                <span className="font-bold text-[13px]">Thêm ảnh</span>
+              </button>
               )}
               <input ref={fileInputRef} type="file" accept="image/jpeg,image/jpg,image/png" multiple onChange={handleAddNewPhoto} className="hidden" />
 
@@ -365,8 +365,8 @@ export default function EditCafePage() {
           </Section>
 
           {/* 3. TIỆN ÍCH & KHÔNG GIAN */}
-          <Section 
-            title="Tiện ích & Không gian" 
+          <Section
+            title="Tiện ích & Không gian"
             desc="Chọn các tiện ích nổi bật nhất mà quán của bạn đang cung cấp cho khách hàng."
           >
             <div className="bg-[#FAFAF5] p-8 rounded-[16px] border border-[#E7E5E4] flex flex-wrap gap-3">
@@ -375,11 +375,10 @@ export default function EditCafePage() {
                 return (
                   <button
                     key={key} onClick={() => toggleFacility(key)}
-                    className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-[14px] font-bold transition-all border ${
-                      active 
-                        ? 'bg-[#14422D] text-white border-[#14422D] shadow-sm' 
-                        : 'bg-white text-[#1A1C19] border-[#D6D3D1] hover:border-[#A8A29E]'
-                    }`}
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-[14px] font-bold transition-all border ${active
+                      ? 'bg-[#14422D] text-white border-[#14422D] shadow-sm'
+                      : 'bg-white text-[#1A1C19] border-[#D6D3D1] hover:border-[#A8A29E]'
+                      }`}
                   >
                     {icon} {label}
                   </button>
@@ -390,8 +389,8 @@ export default function EditCafePage() {
           </Section>
 
           {/* 4. GIỜ HOẠT ĐỘNG */}
-          <Section 
-            title="Giờ hoạt động" 
+          <Section
+            title="Giờ hoạt động"
             desc="Thiết lập thời gian đóng mở cửa chính xác cho từng giai đoạn trong tuần."
           >
             <div className="flex flex-col gap-4">
@@ -429,15 +428,15 @@ export default function EditCafePage() {
                   )}
                 </div>
               ))}
-              
+
               {/* Checkbox Đóng cửa Lễ */}
               <div className="mt-4 flex items-center">
                 <label className="flex items-center gap-3 cursor-pointer group">
                   <div className={`w-[20px] h-[20px] rounded-[6px] flex items-center justify-center transition-colors border ${form.isClosedOnHolidays ? 'bg-[#14422D] border-[#14422D]' : 'bg-[#FAFAF5] border-[#D6D3D1] group-hover:border-[#14422D]'}`}>
                     {form.isClosedOnHolidays && <Check size={14} className="text-white" strokeWidth={3} />}
                   </div>
-                  <input 
-                    type="checkbox" className="hidden" 
+                  <input
+                    type="checkbox" className="hidden"
                     checked={form.isClosedOnHolidays} onChange={() => setForm(f => ({ ...f, isClosedOnHolidays: !f.isClosedOnHolidays }))}
                   />
                   <span className="font-bold text-[15px] text-[#1A1C19]">Đóng cửa vào ngày lễ</span>
@@ -456,7 +455,7 @@ export default function EditCafePage() {
           >
             Hủy
           </button>
-          <button 
+          <button
             onClick={handleSave} disabled={saving}
             className="flex items-center justify-center gap-2 px-10 py-3 rounded-full font-bold text-white bg-[#14422D] hover:bg-[#0d2e1f] transition-all disabled:opacity-70 disabled:cursor-not-allowed text-[15px] min-w-[180px]"
           >
