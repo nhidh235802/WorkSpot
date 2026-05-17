@@ -5,9 +5,11 @@ import { useRouter } from 'next/navigation';
 interface CancelConfirmDialogProps {
   isOpen: boolean;
   onClose: () => void;
+  title?: string;
+  description?: string;
 }
 
-export default function CancelConfirmDialog({ isOpen, onClose }: CancelConfirmDialogProps) {
+export default function CancelConfirmDialog({ isOpen, onClose, title, description }: CancelConfirmDialogProps) {
   const router = useRouter();
 
   if (!isOpen) return null;
@@ -93,7 +95,7 @@ export default function CancelConfirmDialog({ isOpen, onClose }: CancelConfirmDi
                 lineHeight: '32px',
               }}
             >
-              Hủy đăng ký?
+              {title ?? 'Hủy đăng ký?'}
             </h2>
           </div>
 
@@ -110,9 +112,13 @@ export default function CancelConfirmDialog({ isOpen, onClose }: CancelConfirmDi
               maxWidth: 400,
             }}
           >
-            Những thay đổi bạn đã nhập sẽ không được lưu.
-            <br />
-            Bạn có chắc chắn muốn thoát không?
+            {description ?? (
+              <>
+                Những thay đổi bạn đã nhập sẽ không được lưu.
+                <br />
+                Bạn có chắc chắn muốn thoát không?
+              </>
+            )}
           </p>
         </div>
 

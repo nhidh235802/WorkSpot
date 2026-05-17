@@ -14,12 +14,20 @@ import {
   ParseFloatPipe,
   Req,
 } from '@nestjs/common';
+import { UseInterceptors, UploadedFiles } from '@nestjs/common';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
+import { validate } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
+import { BadRequestException } from '@nestjs/common';
+
 import { CafesService } from './cafes.service';
 import { CreateCafeDto } from './dto/create-cafe.dto';
 import { UpdateCafeDto } from './dto/update-cafe.dto';
 import { CafeDetailResponseDto } from './dto/cafe-detail-response.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { Cafe, CafeStatus } from './entities/cafe.entity';
+import { CafeStatus } from './entities/cafe.entity';
 
 import { UserRole } from '../users/entities/user.entity';
 import { Roles } from '../auth/roles.decorator';
@@ -41,12 +49,63 @@ export class CafesController {
     return this.cafesService.getRecommended(lat, lng);
   }
 
+  // API Route: POST http://localhost:3001/cafes
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.OWNER)
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() createCafeDto: CreateCafeDto): Promise<CafeDetailResponseDto> {
-    return this.cafesService.create(createCafeDto);
+  @UseInterceptors(
+    FilesInterceptor('photos', 5, {
+      storage: diskStorage({
+        destination: './src/uploads/cafe-images',
+        filename: (req, file, cb) => {
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          cb(null, `${uniqueSuffix}${extname(file.originalname)}`);
+        },
+      }),
+      fileFilter: (req, file, cb) => {
+        if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.mimetype)) {
+          return cb(new BadRequestException('Chỉ chấp nhận ảnh JPEG hoặc PNG.'), false);
+        }
+        cb(null, true);
+      },
+      limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+    }),
+  )
+  async create(
+    @Body('data') dataString: string,
+    @UploadedFiles() files: Express.Multer.File[],
+    @Req() req: { user: { id: string } },
+  ) {
+    // 1. Dịch chuỗi văn bản thành Object thông thường
+    const rawData = JSON.parse(dataString);
+
+    // 2. BIẾN HÌNH: Ép Object thông thường đó vào khuôn mẫu của CreateCafeDto
+    const createCafeDto = plainToInstance(CreateCafeDto, rawData);
+
+    // 3. KÍCH HOẠT DTO: Chạy các luật kiểm tra (@IsNotEmpty, @MaxLength...)
+    const errors = await validate(createCafeDto);
+    if (errors.length > 0) {
+      // Nếu có lỗi (ví dụ: tên quá 50 ký tự), lập tức ném lỗi 400 đá văng request
+      throw new BadRequestException(
+        'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại!',
+      );
+    }
+
+    // 4. Kiểm tra số lượng ảnh bắt buộc (1-5)
+    if (!files || files.length === 0) {
+      throw new BadRequestException('Vui lòng tải lên ít nhất 1 hình ảnh của quán.');
+    }
+    if (files.length > 5) {
+      throw new BadRequestException('Chỉ được tải lên tối đa 5 ảnh.');
+    }
+
+    // 5. Mọi thứ đã an toàn, gán link ảnh và gọi Service
+    createCafeDto.images =
+      files.map((f) => `/uploads/cafe-images/${f.filename}`);
+
+    return this.cafesService.create(createCafeDto, req.user.id);
   }
 
   @Get('search')
@@ -54,7 +113,7 @@ export class CafesController {
     return this.cafesService.searchCafes(searchCafeDto);
   }
 
-  // 1. ĐÃ SỬA: Lấy danh sách quán của Owner (Bảo mật bằng Token)
+  // 1. Lấy danh sách quán của Owner (Bảo mật bằng Token)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.OWNER)
   @Get('owner/me')
@@ -63,7 +122,7 @@ export class CafesController {
     return this.cafesService.getCafesByOwner(req.user.id);
   }
 
-  // 2. ĐÃ SỬA: Cập nhật trạng thái realtime (Bảo mật bằng Token)
+  // 2. Cập nhật trạng thái realtime (Bảo mật bằng Token)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.OWNER)
   @Patch(':id/realtime-status')
@@ -73,10 +132,12 @@ export class CafesController {
     @Req() req: { user: { id: string } },
   ) {
     // Lấy ID từ token, bỏ qua Body param
-    return this.cafesService.updateRealtimeStatus(id, realtimeStatus, req.user.id);
+    return this.cafesService.updateRealtimeStatus(
+      id,
+      realtimeStatus,
+      req.user.id,
+    );
   }
-
-// ─── REVIEWS ────────────────────────────────────────────────────────────────
 
   // POST /cafes/:id/reviews  →  Đăng đánh giá (chỉ WORKER/CUSTOMER đã đăng nhập)
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -123,11 +184,49 @@ export class CafesController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.OWNER)
   @Patch(':id')
-  update(
+  @UseInterceptors(
+    FilesInterceptor('photos', 5, {
+      storage: diskStorage({
+        destination: './src/uploads/cafe-images',
+        filename: (req, file, cb) => {
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          cb(null, `${uniqueSuffix}${extname(file.originalname)}`);
+        },
+      }),
+      fileFilter: (req, file, cb) => {
+        if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.mimetype)) {
+          return cb(new BadRequestException('Chỉ chấp nhận ảnh JPEG hoặc PNG.'), false);
+        }
+        cb(null, true);
+      },
+      limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+    }),
+  )
+  async update(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() updateCafeDto: UpdateCafeDto,
+    @Body('data') dataString: string,
+    @UploadedFiles() newFiles: Express.Multer.File[],
     @Req() req: { user: { id: string } },
   ): Promise<CafeDetailResponseDto> {
+    // Parse JSON payload
+    const rawData = dataString ? JSON.parse(dataString) : {};
+    const updateCafeDto = plainToInstance(UpdateCafeDto, rawData);
+
+    // Validate
+    const errors = await validate(updateCafeDto);
+    if (errors.length > 0) {
+      throw new BadRequestException('Dữ liệu không hợp lệ. Vui lòng kiểm tra lại!');
+    }
+
+    // Gộp ảnh mới (nếu có) vào danh sách ảnh cũ được giữ lại
+    if (newFiles && newFiles.length > 0) {
+      const newImageUrls = newFiles.map((f) => `/uploads/cafe-images/${f.filename}`);
+      // existingImages là mảng URL cũ mà frontend muốn giữ lại
+      const existingImages: string[] = updateCafeDto.images || [];
+      updateCafeDto.images = [...existingImages, ...newImageUrls];
+    }
+
     return this.cafesService.update(id, updateCafeDto, req.user.id);
   }
 

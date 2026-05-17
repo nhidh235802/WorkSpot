@@ -1,11 +1,12 @@
-import { IsOptional, IsBoolean, IsNumber, Min, Max, IsString } from 'class-validator';
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+import { IsOptional, IsBoolean, IsNumber, IsString } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class SearchCafeDto {
   @IsOptional()
   @IsString()
   keyword?: string;
-  
+
   @IsNumber()
   @Transform(({ value }) => parseFloat(value))
   lat!: number;
@@ -14,7 +15,9 @@ export class SearchCafeDto {
   @Transform(({ value }) => parseFloat(value))
   lng!: number;
 
-  @IsOptional() @IsNumber() @Transform(({ value }) => parseFloat(value))
+  @IsOptional()
+  @IsNumber()
+  @Transform(({ value }) => parseFloat(value))
   radius?: number = 5;
 
   @IsOptional()

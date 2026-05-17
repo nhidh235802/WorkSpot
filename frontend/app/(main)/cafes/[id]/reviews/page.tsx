@@ -93,8 +93,8 @@ function StarRating({
                 star <= (hovered || value)
                   ? '#904C18'
                   : error
-                  ? '#DC2626'
-                  : '#D6D3D1'
+                    ? '#DC2626'
+                    : '#D6D3D1'
               }
               strokeWidth={1.5}
             />
@@ -233,21 +233,13 @@ export default function ReviewPage() {
 
     setSubmitting(true);
     try {
-      // 🛠️ FIX ĐOẠN NÀY: Gom dữ liệu chuẩn chỉnh và ép kiểu Number
-          const reviewPayload: any = {
-            rating: Number(rating), // Ép thành kiểu số nguyên để vượt qua @IsInt() ở backend
-            comment: comment.trim(),
-          };
+      const reviewPayload: any = {
+        rating: Number(rating),
+        comment: comment.trim(),
+      };
+      await CafeService.createReview(cafeId, reviewPayload);
 
-          // Chỉ gửi trường images khi thực sự có dữ liệu URL ảnh hợp lệ (sau khi làm tính năng upload)
-          if (uploadedUrls && uploadedUrls.length > 0) {
-            reviewPayload.images = uploadedUrls;
-          }
-
-          // Gọi API truyền payload chuẩn lên backend
-          await CafeService.createReview(cafeId, reviewPayload);
-
-          setShowSuccess(true);
+      setShowSuccess(true);
     } catch (err: unknown) {
       if (err instanceof Error) {
         if (err.message === 'UNAUTHORIZED') {
