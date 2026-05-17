@@ -205,8 +205,14 @@ export default function CreateCafeForm() {
   // ── Submit state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [toast, setToast] = useState('');
   const [showCancelDialog, setShowCancelDialog] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>();
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(''), 4000);
+  };
 
   // ─── Handlers ────────────────────────────────────────────────────────────
 
@@ -220,37 +226,35 @@ export default function CreateCafeForm() {
 
   const handleAddPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    
-    // 1. Kiểm tra tổng số lượng (Cũ + Mới không được vượt 5)
+    const errs: string[] = [];
+
     if (photos.length + files.length > 5) {
-      alert("Chỉ được tải lên tối đa 5 ảnh!"); // Có thể thay bằng thư viện Toast cho đẹp
+      setFieldErrors(prev => ({ ...prev, photos: 'Chỉ được tải lên tối đa 5 ảnh.' }));
       e.target.value = '';
       return;
     }
 
     const validPhotos: { file: File; preview: string }[] = [];
-
     for (const file of files) {
-      // 2. Kiểm tra định dạng (Chỉ JPEG/PNG)
-      if (file.type !== 'image/jpeg' && file.type !== 'image/png') {
-        alert(`File "${file.name}" không hợp lệ. Chỉ chấp nhận định dạng .JPG, .JPEG, .PNG!`);
-        continue; // Bỏ qua file lỗi, xét tiếp file sau
-      }
-
-      // 3. (Tùy chọn) Kiểm tra dung lượng - giới hạn 10MB
-      if (file.size > 10 * 1024 * 1024) {
-        alert(`File "${file.name}" quá lớn. Dung lượng tối đa là 10MB!`);
+      if (file.type !== 'image/jpeg' && file.type !== 'image/jpg' && file.type !== 'image/png') {
+        errs.push(`"${file.name}" không hợp lệ. Chỉ chấp nhận .JPG, .JPEG, .PNG.`);
         continue;
       }
+      if (file.size > 10 * 1024 * 1024) {
+        errs.push(`"${file.name}" quá lớn. Tối đa 10MB.`);
+        continue;
+      }
+      validPhotos.push({ file, preview: URL.createObjectURL(file) });
+    }
 
-      validPhotos.push({
-        file,
-        preview: URL.createObjectURL(file),
-      });
+    if (errs.length > 0) {
+      setFieldErrors(prev => ({ ...prev, photos: errs.join(' ') }));
+    } else {
+      setFieldErrors(prev => { const n = { ...prev }; delete n.photos; return n; });
     }
 
     setPhotos((prev) => [...prev, ...validPhotos]);
-    e.target.value = ''; // Reset input
+    e.target.value = '';
   };
 
   const removePhoto = (index: number) => {
@@ -275,113 +279,103 @@ export default function CreateCafeForm() {
     setError('');
     const errors: Record<string, string> = {};
 
-    // 1. Validate Tên quán (Bắt buộc, max 50)
+    // 1. Validate Tên quán
     if (!name.trim()) errors.name = 'Vui lòng nhập tên quán.';
     else if (name.trim().length > 50) errors.name = 'Tên quán không được vượt quá 50 ký tự.';
 
-    // 2. Validate Địa chỉ (Bắt buộc, max 100)
+    // 2. Validate Địa chỉ
     if (!address.trim()) errors.address = 'Vui lòng nhập địa chỉ quán.';
     else if (address.trim().length > 100) errors.address = 'Địa chỉ không được vượt quá 100 ký tự.';
 
-    // 3. Validate Mô tả (Bắt buộc, max 300)
+    // 3. Validate Mô tả
     if (!description.trim()) errors.description = 'Vui lòng nhập mô tả quán.';
     else if (description.trim().length > 300) errors.description = 'Mô tả không được vượt quá 300 ký tự.';
 
-    // 4. Validate Số lượng ảnh (Từ 1 đến 5)
-    if (photos.length === 0) {
-      setError('Vui lòng tải lên ít nhất 1 hình ảnh của quán.');
-      return;
-    }
-    if (photos.length >= 11) {
-      setError('Vui lòng chỉ tải lên tối đa 10 hình ảnh của quán.');
-      return;
-    }
+    // 4. Validate Ảnh (1-5)
+    if (photos.length === 0) errors.photos = 'Vui lòng tải lên ít nhất 1 hình ảnh của quán.';
+    else if (photos.length > 5) errors.photos = 'Chỉ được tải lên tối đa 5 ảnh.';
 
-    // 5. Validate Giờ hoạt động (Giờ kết thúc phải sau giờ bắt đầu)
-    let isScheduleValid = true;
+    // 5. Validate Tiện ích
+    if (selectedAmenities.size === 0) errors.amenities = 'Vui lòng chọn ít nhất 1 tiện ích.';
+
+    // 6. Validate Giờ hoạt động
     DAY_GROUPS.forEach(day => {
       const s = schedule[day.key];
-      if (!s.isClosed) {
-        // So sánh chuỗi giờ '08:00' < '22:00'
-        if (s.open >= s.close) {
-          errors[`schedule_${day.key}`] = 'Giờ kết thúc phải sau giờ mở cửa.';
-          isScheduleValid = false;
-        }
+      if (!s.isClosed && s.open >= s.close) {
+        errors[`schedule_${day.key}`] = 'Giờ kết thúc phải sau giờ mở cửa.';
       }
     });
 
-    // NẾU CÓ LỖI -> Đổ vào State, dừng lại không submit nữa
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
-      if (!isScheduleValid) setError('Có lỗi ở phần thiết lập Giờ hoạt động. Vui lòng kiểm tra lại!');
-      return; 
+      return;
     }
 
-    // Nếu mọi thứ đều đúng, xóa giỏ lỗi cũ và bắt đầu tiến trình Submit
     setFieldErrors({});
     setIsSubmitting(true);
 
     try {
-      // 1. Geocode address → coordinates via Nominatim
-      const searchQuery = `${address.trim()}, Hà Nội, Việt Nam`;
+      // 1. Geocode
       const geocodeRes = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(
-          searchQuery
-        )}`,
+        `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(address.trim() + ', Việt Nam')}`,
         { headers: { 'Accept-Language': 'vi' } }
       );
       const geocodeData = await geocodeRes.json();
+      const lat = geocodeData?.[0] ? parseFloat(geocodeData[0].lat) : undefined;
+      const lng = geocodeData?.[0] ? parseFloat(geocodeData[0].lon) : undefined;
 
-      if (!geocodeData || geocodeData.length === 0) {
-        setError(
-          'Không thể xác định tọa độ từ địa chỉ này. Vui lòng nhập rõ hơn (VD: Số nhà, Tên đường, Quận).'
-        );
-        setIsSubmitting(false);
-        return;
-      }
+      // 2. Chuyển schedule → mảng OperatingHours cho backend
+      const operatingHours: { dayOfWeek: string; openTime: string | null; closeTime: string | null; isDayOff: boolean }[] = [];
+      const dayMap: Record<string, string[]> = {
+        weekday: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+        saturday: ['saturday'],
+        sunday: ['sunday'],
+      };
+      DAY_GROUPS.forEach(({ key }) => {
+        const s = schedule[key];
+        dayMap[key].forEach(d => {
+          operatingHours.push({
+            dayOfWeek: d,
+            openTime: s.isClosed ? null : s.open,
+            closeTime: s.isClosed ? null : s.close,
+            isDayOff: s.isClosed,
+          });
+        });
+      });
 
-      const lat = parseFloat(geocodeData[0].lat);
-      const lng = parseFloat(geocodeData[0].lon);
-
-      // 2. Build payload
+      // 3. Build FormData
+      const token = localStorage.getItem('access_token');
       const payload = {
         name: name.trim(),
         address: address.trim(),
         description: description.trim(),
-        latitude: lat,
-        longitude: lng,
-        amenities: Array.from(selectedAmenities),
-        schedule: {
-          weekday: schedule.weekday,
-          saturday: schedule.saturday,
-          sunday: schedule.sunday,
-          closedOnHolidays,
-        },
+        ...(lat !== undefined && { latitude: lat }),
+        ...(lng !== undefined && { longitude: lng }),
+        facilities: Array.from(selectedAmenities),
+        isClosedOnHolidays: closedOnHolidays,
+        operatingHours,
       };
 
-      // 3. Send to backend
-      // If photos are needed, use FormData:
-      // const formData = new FormData();
-      // formData.append('data', JSON.stringify(payload));
-      // photos.forEach((p) => formData.append('photos', p.file));
+      const formData = new FormData();
+      formData.append('data', JSON.stringify(payload));
+      photos.forEach(p => formData.append('photos', p.file));
 
-      const backendRes = await fetch('/api/cafes', {
+      const res = await fetch('http://localhost:3001/cafes', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
       });
 
-      if (!backendRes.ok) {
-        const msg = await backendRes.text();
-        throw new Error(msg || 'Lỗi từ server');
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.message || 'Lỗi từ server');
       }
 
-      // 4. Success
-      alert("Đăng ký quán thành công! Quán đang ở trạng thái 'Chờ duyệt'.");
-      router.push('/owner/dashboard');
-    } catch (err) {
+      showToast("Đăng ký thành công! Quán đang ở trạng thái 'Chờ duyệt'.");
+      setTimeout(() => router.push('/dashboard'), 1500);
+    } catch (err: any) {
       console.error(err);
-      setError('Có lỗi xảy ra, vui lòng thử lại.');
+      setError(err.message || 'Có lỗi xảy ra, vui lòng thử lại.');
     } finally {
       setIsSubmitting(false);
     }
@@ -391,6 +385,19 @@ export default function CreateCafeForm() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#FAFAF5' }}>
+      {/* Toast */}
+      {toast && (
+        <div style={{
+          position: 'fixed', top: 24, right: 24, zIndex: 9999,
+          background: '#14422D', color: 'white', borderRadius: 12,
+          padding: '14px 20px', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif',
+          fontWeight: 600, boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+          display: 'flex', alignItems: 'center', gap: 10, maxWidth: 380,
+        }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke="white" strokeWidth="2" strokeLinecap="round"/><polyline points="22 4 12 14.01 9 11.01" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          {toast}
+        </div>
+      )}
       <Sidebar />
       <div
         style={{
@@ -554,6 +561,11 @@ export default function CreateCafeForm() {
                   );
                 })}
               </div>
+              {fieldErrors?.amenities && (
+                <span style={{ color: '#DC2626', fontSize: 12, marginTop: 4, display: 'block', fontFamily: 'Be Vietnam Pro, sans-serif' }}>
+                  {fieldErrors.amenities}
+                </span>
+              )}
             </div>
           </div>
 
@@ -642,11 +654,17 @@ export default function CreateCafeForm() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/jpg,image/png"
                 multiple
                 style={{ display: 'none' }}
                 onChange={handleAddPhoto}
               />
+
+              {fieldErrors?.photos && (
+                <span style={{ color: '#DC2626', fontSize: 12, marginTop: 4, display: 'block', fontFamily: 'Be Vietnam Pro, sans-serif' }}>
+                  {fieldErrors.photos}
+                </span>
+              )}
 
               <p
                 style={{

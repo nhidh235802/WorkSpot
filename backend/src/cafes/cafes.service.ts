@@ -86,8 +86,9 @@ export class CafesService {
 
   async create(
     createCafeDto: CreateCafeDto,
+    ownerId: string,
   ): Promise<CafeDetailResponseDto> {
-    const { ownerId, operatingHours, ...cafeData } = createCafeDto;
+    const { operatingHours, ...cafeData } = createCafeDto;
 
     const owner = await this.usersRepository.findOne({
       where: { id: ownerId },
@@ -102,6 +103,7 @@ export class CafesService {
     const cafe = this.cafesRepository.create({
       ...cafeData,
       owner,
+      status: CafeStatus.PENDING, // Mới đăng ký → Chờ duyệt
     });
 
     const savedCafe = await this.cafesRepository.save(cafe);
@@ -266,6 +268,9 @@ export class CafesService {
         }
 
         Object.assign(cafe, cafeData);
+
+        // Sau khi chỉnh sửa → reset về Chờ duyệt để Admin duyệt lại
+        cafe.status = CafeStatus.PENDING;
 
         return manager.save(Cafe, cafe);
       },

@@ -1,72 +1,66 @@
 import {
-    IsArray,
-    IsBoolean,
-    IsEnum,
-    IsNumber,
-    IsOptional,
-    IsString,
-    ValidateNested,
+  IsString,
+  IsNotEmpty,
+  MaxLength,
+  IsNumber,
+  IsOptional,
+  IsArray,
+  IsBoolean,
+  ValidateNested,
+  IsEnum,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { FacilityType } from '../entities/cafe.entity';
 import { OperatingHourDto } from './operating-hour.dto';
 
-/** DTO chỉnh sửa thông tin quán — tất cả field đều optional */
+// --- DTO CHÍNH cho cập nhật quán ---
 export class UpdateCafeDto {
-    /** Tên quán */
-    @IsOptional()
-    @IsString()
-    name?: string;
+  @IsString()
+  @IsNotEmpty({ message: 'Tên quán không được để trống' })
+  @MaxLength(50, { message: 'Tên quán không được vượt quá 50 ký tự' })
+  @IsOptional()
+  name?: string;
 
-    /** Mô tả quán */
-    @IsOptional()
-    @IsString()
-    description?: string;
+  @IsString()
+  @IsNotEmpty({ message: 'Địa chỉ không được để trống' })
+  @MaxLength(100, { message: 'Địa chỉ không được vượt quá 100 ký tự' })
+  @IsOptional()
+  address?: string;
 
-    /** Địa chỉ quán */
-    @IsOptional()
-    @IsString()
-    address?: string;
+  @IsString()
+  @IsNotEmpty({ message: 'Mô tả không được để trống' })
+  @MaxLength(300, { message: 'Mô tả không được vượt quá 300 ký tự' })
+  @IsOptional()
+  description?: string;
 
-    /** Vĩ độ */
-    @IsOptional()
-    @IsNumber()
-    latitude?: number;
+  @IsNumber()
+  @IsOptional()
+  latitude?: number;
 
-    /** Kinh độ */
-    @IsOptional()
-    @IsNumber()
-    longitude?: number;
+  @IsNumber()
+  @IsOptional()
+  longitude?: number;
 
-    /** Ảnh đại diện (URL) */
-    @IsOptional()
-    @IsString()
-    avatar?: string;
+  // Danh sách tiện ích
+  @IsArray()
+  @IsEnum(FacilityType, { each: true, message: 'Có tiện ích không hợp lệ' })
+  @IsOptional()
+  facilities?: FacilityType[];
 
-    /** Danh sách ảnh quán (mảng URL) */
-    @IsOptional()
-    @IsArray()
-    @IsString({ each: true })
-    images?: string[];
+  @IsBoolean()
+  @IsOptional()
+  isClosedOnHolidays?: boolean;
 
-    /** Các tiện ích của quán */
-    @IsOptional()
-    @IsArray()
-    @IsEnum(FacilityType, { each: true })
-    facilities?: FacilityType[];
+  // Giờ hoạt động (mảng theo từng ngày)
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => OperatingHourDto)
+  operatingHours?: OperatingHourDto[];
 
-    /** Đóng cửa vào ngày lễ */
-    @IsOptional()
-    @IsBoolean()
-    isClosedOnHolidays?: boolean;
-
-    /**
-     * Giờ hoạt động — nếu truyền vào thì toàn bộ giờ cũ sẽ bị xoá
-     * và thay thế bằng danh sách mới (replace strategy)
-     */
-    @IsOptional()
-    @IsArray()
-    @ValidateNested({ each: true })
-    @Type(() => OperatingHourDto)
-    operatingHours?: OperatingHourDto[];
+  // Danh sách URL ảnh (được Controller thêm vào sau khi Multer xử lý)
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  images?: string[];
 }

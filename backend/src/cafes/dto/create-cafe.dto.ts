@@ -6,7 +6,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
-  IsUUID,
+  MaxLength,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -14,19 +14,22 @@ import { FacilityType } from '../entities/cafe.entity';
 import { OperatingHourDto } from './operating-hour.dto';
 
 export class CreateCafeDto {
-  /** Tên quán */
+  /** Tên quán (bắt buộc, tối đa 50 ký tự) */
   @IsString()
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Tên quán không được để trống' })
+  @MaxLength(50, { message: 'Tên quán không được vượt quá 50 ký tự' })
   name!: string;
 
-  /** Mô tả quán */
-  @IsOptional()
+  /** Mô tả quán (bắt buộc, tối đa 300 ký tự) */
   @IsString()
-  description?: string;
+  @IsNotEmpty({ message: 'Mô tả không được để trống' })
+  @MaxLength(300, { message: 'Mô tả không được vượt quá 300 ký tự' })
+  description!: string;
 
-  /** Địa chỉ */
+  /** Địa chỉ (bắt buộc, tối đa 100 ký tự) */
   @IsString()
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Địa chỉ không được để trống' })
+  @MaxLength(100, { message: 'Địa chỉ không được vượt quá 100 ký tự' })
   address!: string;
 
   /** Vĩ độ */
@@ -44,7 +47,7 @@ export class CreateCafeDto {
   @IsString()
   avatar?: string;
 
-  /** Danh sách ảnh quán (mảng URL) */
+  /** Danh sách ảnh quán (mảng URL) — được Controller thêm vào sau khi Multer lưu ảnh */
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
@@ -61,11 +64,12 @@ export class CreateCafeDto {
   @IsBoolean()
   isClosedOnHolidays?: boolean;
 
-  /** UUID của chủ quán */
-  @IsUUID()
-  ownerId!: string;
+  /** UUID của chủ quán — được Controller inject từ JWT token */
+  @IsOptional()
+  @IsString()
+  ownerId?: string;
 
-  /** Giờ hoạt động */
+  /** Giờ hoạt động (mảng theo từng ngày) */
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
