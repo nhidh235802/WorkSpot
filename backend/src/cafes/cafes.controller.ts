@@ -236,8 +236,9 @@ export class CafesController {
   patchStatus(
     @Param('id', ParseUUIDPipe) id: string,
     @Body('status') status: CafeStatus,
+    @Body('rejectionReason') rejectionReason?: string,
   ): Promise<CafeDetailResponseDto> {
-    return this.cafesService.patchStatus(id, status);
+    return this.cafesService.patchStatus(id, status, rejectionReason);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
