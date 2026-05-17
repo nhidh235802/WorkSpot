@@ -39,12 +39,12 @@ type Amenity = {
 
 const AMENITIES: Amenity[] = [
   { id: 'wifi', label: 'Wi-Fi', icon: <Wifi size={16} /> },
-  { id: 'power', label: 'Ổ cắm điện', icon: <Zap size={16} /> },
+  { id: 'socket', label: 'Ổ cắm điện', icon: <Zap size={16} /> },
   { id: 'desk', label: 'Bàn làm việc', icon: <Monitor size={16} /> },
   { id: 'snack', label: 'Đồ ăn nhẹ', icon: <UtensilsCrossed size={16} /> },
-  { id: 'clean', label: 'Độ sạch sẽ', icon: <Sparkles size={16} /> },
+  { id: 'cleanliness', label: 'Độ sạch sẽ', icon: <Sparkles size={16} /> },
   { id: 'workspace', label: 'Không gian làm việc', icon: <Laptop size={16} /> },
-  { id: 'smoking', label: 'Quy định hút thuốc', icon: <Cigarette size={16} /> },
+  { id: 'smoking_rule', label: 'Quy định hút thuốc', icon: <Cigarette size={16} /> },
 ];
 
 const DAY_GROUPS = [
@@ -207,7 +207,7 @@ export default function CreateCafeForm() {
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
   const [showCancelDialog, setShowCancelDialog] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>();
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -394,7 +394,7 @@ export default function CreateCafeForm() {
           fontWeight: 600, boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
           display: 'flex', alignItems: 'center', gap: 10, maxWidth: 380,
         }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke="white" strokeWidth="2" strokeLinecap="round"/><polyline points="22 4 12 14.01 9 11.01" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke="white" strokeWidth="2" strokeLinecap="round" /><polyline points="22 4 12 14.01 9 11.01" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
           {toast}
         </div>
       )}
@@ -492,11 +492,11 @@ export default function CreateCafeForm() {
                       resize: 'vertical',
                     }}
                   />
-                    {fieldErrors.description && (
-                      <span style={{ color: '#DC2626', fontSize: 12, marginTop: 4 }}>
-                        {fieldErrors.description}
-                      </span>
-                    )}
+                  {fieldErrors.description && (
+                    <span style={{ color: '#DC2626', fontSize: 12, marginTop: 4 }}>
+                      {fieldErrors.description}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -913,7 +913,7 @@ export default function CreateCafeForm() {
           </button>
         </div>
       </div>
-            <CancelConfirmDialog
+      <CancelConfirmDialog
         isOpen={showCancelDialog}
         onClose={() => setShowCancelDialog(false)}
       />

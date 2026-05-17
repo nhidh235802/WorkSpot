@@ -84,8 +84,8 @@ export default function EditCafePage() {
         const user = userStr ? JSON.parse(userStr) : null
         if (!user) return router.push('/login')
 
-        const res = await axios.get(`http://localhost:3001/cafes/${cafeId}`)
-        const data = res.data
+        const res = await fetch(`http://localhost:3001/cafes/${cafeId}`)
+        const data = await res.json()
         if (data.owner?.id !== user.id) return router.push('/dashboard')
 
         // Tái cấu trúc giờ hoạt động từ Backend thành 3 block
