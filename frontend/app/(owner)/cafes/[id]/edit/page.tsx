@@ -85,8 +85,11 @@ export default function EditCafePage() {
         if (!user) return router.push('/login')
 
         const res = await fetch(`http://localhost:3001/cafes/${cafeId}`)
-        const data = await res.json()
-        if (data.owner?.id !== user.id) return router.push('/dashboard')
+        const rawData = await res.json()
+        if (rawData.owner?.id !== user.id) return router.push('/dashboard')
+
+        // Ưu tiên hiển thị dữ liệu đang chờ duyệt (nếu có) để chủ quán xem lại nội dung vừa sửa
+        const data = rawData.pendingData ? { ...rawData, ...rawData.pendingData } : rawData;
 
         // Tái cấu trúc giờ hoạt động từ Backend thành 3 block
         const oh = data.operatingHours || []

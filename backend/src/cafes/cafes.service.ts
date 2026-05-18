@@ -184,6 +184,8 @@ export class CafesService {
       images: cafe.images || [],
       facilities: cafe.facilities || [],
       realtimeStatus: cafe.realtimeStatus,
+      status: cafe.status,
+      pendingData: cafe.pendingData,
 
       owner: cafe.owner
         ? {

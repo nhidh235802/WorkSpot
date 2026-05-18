@@ -110,7 +110,7 @@ export class CafesController {
   @UseInterceptors(
     FilesInterceptor('photos', 5, {
       storage: diskStorage({
-        destination: './src/uploads/cafe-images',
+        destination: './uploads/cafe-images',
         filename: (req, file, cb) => {
           const uniqueSuffix =
             Date.now() + '-' + Math.round(Math.random() * 1e9);
@@ -284,7 +284,7 @@ export class CafesController {
   @UseInterceptors(
     FilesInterceptor('photos', 5, {
       storage: diskStorage({
-        destination: './src/uploads/cafe-images',
+        destination: './uploads/cafe-images',
         filename: (req, file, cb) => {
           const uniqueSuffix =
             Date.now() + '-' + Math.round(Math.random() * 1e9);
