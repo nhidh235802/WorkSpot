@@ -521,7 +521,7 @@ export default function CafeDetailPage() {
                   {review.images?.length > 0 && (
                     <div style={{ display: 'flex', gap: 12 }}>
                       {review.images.slice(0, 4).map((img: string, i: number) => (
-                        <img key={i} src={img} alt="" style={{
+                        <img key={i} src={toAbsoluteUrl(img)!} alt="" style={{
                           width: 148, height: 148,
                           borderRadius: 12, objectFit: 'cover',
                           border: '1px solid rgba(192,201,193,0.2)',

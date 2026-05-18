@@ -134,6 +134,28 @@ export const CafeService = {
       return res.json();
     },
 
+  // ── POST /cafes/:id/reviews/images  →  Upload ảnh trước khi gửi review ──
+  uploadReviewImages: async (cafeId: string, files: File[]): Promise<string[]> => {
+    const token = typeof window !== 'undefined'
+      ? (localStorage.getItem('accessToken') || localStorage.getItem('access_token'))
+      : null;
+
+    const formData = new FormData();
+    files.forEach((file) => formData.append('images', file));
+
+    const res = await fetch(`http://localhost:3001/cafes/${cafeId}/reviews/images`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    });
+
+    if (res.status === 401) throw new Error('UNAUTHORIZED');
+    if (!res.ok) throw new Error('画像のアップロードに失敗しました');
+
+    const data = await res.json() as { urls: string[] };
+    return data.urls;
+  },
+
   // ── GET /cafes/:id/reviews ────────────────────────────────────────────────
   getReviews: async (cafeId: string): Promise<ReviewResponse[]> => {
     const res = await fetch(`${BACKEND_API_URL}/cafes/${cafeId}/reviews`);

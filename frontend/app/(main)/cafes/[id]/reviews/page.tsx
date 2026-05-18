@@ -233,9 +233,18 @@ export default function ReviewPage() {
 
     setSubmitting(true);
     try {
+      let imageUrls: string[] = [];
+      if (photos.length > 0) {
+        imageUrls = await CafeService.uploadReviewImages(
+          cafeId,
+          photos.map((p) => p.file),
+        );
+      }
+
       const reviewPayload: any = {
         rating: Number(rating),
         comment: comment.trim(),
+        ...(imageUrls.length > 0 && { images: imageUrls }),
       };
       await CafeService.createReview(cafeId, reviewPayload);
 

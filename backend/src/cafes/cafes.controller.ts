@@ -18,6 +18,7 @@ import { UseInterceptors, UploadedFiles } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import * as fs from 'fs';
 import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import { BadRequestException } from '@nestjs/common';
@@ -34,7 +35,7 @@ import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { SearchCafeDto } from './dto/search-cafe.dto';
 import { RealtimeStatus } from './entities/cafe.entity';
-import { CreateReviewDto } from '../reviews/dto/create-review.dto';
+import { CreateReviewDto } from './dto/create-review.dto';
 
 import { AdminQueryCafeDto } from './dto/admin-query-cafe.dto';
 import { RejectCafeDto } from './dto/reject-cafe.dto';
@@ -195,6 +196,44 @@ export class CafesController {
       realtimeStatus,
       req.user.id,
     );
+  }
+
+  // POST /cafes/:id/reviews/images  →  Upload ảnh trước khi gửi review
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.CUSTOMER)
+  @Post(':id/reviews/images')
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(
+    FilesInterceptor('images', 10, {
+      storage: diskStorage({
+        destination: (_req, _file, cb) => {
+          const dir = './uploads/review-images';
+          fs.mkdirSync(dir, { recursive: true });
+          cb(null, dir);
+        },
+        filename: (req, file, cb) => {
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          cb(null, `${uniqueSuffix}${extname(file.originalname)}`);
+        },
+      }),
+      fileFilter: (req, file, cb) => {
+        if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.mimetype)) {
+          return cb(
+            new BadRequestException('Chỉ chấp nhận ảnh JPEG hoặc PNG.'),
+            false,
+          );
+        }
+        cb(null, true);
+      },
+      limits: { fileSize: 10 * 1024 * 1024 },
+    }),
+  )
+  uploadReviewImages(@UploadedFiles() files: Express.Multer.File[]) {
+    if (!files || files.length === 0) return { urls: [] };
+    return {
+      urls: files.map((f) => `/uploads/review-images/${f.filename}`),
+    };
   }
 
   // POST /cafes/:id/reviews  →  Đăng đánh giá (chỉ WORKER/CUSTOMER đã đăng nhập)

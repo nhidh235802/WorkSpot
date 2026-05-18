@@ -17,7 +17,7 @@ import { UpdateCafeDto } from './dto/update-cafe.dto';
 import { CafeDetailResponseDto } from './dto/cafe-detail-response.dto';
 import { SearchCafeDto } from './dto/search-cafe.dto';
 
-import { CreateReviewDto } from '../reviews/dto/create-review.dto';
+import { CreateReviewDto } from './dto/create-review.dto';
 
 @Injectable()
 export class CafesService {
