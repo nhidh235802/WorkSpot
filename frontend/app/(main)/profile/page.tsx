@@ -299,12 +299,21 @@ export default function ProfilePage() {
   async function handleSaveProfile() {
     setSavingProfile(true); setProfileError('')
     try {
-      const updated = await patchProfile({
+      await patchProfile({
         fullName: editForm.fullName.trim(), email: editForm.email.trim(),
         phone: editForm.phone.trim() || undefined, address: editForm.address.trim() || undefined,
         bio: editForm.bio.trim() || undefined,
       })
-      setProfile(updated); setIsEditing(false)
+      // Chỉ cập nhật các field đã PATCH — không đụng vào avatar
+      setProfile(prev => prev ? {
+        ...prev,
+        fullName: editForm.fullName.trim(),
+        email: editForm.email.trim(),
+        phone: editForm.phone.trim() || null,
+        address: editForm.address.trim() || null,
+        bio: editForm.bio.trim() || null,
+      } : prev)
+      setIsEditing(false)
     } catch (e: unknown) { setProfileError((e as Error).message) }
     finally { setSavingProfile(false) }
   }
