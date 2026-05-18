@@ -47,6 +47,7 @@ export default function AdminAccountPage() {
 
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState<string | null>(null)
+  const [detailUser, setDetailUser] = useState<AdminUser | null>(null)
 
   // 統計用: 総アカウント数
   useEffect(() => {
@@ -332,6 +333,7 @@ export default function AdminAccountPage() {
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
                   <button
                     type="button"
+                    onClick={() => setDetailUser(user)}
                     style={{
                       paddingLeft: 20, paddingRight: 20, paddingTop: 8, paddingBottom: 9,
                       background: '#14422D', boxShadow: '0px 1px 2px rgba(0,0,0,0.05)',
@@ -374,6 +376,147 @@ export default function AdminAccountPage() {
           })
         )}
       </div>
+
+      {/* ── ユーザー詳細モーダル ── */}
+      {detailUser && (() => {
+        const rc = ROLE_CONFIG[detailUser.role] ?? { label: detailUser.role, avatarBg: '#E3E3DE', avatarText: '#717973' }
+        return (
+          <div
+            onClick={() => setDetailUser(null)}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 50,
+              background: 'rgba(0,0,0,0.40)', backdropFilter: 'blur(2px)',
+              display: 'flex', justifyContent: 'center', alignItems: 'center',
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: 512, maxWidth: '90vw',
+                background: 'white',
+                boxShadow: '0px 12px 40px rgba(26,28,25,0.06)',
+                borderRadius: 16,
+                outline: '1px rgba(192,201,193,0.10) solid',
+                outlineOffset: '-1px',
+                overflow: 'hidden',
+                display: 'flex', flexDirection: 'column',
+              }}
+            >
+              {/* ── ヘッダー (緑背景) ── */}
+              <div style={{
+                background: 'linear-gradient(171deg, #14422D 0%, #2D5A43 100%)',
+                padding: '32px 32px 40px',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16,
+              }}>
+                <div style={{
+                  width: 80, height: 80, borderRadius: 9999,
+                  background: rc.avatarBg,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: rc.avatarText, fontSize: 24, fontFamily: 'Manrope, sans-serif', fontWeight: 700,
+                  flexShrink: 0,
+                }}>
+                  {getInitials(detailUser.fullName)}
+                </div>
+                <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <div style={{ color: 'white', fontSize: 22, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '28px' }}>
+                    {detailUser.fullName}
+                  </div>
+                  <div style={{ color: 'rgba(188,238,207,0.80)', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 400 }}>
+                    {detailUser.email}
+                  </div>
+                </div>
+                {/* ロールバッジ */}
+                <div style={{
+                  paddingLeft: 16, paddingRight: 16, paddingTop: 4, paddingBottom: 4,
+                  background: 'rgba(255,255,255,0.15)', borderRadius: 9999,
+                  color: 'white', fontSize: 12, fontFamily: 'Manrope, sans-serif', fontWeight: 500,
+                  textTransform: 'uppercase', letterSpacing: 1,
+                }}>
+                  {rc.label}
+                </div>
+              </div>
+
+              {/* ── 詳細情報 ── */}
+              <div style={{ padding: '28px 32px 32px', display: 'flex', flexDirection: 'column', gap: 0 }}>
+
+                {/* ステータス */}
+                <div style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  paddingTop: 16, paddingBottom: 16,
+                  borderBottom: '1px rgba(192,201,193,0.20) solid',
+                }}>
+                  <span style={{ color: '#A8A29E', fontSize: 12, fontFamily: 'Manrope, sans-serif', fontWeight: 500, textTransform: 'uppercase', letterSpacing: 1 }}>
+                    アカウントステータス
+                  </span>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, paddingLeft: 12, paddingRight: 12, paddingTop: 4, paddingBottom: 4, background: '#D1FAE5', borderRadius: 9999 }}>
+                    <div style={{ width: 6, height: 6, background: '#10B981', borderRadius: 9999 }} />
+                    <span style={{ color: '#065F46', fontSize: 10, fontFamily: 'Manrope, sans-serif', fontWeight: 500 }}>有効</span>
+                  </div>
+                </div>
+
+                {/* 登録日 */}
+                <div style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  paddingTop: 16, paddingBottom: 16,
+                  borderBottom: '1px rgba(192,201,193,0.20) solid',
+                }}>
+                  <span style={{ color: '#A8A29E', fontSize: 12, fontFamily: 'Manrope, sans-serif', fontWeight: 500, textTransform: 'uppercase', letterSpacing: 1 }}>
+                    登録日
+                  </span>
+                  <span style={{ color: '#414943', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 400 }}>
+                    {formatDate(detailUser.createdAt)}
+                  </span>
+                </div>
+
+                {/* 最終ログイン */}
+                <div style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  paddingTop: 16, paddingBottom: 16,
+                  borderBottom: '1px rgba(192,201,193,0.20) solid',
+                }}>
+                  <span style={{ color: '#A8A29E', fontSize: 12, fontFamily: 'Manrope, sans-serif', fontWeight: 500, textTransform: 'uppercase', letterSpacing: 1 }}>
+                    最終ログイン
+                  </span>
+                  <span style={{ color: '#414943', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 400 }}>
+                    {formatDate(detailUser.createdAt)}
+                  </span>
+                </div>
+
+                {/* ユーザーID */}
+                <div style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  paddingTop: 16, paddingBottom: 16,
+                }}>
+                  <span style={{ color: '#A8A29E', fontSize: 12, fontFamily: 'Manrope, sans-serif', fontWeight: 500, textTransform: 'uppercase', letterSpacing: 1 }}>
+                    ユーザーID
+                  </span>
+                  <span style={{ color: '#A8A29E', fontSize: 12, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 400, maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {detailUser.id}
+                  </span>
+                </div>
+
+                {/* ボタン */}
+                <div style={{ paddingTop: 8, display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+                  <button
+                    type="button"
+                    onClick={() => setDetailUser(null)}
+                    style={{
+                      paddingLeft: 32, paddingRight: 32, paddingTop: 12, paddingBottom: 12,
+                      background: '#E8E8E3', borderRadius: 9999, border: 'none', cursor: 'pointer',
+                      color: '#1A1C19', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 500,
+                      whiteSpace: 'nowrap',
+                    }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#D8D8D3' }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = '#E8E8E3' }}
+                  >
+                    閉じる
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* ── ページネーション ── */}
       {!loading && totalPages > 1 && (
