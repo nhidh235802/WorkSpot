@@ -244,7 +244,7 @@ export default function EditCafePage() {
   }
 
   return (
-    <div className="flex h-screen bg-[#FAFAF5] font-['Be_Vietnam_Pro'] overflow-hidden">
+    <div className="flex h-screen bg-[#FAFAF5] w-full min-w-[1280px] overflow-hidden relative">
       {/* Toast */}
       {toast && (
         <div style={{
@@ -254,17 +254,17 @@ export default function EditCafePage() {
           fontWeight: 600, boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
           display: 'flex', alignItems: 'center', gap: 10, maxWidth: 380,
         }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke="white" strokeWidth="2" strokeLinecap="round"/><polyline points="22 4 12 14.01 9 11.01" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke="white" strokeWidth="2" strokeLinecap="round" /><polyline points="22 4 12 14.01 9 11.01" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
           {toast}
         </div>
       )}
       <CancelConfirmDialog isOpen={showCancelDialog} onClose={() => setShowCancelDialog(false)} title="Hủy chỉnh sửa?" />
       <OwnerSidebar />
 
-      <main className="flex-1 overflow-y-auto px-10 py-12 lg:px-16 w-full">
+      <main className="flex-1 h-full overflow-y-auto px-12 py-10 font-['Be_Vietnam_Pro'] z-10">
 
         {/* Nút Quay lại */}
-        <button 
+        <button
           onClick={() => setShowCancelDialog(true)}
           className="flex items-center gap-2 text-[#14422D] hover:text-[#0d2e1f] font-bold text-[12px] uppercase tracking-widest mb-6 transition-colors group"
         >
@@ -273,11 +273,11 @@ export default function EditCafePage() {
         </button>
 
         {/* Tiêu đề trang */}
-        <div className="mb-16">
-          <h1 className="text-[36px] font-bold text-[#14422D] font-['Manrope'] mb-2">
+        <div className="mb-10">
+          <h1 className="text-[40px] font-bold text-[#14422D] font-['Manrope'] mb-2 leading-tight">
             Chỉnh sửa thông tin của quán
           </h1>
-          <p className="text-[#57534E] text-[16px]">
+          <p className="text-[#57534E] text-base">
             Cập nhật thông tin chi tiết của quán để khách hàng có thông tin chính xác nhất.
           </p>
         </div>
@@ -330,13 +330,13 @@ export default function EditCafePage() {
           >
             <div className="flex flex-wrap gap-4">
               {(form.images.length + newPhotos.length) < 5 && (
-             <button
-                onClick={() => fileInputRef.current?.click()}
-                className="w-[200px] h-[140px] rounded-[16px] border border-dashed border-[#D6D3D1] flex flex-col items-center justify-center gap-2 text-[#78716C] hover:text-[#14422D] hover:border-[#14422D] hover:bg-[#FAFAF5] transition-all cursor-pointer bg-transparent"
-              >
-                <ImagePlus size={24} strokeWidth={1.5} />
-                <span className="font-bold text-[13px]">Thêm ảnh</span>
-              </button>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-[200px] h-[140px] rounded-[16px] border border-dashed border-[#D6D3D1] flex flex-col items-center justify-center gap-2 text-[#78716C] hover:text-[#14422D] hover:border-[#14422D] hover:bg-[#FAFAF5] transition-all cursor-pointer bg-transparent"
+                >
+                  <ImagePlus size={24} strokeWidth={1.5} />
+                  <span className="font-bold text-[13px]">Thêm ảnh</span>
+                </button>
               )}
               <input ref={fileInputRef} type="file" accept="image/jpeg,image/jpg,image/png" multiple onChange={handleAddNewPhoto} className="hidden" />
 
@@ -395,37 +395,50 @@ export default function EditCafePage() {
           >
             <div className="flex flex-col gap-4">
               {form.operatingHours.map((row, idx) => (
-                <div key={row.label} className="flex flex-col gap-1">
-                  <div className="bg-white px-6 py-5 rounded-[12px] border border-[#E7E5E4] flex items-center justify-between shadow-sm">
-                    <div className={`font-bold text-[15px] w-40 ${row.isDayOff ? 'text-[#A8A29E]' : 'text-[#14422D]'}`}>
-                      {row.label}
-                    </div>
-                    <div className="flex items-center gap-6">
-                      {row.isDayOff ? (
-                        <>
-                          <div className="w-[120px] text-center text-[#A8A29E] font-bold">--</div>
-                          <div className="w-[120px] text-center text-[#A8A29E] font-bold">--</div>
-                        </>
-                      ) : (
-                        <>
-                          <input type="time" value={row.openTime} onChange={e => setTime(idx, 'openTime', e.target.value)}
-                            className="w-[120px] border border-[#E7E5E4] rounded-[8px] px-3 py-2 text-[14px] font-medium focus:outline-none focus:border-[#14422D] text-center" />
-                          <input type="time" value={row.closeTime} onChange={e => setTime(idx, 'closeTime', e.target.value)}
-                            className="w-[120px] border border-[#E7E5E4] rounded-[8px] px-3 py-2 text-[14px] font-medium focus:outline-none focus:border-[#14422D] text-center" />
-                        </>
-                      )}
-                      <label className="flex items-center gap-2 cursor-pointer ml-4">
-                        <div className={`w-[18px] h-[18px] rounded-[4px] flex items-center justify-center transition-colors border ${row.isDayOff ? 'bg-[#14422D] border-[#14422D]' : 'bg-white border-[#D6D3D1]'}`}>
-                          {row.isDayOff && <Check size={14} className="text-white" strokeWidth={3} />}
-                        </div>
-                        <input type="checkbox" className="hidden" checked={row.isDayOff} onChange={() => toggleDayOff(idx)} />
-                        <span className={`text-[14px] font-bold ${row.isDayOff ? 'text-[#1A1C19]' : 'text-[#78716C]'}`}>Nghỉ</span>
-                      </label>
-                    </div>
+                <div key={row.label} className={`px-6 py-5 rounded-[12px] border border-[#E7E5E4] flex items-center justify-between shadow-sm ${row.isDayOff ? 'bg-[#FAFAF5]' : 'bg-white'}`}>
+
+                  {/* Nhãn Thứ */}
+                  <div className={`font-bold text-[15px] w-40 ${row.isDayOff ? 'text-[#A8A29E]' : 'text-[#14422D]'}`}>
+                    {row.label}
                   </div>
-                  {fieldErrors[`schedule_${idx}`] && (
-                    <p className="text-red-600 text-[12px] px-1">{fieldErrors[`schedule_${idx}`]}</p>
-                  )}
+
+                  {/* Cụm input giờ */}
+                  <div className="flex items-center gap-6">
+                    {row.isDayOff ? (
+                      <>
+                        <div className="w-[120px] border border-[#E7E5E4] rounded-[8px] px-3 py-2 text-[14px] font-medium text-center text-[#A8A29E] bg-[#FAFAF5]">—</div>
+                        <div className="w-[120px] border border-[#E7E5E4] rounded-[8px] px-3 py-2 text-[14px] font-medium text-center text-[#A8A29E] bg-[#FAFAF5]">—</div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="relative">
+                          <input
+                            type="time" value={row.openTime} onChange={e => setTime(idx, 'openTime', e.target.value)}
+                            className="w-[120px] border border-[#E7E5E4] rounded-[8px] px-3 py-2 text-[14px] font-medium focus:outline-none focus:border-[#14422D] text-center"
+                          />
+                        </div>
+                        <div className="relative">
+                          <input
+                            type="time" value={row.closeTime} onChange={e => setTime(idx, 'closeTime', e.target.value)}
+                            className="w-[120px] border border-[#E7E5E4] rounded-[8px] px-3 py-2 text-[14px] font-medium focus:outline-none focus:border-[#14422D] text-center"
+                          />
+                        </div>
+                      </>
+                    )}
+
+                    {/* Checkbox Nghỉ */}
+                    <label className="flex items-center gap-2 cursor-pointer ml-4">
+                      <div className={`w-[18px] h-[18px] rounded-[4px] flex items-center justify-center transition-colors border ${row.isDayOff ? 'bg-[#14422D] border-[#14422D]' : 'bg-white border-[#D6D3D1]'}`}>
+                        {row.isDayOff && <Check size={14} className="text-white" strokeWidth={3} />}
+                      </div>
+                      <input
+                        type="checkbox" className="hidden"
+                        checked={row.isDayOff} onChange={() => toggleDayOff(idx)}
+                      />
+                      <span className={`text-[14px] font-bold ${row.isDayOff ? 'text-[#1A1C19]' : 'text-[#78716C]'}`}>Nghỉ</span>
+                    </label>
+                  </div>
+
                 </div>
               ))}
 
@@ -449,8 +462,8 @@ export default function EditCafePage() {
 
         {/* Footer Actions */}
         <div className="mt-auto border-t border-[#E7E5E4] pt-8 flex items-center justify-end gap-4 pb-10">
-          <button 
-            onClick={() => setShowCancelDialog(true)}
+          <button
+            onClick={() => router.push('/dashboard')}
             className="px-8 py-3 rounded-full font-bold text-[#57534E] border border-[#E7E5E4] bg-white hover:bg-[#F5F5F0] transition-colors text-[15px] min-w-[120px]"
           >
             Hủy

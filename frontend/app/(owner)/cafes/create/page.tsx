@@ -384,7 +384,7 @@ export default function CreateCafeForm() {
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#FAFAF5' }}>
+    <div style={{ display: 'flex', height: '100vh', background: '#FAFAF5', width: '100%', minWidth: 1280, overflow: 'hidden', position: 'relative' }}>
       {/* Toast */}
       {toast && (
         <div style={{
@@ -402,20 +402,24 @@ export default function CreateCafeForm() {
       <div
         style={{
           flex: 1,
-          paddingTop: 64,
-          paddingBottom: 96,
-          paddingLeft: 32,
-          paddingRight: 32,
+          height: '100%',
+          overflowY: 'auto',
+          paddingTop: 40,
+          paddingBottom: 40,
+          paddingLeft: 48,
+          paddingRight: 48,
           boxSizing: 'border-box',
+          position: 'relative',
+          zIndex: 10,
         }}
       >
         {/* Page Header */}
-        <div style={{ marginBottom: 48, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ marginBottom: 40, display: 'flex', flexDirection: 'column', gap: 8 }}>
           <h1
             style={{
               margin: 0,
               color: '#14422D',
-              fontSize: 48,
+              fontSize: 40,
               fontFamily: 'Manrope, sans-serif',
               fontWeight: 800,
               lineHeight: '56px',
@@ -427,7 +431,7 @@ export default function CreateCafeForm() {
             style={{
               margin: 0,
               color: '#78716C',
-              fontSize: 20,
+              fontSize: 16,
               fontFamily: 'Be Vietnam Pro, sans-serif',
               fontWeight: 400,
               lineHeight: '26px',
