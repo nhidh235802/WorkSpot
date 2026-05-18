@@ -11,8 +11,7 @@ type Facility = 'wifi' | 'socket' | 'desk' | 'snack' | 'cleanliness' | 'workspac
 
 interface OperatingHour {
   label: string
-  days: string[]
-  days: string[]
+  days: string[] // Chứa mảng các ngày (vd: ['monday', 'tuesday', ...])
   openTime: string
   closeTime: string
   isDayOff: boolean
@@ -30,201 +29,25 @@ interface CafeForm {
 
 // ─── Facility config ────────────────────────────────────────────────────────────
 const FACILITIES: { key: Facility; label: string; icon: React.ReactNode }[] = [
-  {
-    key: 'wifi', label: 'Wi-Fi',
-    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M5 12.55a11 11 0 0 1 14.08 0" /><path d="M1.42 9a16 16 0 0 1 21.16 0" /><path d="M8.53 16.11a6 6 0 0 1 6.95 0" /><circle cx="12" cy="20" r="1" fill="currentColor" stroke="none" /></svg>
-  },
-  {
-    key: 'socket', label: 'Ổ cắm điện',
-    icon: <svg width="10" height="14" viewBox="0 0 14 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="5" y1="1" x2="5" y2="5" /><line x1="9" y1="1" x2="9" y2="5" /><rect x="2" y="5" width="10" height="9" rx="4" /><line x1="7" y1="14" x2="7" y2="19" /></svg>
-  },
-  {
-    key: 'desk', label: 'Bàn làm việc',
-    icon: <svg width="14" height="10" viewBox="0 0 20 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="1" y="1" width="18" height="5" rx="1" /><line x1="4" y1="6" x2="4" y2="13" /><line x1="16" y1="6" x2="16" y2="13" /><line x1="4" y1="10" x2="16" y2="10" /></svg>
-  },
-  {
-    key: 'snack', label: 'Đồ ăn nhẹ',
-    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10" /><circle cx="9" cy="9.5" r="1.5" fill="currentColor" stroke="none" /><circle cx="14.5" cy="11" r="1" fill="currentColor" stroke="none" /><circle cx="10.5" cy="15" r="1" fill="currentColor" stroke="none" /></svg>
-  },
-  {
-    key: 'cleanliness', label: 'Độ sạch sẽ',
-    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="10" y="2" width="4" height="6" rx="2" /><rect x="3" y="8" width="18" height="10" rx="2" /><line x1="8" y1="11" x2="8" y2="16" /><line x1="12" y1="11" x2="12" y2="16" /><line x1="16" y1="11" x2="16" y2="16" /></svg>
-  },
-  {
-    key: 'workspace', label: 'Không gian làm việc',
-    icon: <svg width="16" height="12" viewBox="0 0 22 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="1" y="1" width="20" height="11" rx="2" /><line x1="7" y1="15" x2="15" y2="15" /><line x1="11" y1="12" x2="11" y2="15" /></svg>
-  },
-  {
-    key: 'smoking_rule', label: 'Quy định hút thuốc',
-    icon: <svg width="16" height="14" viewBox="0 0 22 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="2" y1="12" x2="14" y2="12" /><line x1="16" y1="12" x2="20" y2="12" /><path d="M14 9 c3 0 3 3 3 3" /><path d="M12 6 c3 0 4 2 4 6" /><line x1="2" y1="2" x2="20" y2="16" /></svg>
-  },
-  {
-    key: 'wifi', label: 'Wi-Fi',
-    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M5 12.55a11 11 0 0 1 14.08 0" /><path d="M1.42 9a16 16 0 0 1 21.16 0" /><path d="M8.53 16.11a6 6 0 0 1 6.95 0" /><circle cx="12" cy="20" r="1" fill="currentColor" stroke="none" /></svg>
-  },
-  {
-    key: 'socket', label: 'Ổ cắm điện',
-    icon: <svg width="10" height="14" viewBox="0 0 14 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="5" y1="1" x2="5" y2="5" /><line x1="9" y1="1" x2="9" y2="5" /><rect x="2" y="5" width="10" height="9" rx="4" /><line x1="7" y1="14" x2="7" y2="19" /></svg>
-  },
-  {
-    key: 'desk', label: 'Bàn làm việc',
-    icon: <svg width="14" height="10" viewBox="0 0 20 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="1" y="1" width="18" height="5" rx="1" /><line x1="4" y1="6" x2="4" y2="13" /><line x1="16" y1="6" x2="16" y2="13" /><line x1="4" y1="10" x2="16" y2="10" /></svg>
-  },
-  {
-    key: 'snack', label: 'Đồ ăn nhẹ',
-    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10" /><circle cx="9" cy="9.5" r="1.5" fill="currentColor" stroke="none" /><circle cx="14.5" cy="11" r="1" fill="currentColor" stroke="none" /><circle cx="10.5" cy="15" r="1" fill="currentColor" stroke="none" /></svg>
-  },
-  {
-    key: 'cleanliness', label: 'Độ sạch sẽ',
-    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="10" y="2" width="4" height="6" rx="2" /><rect x="3" y="8" width="18" height="10" rx="2" /><line x1="8" y1="11" x2="8" y2="16" /><line x1="12" y1="11" x2="12" y2="16" /><line x1="16" y1="11" x2="16" y2="16" /></svg>
-  },
-  {
-    key: 'workspace', label: 'Không gian làm việc',
-    icon: <svg width="16" height="12" viewBox="0 0 22 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="1" y="1" width="20" height="11" rx="2" /><line x1="7" y1="15" x2="15" y2="15" /><line x1="11" y1="12" x2="11" y2="15" /></svg>
-  },
-  {
-    key: 'smoking_rule', label: 'Quy định hút thuốc',
-    icon: <svg width="16" height="14" viewBox="0 0 22 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="2" y1="12" x2="14" y2="12" /><line x1="16" y1="12" x2="20" y2="12" /><path d="M14 9 c3 0 3 3 3 3" /><path d="M12 6 c3 0 4 2 4 6" /><line x1="2" y1="2" x2="20" y2="16" /></svg>
-  },
+  { key: 'wifi', label: 'Wi-Fi', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M5 12.55a11 11 0 0 1 14.08 0" /><path d="M1.42 9a16 16 0 0 1 21.16 0" /><path d="M8.53 16.11a6 6 0 0 1 6.95 0" /><circle cx="12" cy="20" r="1" fill="currentColor" stroke="none" /></svg> },
+  { key: 'socket', label: 'Ổ cắm điện', icon: <svg width="10" height="14" viewBox="0 0 14 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="5" y1="1" x2="5" y2="5" /><line x1="9" y1="1" x2="9" y2="5" /><rect x="2" y="5" width="10" height="9" rx="4" /><line x1="7" y1="14" x2="7" y2="19" /></svg> },
+  { key: 'desk', label: 'Bàn làm việc', icon: <svg width="14" height="10" viewBox="0 0 20 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="1" y="1" width="18" height="5" rx="1" /><line x1="4" y1="6" x2="4" y2="13" /><line x1="16" y1="6" x2="16" y2="13" /><line x1="4" y1="10" x2="16" y2="10" /></svg> },
+  { key: 'snack', label: 'Đồ ăn nhẹ', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10" /><circle cx="9" cy="9.5" r="1.5" fill="currentColor" stroke="none" /><circle cx="14.5" cy="11" r="1" fill="currentColor" stroke="none" /><circle cx="10.5" cy="15" r="1" fill="currentColor" stroke="none" /></svg> },
+  { key: 'cleanliness', label: 'Độ sạch sẽ', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="10" y="2" width="4" height="6" rx="2" /><rect x="3" y="8" width="18" height="10" rx="2" /><line x1="8" y1="11" x2="8" y2="16" /><line x1="12" y1="11" x2="12" y2="16" /><line x1="16" y1="11" x2="16" y2="16" /></svg> },
+  { key: 'workspace', label: 'Không gian làm việc', icon: <svg width="14" height="10" viewBox="0 0 22 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="1" y="1" width="20" height="11" rx="2" /><line x1="7" y1="15" x2="15" y2="15" /><line x1="11" y1="12" x2="11" y2="15" /></svg> },
+  { key: 'smoking_rule', label: 'Quy định hút thuốc', icon: <svg width="14" height="12" viewBox="0 0 22 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="2" y1="12" x2="14" y2="12" /><line x1="16" y1="12" x2="20" y2="12" /><path d="M14 9 c3 0 3 3 3 3" /><path d="M12 6 c3 0 4 2 4 6" /><line x1="2" y1="2" x2="20" y2="16" /></svg> },
 ]
 
-// ─── Sidebar ────────────────────────────────────────────────────────────────────
-function Sidebar({ userName = 'Minh Anh' }: { userName?: string }) {
-  const navItems = [
-    { label: 'Tổng quan', active: true, icon: <svg width="14" height="14" viewBox="0 0 18 18" fill="currentColor"><rect x="1" y="1" width="7" height="7" rx="1.5" /><rect x="10" y="1" width="7" height="7" rx="1.5" /><rect x="1" y="10" width="7" height="7" rx="1.5" /><rect x="10" y="10" width="7" height="7" rx="1.5" /></svg> },
-    { label: 'Đăng ký quán mới', active: false, icon: <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2H5a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h7" /><polyline points="12,2 12,6 16,6" /><path d="M16 2h-4" /><path d="M13 13.5l3.5-3.5a1.2 1.2 0 0 1 1.7 1.7L14.7 15l-2.2.5.5-2z" /><line x1="7" y1="8" x2="11" y2="8" /><line x1="7" y1="11" x2="10" y2="11" /></svg> },
-    { label: 'Hồ sơ cá nhân', active: false, icon: <svg width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="9" cy="6" r="3.5" /><path d="M2 16c0-3.3 3.1-6 7-6s7 2.7 7 6" /></svg> },
-  ]
-
-  return (
-    <div style={{ width: 288, minHeight: '100vh', background: '#FAFAF5', borderRight: '1px solid rgba(120,113,108,0.1)', padding: 24, display: 'flex', flexDirection: 'column', position: 'fixed', left: 0, top: 0, bottom: 0, zIndex: 10 }}>
-      {/* Brand */}
-      <div style={{ paddingBottom: 40 }}>
-        <div style={{ color: '#1C1917', fontSize: 20, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '28px' }}>WorkSpot Owner</div>
-        <div style={{ color: '#A8A29E', fontSize: 10, fontFamily: 'Be Vietnam Pro, sans-serif', letterSpacing: '0.08em', lineHeight: '16px', marginTop: 2 }}>Cổng thông tin Hà Nội</div>
-      </div>
-
-      {/* Nav */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
-        {navItems.map(item => (
-          <button key={item.label} style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, background: item.active ? '#14422D' : 'transparent', color: item.active ? 'white' : '#78716C', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: item.active ? 700 : 500, lineHeight: '20px', textAlign: 'left', boxShadow: item.active ? '0 1px 2px rgba(0,0,0,0.05)' : 'none' }}>
-            <span style={{ color: item.active ? 'white' : '#78716C', flexShrink: 0 }}>{item.icon}</span>
-            {item.label}
-          </button>
-        ))}
-      </div>
-
-      {/* User */}
-      <div style={{ borderTop: '1px solid #E7E5E4', paddingTop: 24 }}>
-        <div style={{ padding: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#D6D3D1', flexShrink: 0, overflow: 'hidden' }}>
-            <img src="https://placehold.co/40x40" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          </div>
-          <div>
-            <div style={{ color: '#1C1917', fontSize: 14, fontFamily: 'Roboto, sans-serif', fontWeight: 500, lineHeight: '20px' }}>{userName}</div>
-            <div style={{ color: '#78716C', fontSize: 10, fontFamily: 'Be Vietnam Pro, sans-serif', lineHeight: '16px' }}>Chủ quán</div>
-          </div>
-        </div>
-      </div>
-// ─── Sidebar ────────────────────────────────────────────────────────────────────
-function Sidebar({ userName = 'Minh Anh' }: { userName?: string }) {
-  const navItems = [
-    { label: 'Tổng quan', active: true, icon: <svg width="14" height="14" viewBox="0 0 18 18" fill="currentColor"><rect x="1" y="1" width="7" height="7" rx="1.5" /><rect x="10" y="1" width="7" height="7" rx="1.5" /><rect x="1" y="10" width="7" height="7" rx="1.5" /><rect x="10" y="10" width="7" height="7" rx="1.5" /></svg> },
-    { label: 'Đăng ký quán mới', active: false, icon: <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2H5a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h7" /><polyline points="12,2 12,6 16,6" /><path d="M16 2h-4" /><path d="M13 13.5l3.5-3.5a1.2 1.2 0 0 1 1.7 1.7L14.7 15l-2.2.5.5-2z" /><line x1="7" y1="8" x2="11" y2="8" /><line x1="7" y1="11" x2="10" y2="11" /></svg> },
-    { label: 'Hồ sơ cá nhân', active: false, icon: <svg width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="9" cy="6" r="3.5" /><path d="M2 16c0-3.3 3.1-6 7-6s7 2.7 7 6" /></svg> },
-  ]
-
-  return (
-    <div style={{ width: 288, minHeight: '100vh', background: '#FAFAF5', borderRight: '1px solid rgba(120,113,108,0.1)', padding: 24, display: 'flex', flexDirection: 'column', position: 'fixed', left: 0, top: 0, bottom: 0, zIndex: 10 }}>
-      {/* Brand */}
-      <div style={{ paddingBottom: 40 }}>
-        <div style={{ color: '#1C1917', fontSize: 20, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '28px' }}>WorkSpot Owner</div>
-        <div style={{ color: '#A8A29E', fontSize: 10, fontFamily: 'Be Vietnam Pro, sans-serif', letterSpacing: '0.08em', lineHeight: '16px', marginTop: 2 }}>Cổng thông tin Hà Nội</div>
-      </div>
-
-      {/* Nav */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
-        {navItems.map(item => (
-          <button key={item.label} style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, background: item.active ? '#14422D' : 'transparent', color: item.active ? 'white' : '#78716C', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: item.active ? 700 : 500, lineHeight: '20px', textAlign: 'left', boxShadow: item.active ? '0 1px 2px rgba(0,0,0,0.05)' : 'none' }}>
-            <span style={{ color: item.active ? 'white' : '#78716C', flexShrink: 0 }}>{item.icon}</span>
-            {item.label}
-          </button>
-        ))}
-      </div>
-
-      {/* User */}
-      <div style={{ borderTop: '1px solid #E7E5E4', paddingTop: 24 }}>
-        <div style={{ padding: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#D6D3D1', flexShrink: 0, overflow: 'hidden' }}>
-            <img src="https://placehold.co/40x40" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          </div>
-          <div>
-            <div style={{ color: '#1C1917', fontSize: 14, fontFamily: 'Roboto, sans-serif', fontWeight: 500, lineHeight: '20px' }}>{userName}</div>
-            <div style={{ color: '#78716C', fontSize: 10, fontFamily: 'Be Vietnam Pro, sans-serif', lineHeight: '16px' }}>Chủ quán</div>
-          </div>
-        </div>
-      </div>
+// ─── Component Section Layout ───────────────────────────────────────────────────
+const Section = ({ title, desc, children }: { title: string, desc: string, children: React.ReactNode }) => (
+  <div className="flex flex-col xl:flex-row gap-10 lg:gap-16 items-start w-full">
+    <div className="w-full xl:w-[280px] shrink-0 pt-2">
+      <h2 className="text-[20px] font-bold text-[#14422D] font-['Manrope'] mb-3">{title}</h2>
+      <p className="text-[14px] text-[#78716C] leading-relaxed font-['Be_Vietnam_Pro']">{desc}</p>
     </div>
-  )
-}
-
-// ─── Section wrapper ────────────────────────────────────────────────────────────
-function Section({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
-  return (
-    <div style={{ display: 'flex', gap: 48, alignItems: 'flex-start' }}>
-      {/* Left label */}
-      <div style={{ width: 240, flexShrink: 0, paddingTop: 4 }}>
-        <div style={{ color: '#14422D', fontSize: 24, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '32px', marginBottom: 12 }}>{title}</div>
-        <div style={{ color: '#525252', fontSize: 14, fontFamily: 'Noto Sans, sans-serif', fontWeight: 400, lineHeight: '24px' }}>{description}</div>
-      </div>
-      {/* Right content */}
-      <div style={{ flex: 1 }}>{children}</div>
-    </div>
-  )
-}
-
-const labelStyle: React.CSSProperties = {
-  color: '#92400E', fontSize: 12, fontFamily: 'Noto Sans, sans-serif',
-  fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', lineHeight: '16px',
-}
-
-const inputBase: React.CSSProperties = {
-  width: '100%', boxSizing: 'border-box', background: 'white',
-  border: 'none', outline: '1px solid rgba(120,113,108,0.3)', outlineOffset: -1,
-  borderRadius: 8, padding: '12px 16px',
-  color: '#1C1917', fontSize: 16, fontFamily: 'Noto Sans, sans-serif',
-  fontWeight: 400, lineHeight: '24px',
-}
-  )
-}
-
-// ─── Section wrapper ────────────────────────────────────────────────────────────
-function Section({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
-  return (
-    <div style={{ display: 'flex', gap: 48, alignItems: 'flex-start' }}>
-      {/* Left label */}
-      <div style={{ width: 240, flexShrink: 0, paddingTop: 4 }}>
-        <div style={{ color: '#14422D', fontSize: 24, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '32px', marginBottom: 12 }}>{title}</div>
-        <div style={{ color: '#525252', fontSize: 14, fontFamily: 'Noto Sans, sans-serif', fontWeight: 400, lineHeight: '24px' }}>{description}</div>
-      </div>
-      {/* Right content */}
-      <div style={{ flex: 1 }}>{children}</div>
-    </div>
-  )
-}
-
-const labelStyle: React.CSSProperties = {
-  color: '#92400E', fontSize: 12, fontFamily: 'Noto Sans, sans-serif',
-  fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', lineHeight: '16px',
-}
-
-const inputBase: React.CSSProperties = {
-  width: '100%', boxSizing: 'border-box', background: 'white',
-  border: 'none', outline: '1px solid rgba(120,113,108,0.3)', outlineOffset: -1,
-  borderRadius: 8, padding: '12px 16px',
-  color: '#1C1917', fontSize: 16, fontFamily: 'Noto Sans, sans-serif',
-  fontWeight: 400, lineHeight: '24px',
-}
+    <div className="flex-1 w-full max-w-[800px]">{children}</div>
+  </div>
+)
 
 // ─── Main page ──────────────────────────────────────────────────────────────────
 export default function EditCafePage() {
@@ -233,20 +56,12 @@ export default function EditCafePage() {
   const cafeId = params.id as string
 
   const [form, setForm] = useState<CafeForm>({
-    name: '',
-    address: '',
-    description: '',
-    facilities: [],
-    images: [],
-    isClosedOnHolidays: false,
-    operatingHours: [],
-    name: '',
-    address: '',
-    description: '',
-    facilities: [],
-    images: [],
-    isClosedOnHolidays: false,
-    operatingHours: [],
+    name: '', address: '', description: '', facilities: [], images: [], isClosedOnHolidays: false,
+    operatingHours: [
+      { label: 'Thứ Hai - Thứ Sáu', days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'], openTime: '08:00', closeTime: '22:00', isDayOff: false },
+      { label: 'Thứ Bảy', days: ['saturday'], openTime: '08:00', closeTime: '22:00', isDayOff: false },
+      { label: 'Chủ Nhật', days: ['sunday'], openTime: '08:00', closeTime: '22:00', isDayOff: false },
+    ]
   })
 
   const [loading, setLoading] = useState(true)
@@ -267,16 +82,7 @@ export default function EditCafePage() {
       try {
         const userStr = localStorage.getItem('user')
         const user = userStr ? JSON.parse(userStr) : null
-        
-        if (!user) {
-          router.push('/login')
-          return
-        }
-        
-        if (!user) {
-          router.push('/login')
-          return
-        }
+        if (!user) return router.push('/login')
 
         const res = await fetch(`http://localhost:3001/cafes/${cafeId}`)
         const data = await res.json()
@@ -291,34 +97,20 @@ export default function EditCafePage() {
         const sun = getHoursForDay('sunday')
 
         setForm({
-          name: data.name,
-          address: data.address,
-          name: data.name,
-          address: data.address,
+          name: data.name || '',
+          address: data.address || '',
           description: data.description || '',
           facilities: data.facilities || [],
           images: data.images || [],
           isClosedOnHolidays: data.isClosedOnHolidays || false,
-          operatingHours: data.operatingHours.map((oh: any) => ({
-            label: oh.dayOfWeek === 'weekday' ? 'Thứ Hai - Thứ Sáu' : oh.dayOfWeek === 'saturday' ? 'Thứ Bảy' : 'Chủ Nhật',
-            days: [oh.dayOfWeek],
-            openTime: oh.openTime || '08:00',
-            closeTime: oh.closeTime || '22:00',
-            isDayOff: oh.isDayOff
-          }))
-          operatingHours: data.operatingHours.map((oh: any) => ({
-            label: oh.dayOfWeek === 'weekday' ? 'Thứ Hai - Thứ Sáu' : oh.dayOfWeek === 'saturday' ? 'Thứ Bảy' : 'Chủ Nhật',
-            days: [oh.dayOfWeek],
-            openTime: oh.openTime || '08:00',
-            closeTime: oh.closeTime || '22:00',
-            isDayOff: oh.isDayOff
-          }))
+          operatingHours: [
+            { label: 'Thứ Hai - Thứ Sáu', days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'], openTime: mon.openTime, closeTime: mon.closeTime, isDayOff: mon.isDayOff },
+            { label: 'Thứ Bảy', days: ['saturday'], openTime: sat.openTime, closeTime: sat.closeTime, isDayOff: sat.isDayOff },
+            { label: 'Chủ Nhật', days: ['sunday'], openTime: sun.openTime, closeTime: sun.closeTime, isDayOff: sun.isDayOff },
+          ]
         })
       } catch (err) {
-        console.error(err)
-        setSaveError('Không thể tải thông tin quán.')
-        console.error(err)
-        setSaveError('Không thể tải thông tin quán.')
+        alert('Không thể tải thông tin quán.')
       } finally {
         setLoading(false)
       }
@@ -326,56 +118,18 @@ export default function EditCafePage() {
     fetchCafe()
   }, [cafeId, router])
 
-  // Toggle facility
-  function toggleFacility(key: Facility) {
-    setForm(f => ({
-      ...f,
-      facilities: f.facilities.includes(key)
-        ? f.facilities.filter(k => k !== key)
-        : [...f.facilities, key],
-    }))
-  }
-  // Toggle facility
-  function toggleFacility(key: Facility) {
-    setForm(f => ({
-      ...f,
-      facilities: f.facilities.includes(key)
-        ? f.facilities.filter(k => k !== key)
-        : [...f.facilities, key],
-    }))
-  }
+  // Handlers
+  const toggleFacility = (key: Facility) => setForm(f => ({
+    ...f, facilities: f.facilities.includes(key) ? f.facilities.filter(k => k !== key) : [...f.facilities, key],
+  }))
 
-  // Toggle day off
-  function toggleDayOff(idx: number) {
-    setForm(f => {
-      const hours = [...f.operatingHours]
-      hours[idx] = { ...hours[idx], isDayOff: !hours[idx].isDayOff }
-      return { ...f, operatingHours: hours }
-    })
-  }
-  // Toggle day off
-  function toggleDayOff(idx: number) {
-    setForm(f => {
-      const hours = [...f.operatingHours]
-      hours[idx] = { ...hours[idx], isDayOff: !hours[idx].isDayOff }
-      return { ...f, operatingHours: hours }
-    })
-  }
+  const toggleDayOff = (idx: number) => setForm(f => {
+    const hours = [...f.operatingHours]; hours[idx] = { ...hours[idx], isDayOff: !hours[idx].isDayOff }; return { ...f, operatingHours: hours }
+  })
 
-  function setTime(idx: number, field: 'openTime' | 'closeTime', val: string) {
-    setForm(f => {
-      const hours = [...f.operatingHours]
-      hours[idx] = { ...hours[idx], [field]: val }
-      return { ...f, operatingHours: hours }
-    })
-  }
-  function setTime(idx: number, field: 'openTime' | 'closeTime', val: string) {
-    setForm(f => {
-      const hours = [...f.operatingHours]
-      hours[idx] = { ...hours[idx], [field]: val }
-      return { ...f, operatingHours: hours }
-    })
-  }
+  const setTime = (idx: number, field: 'openTime' | 'closeTime', val: string) => setForm(f => {
+    const hours = [...f.operatingHours]; hours[idx] = { ...hours[idx], [field]: val }; return { ...f, operatingHours: hours }
+  })
 
   const handleAddNewPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -483,10 +237,8 @@ export default function EditCafePage() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#FAFAF5' }}>
-        <p style={{ color: '#14422D', fontSize: 18, fontWeight: 500 }}>Đang tải thông tin quán...</p>
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#FAFAF5' }}>
-        <p style={{ color: '#14422D', fontSize: 18, fontWeight: 500 }}>Đang tải thông tin quán...</p>
+      <div className="flex h-screen items-center justify-center bg-[#FAFAF5]">
+        <Loader2 className="w-10 h-10 animate-spin text-[#14422D]" />
       </div>
     )
   }
@@ -720,14 +472,11 @@ export default function EditCafePage() {
             onClick={handleSave} disabled={saving}
             className="flex items-center justify-center gap-2 px-10 py-3 rounded-full font-bold text-white bg-[#14422D] hover:bg-[#0d2e1f] transition-all disabled:opacity-70 disabled:cursor-not-allowed text-[15px] min-w-[180px]"
           >
-            {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
-            {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
+            {saving ? <><Loader2 size={18} className="animate-spin" /> Đang lưu...</> : 'Lưu thay đổi'}
           </button>
         </div>
 
-      </div>
-      </div>
+      </main>
     </div>
   )
 }
-
