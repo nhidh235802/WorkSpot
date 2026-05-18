@@ -75,7 +75,7 @@ function RealtimeBadge({ status, className = '' }: { status?: string; className?
   const rt = REALTIME_CONFIG[status ?? ''] ?? REALTIME_CONFIG['normal'];
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold ${className}`}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold whitespace-nowrap ${className}`}
       style={{ background: rt.bg, color: rt.text, border: `1px solid ${rt.dot}33` }}
     >
       <span style={{ width: 6, height: 6, borderRadius: '50%', background: rt.dot, display: 'inline-block', flexShrink: 0 }} />
@@ -445,12 +445,11 @@ export default function CafesSearchPage() {
                     </div>
                     <div className="flex-1">
                       <h2 className="text-[#14422d] font-bold text-xl leading-tight">{cafe.name}</h2>
-                      <div className="flex items-center gap-1.5 mt-1">
+                      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                         <Star size={14} fill="#904C18" color="#904C18" />
                         <span className="text-[#904C18] font-bold text-sm">{cafe.rating || '4.9'}</span>
                         <span className="text-[#717973] text-xs ml-1">(120+ レビュー)</span>
-                      </div>
-                      <RealtimeBadge status={cafe.realtimeStatus} className="mt-2" />
+                        <RealtimeBadge status={cafe.realtimeStatus} /></div>
                     </div>
                   </div>
 
