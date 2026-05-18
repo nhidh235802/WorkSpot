@@ -1,4 +1,4 @@
-import { FacilityType, RealtimeStatus } from '../entities/cafe.entity';
+import { CafeStatus, FacilityType, RealtimeStatus } from '../entities/cafe.entity';
 import { OperatingHourResponseDto } from './operating-hour.dto';
 import { UserRole } from '../../users/entities/user.entity';
 
@@ -41,6 +41,8 @@ export class CafeDetailResponseDto {
   images!: string[];
   facilities!: FacilityType[];
   realtimeStatus!: RealtimeStatus;
+  status!: CafeStatus;
+  pendingData!: any;
   owner!: OwnerDto | null;
   operatingHours!: OperatingHourResponseDto[];
   reviews!: ReviewDto[];

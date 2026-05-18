@@ -122,9 +122,19 @@ export default function CafeDetailPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalStartIndex, setModalStartIndex] = useState(0);
 
+  const [reviewModalImages, setReviewModalImages] = useState<string[]>([]);
+  const [reviewModalIndex, setReviewModalIndex] = useState(0);
+
   const openModal = (index: number) => {
     setModalStartIndex(index);
     setModalOpen(true);
+  };
+
+  const openReviewModal = (images: string[], index: number) => {
+    setReviewModalImages(images.map(img =>
+      img.startsWith('blob:') || img.startsWith('http') ? img : `${API_URL}${img}`
+    ));
+    setReviewModalIndex(index);
   };
 
   const fetchCafe = () => {
@@ -170,12 +180,19 @@ export default function CafeDetailPage() {
 
   return (
     <>
-      {!modalOpen && <Navbar />}
+      {!modalOpen && reviewModalImages.length === 0 && <Navbar />}
       {modalOpen && images.length > 0 && (
         <PhotoGalleryModal
           images={images}
           initialIndex={modalStartIndex}
           onClose={() => setModalOpen(false)}
+        />
+      )}
+      {reviewModalImages.length > 0 && (
+        <PhotoGalleryModal
+          images={reviewModalImages}
+          initialIndex={reviewModalIndex}
+          onClose={() => setReviewModalImages([])}
         />
       )}
 
@@ -519,13 +536,23 @@ export default function CafeDetailPage() {
 
                   {/* Review images */}
                   {review.images?.length > 0 && (
-                    <div style={{ display: 'flex', gap: 12 }}>
+                    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                       {review.images.slice(0, 4).map((img: string, i: number) => (
-                        <img key={i} src={toAbsoluteUrl(img)!} alt="" style={{
-                          width: 148, height: 148,
-                          borderRadius: 12, objectFit: 'cover',
-                          border: '1px solid rgba(192,201,193,0.2)',
-                        }} />
+                        <img
+                          key={i}
+                          src={toAbsoluteUrl(img)!}
+                          alt=""
+                          onClick={() => openReviewModal(review.images, i)}
+                          style={{
+                            width: 148, height: 148,
+                            borderRadius: 12, objectFit: 'cover',
+                            border: '1px solid rgba(192,201,193,0.2)',
+                            cursor: 'pointer',
+                            transition: 'opacity 0.15s',
+                          }}
+                          onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
+                          onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+                        />
                       ))}
                     </div>
                   )}
