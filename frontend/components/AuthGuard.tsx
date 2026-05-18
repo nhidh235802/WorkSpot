@@ -10,64 +10,63 @@ interface AuthGuardProps {
   requireAuth?: boolean
 }
 
+function syncCheck(
+  pathname: string,
+  allowedRoles?: string[],
+  forbiddenRoles?: string[],
+  requireAuth = true,
+): boolean {
+  if (typeof window === 'undefined') return false
+  const user = (() => {
+    try { return JSON.parse(localStorage.getItem('user') || 'null') } catch { return null }
+  })()
+
+  if (!user) return !requireAuth
+
+  const role: string = user.role
+
+  // Profile is accessible to customer and owner
+  if (pathname === '/profile') return role === 'customer' || role === 'owner'
+
+  const isAllowed  = allowedRoles  ? allowedRoles.includes(role)  : true
+  const isForbidden = forbiddenRoles ? forbiddenRoles.includes(role) : false
+  return isAllowed && !isForbidden
+}
+
 export default function AuthGuard({
   children,
   allowedRoles,
   forbiddenRoles,
-  requireAuth = true
+  requireAuth = true,
 }: AuthGuardProps) {
-  const router = useRouter()
+  const router   = useRouter()
   const pathname = usePathname()
-  const [isAuthorized, setIsAuthorized] = useState(false)
+
+  // Sync init: on client navigations this resolves immediately — no flash
+  const [isAuthorized, setIsAuthorized] = useState(() =>
+    syncCheck(pathname, allowedRoles, forbiddenRoles, requireAuth)
+  )
 
   useEffect(() => {
-    const userStr = localStorage.getItem('user')
-    const user = userStr ? JSON.parse(userStr) : null
-
-    // Guest check
-    if (!user) {
-      if (requireAuth) {
-        router.push('/login')
-      } else {
-        setIsAuthorized(true)
-      }
+    const ok = syncCheck(pathname, allowedRoles, forbiddenRoles, requireAuth)
+    if (ok) {
+      setIsAuthorized(true)
       return
     }
-
-    // Role check
-    const role = user.role
-
-    // Profile exception logic: customer and owner allowed, admin and guest NOT
-    if (pathname === '/profile') {
-      if (role === 'customer' || role === 'owner') {
-        setIsAuthorized(true)
-      } else {
-        router.push(role === 'admin' ? '/admin/dashboard' : '/login')
-      }
-      return
-    }
-
-    const isAllowed = allowedRoles ? allowedRoles.includes(role) : true
-    const isForbidden = forbiddenRoles ? forbiddenRoles.includes(role) : false
-
-    if (!isAllowed || isForbidden) {
-      if (role === 'admin') {
-        router.push('/admin/dashboard')
-      } else if (role === 'owner') {
-        router.push('/dashboard')
-      } else if (role === 'customer') {
-        router.push('/')
-      } else {
-        router.push('/login')
-      }
-      return
-    }
-
-    setIsAuthorized(true)
+    // Not authorized → redirect
+    const user = (() => {
+      try { return JSON.parse(localStorage.getItem('user') || 'null') } catch { return null }
+    })()
+    const role = user?.role
+    if (!user)              router.push('/login')
+    else if (role === 'admin')    router.push('/admin/dashboard')
+    else if (role === 'owner')    router.push('/dashboard')
+    else if (role === 'customer') router.push('/')
+    else                          router.push('/login')
   }, [router, pathname, allowedRoles, forbiddenRoles, requireAuth])
 
   if (!isAuthorized) {
-    return null // or a loading spinner
+    return <div style={{ minHeight: '100vh', background: '#FAFAF5' }} />
   }
 
   return <>{children}</>

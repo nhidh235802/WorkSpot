@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import OwnerSidebar from '@/components/OwnerSidebar'
 import CancelConfirmDialog from '@/components/CancelCreateDialog'
 import { ArrowLeft, MapPin, ImagePlus, X, Check, Loader2, Plus } from 'lucide-react'
 
@@ -247,7 +246,7 @@ export default function EditCafePage() {
   }
 
   return (
-    <div className="flex h-screen bg-[#FAFAF5] w-full min-w-[1280px] overflow-hidden relative">
+    <>
       {/* Toast */}
       {toast && (
         <div style={{
@@ -262,9 +261,7 @@ export default function EditCafePage() {
         </div>
       )}
       <CancelConfirmDialog isOpen={showCancelDialog} onClose={() => setShowCancelDialog(false)} title="Hủy chỉnh sửa?" />
-      <OwnerSidebar />
-
-      <main className="flex-1 h-full overflow-y-auto px-12 py-10 font-['Be_Vietnam_Pro'] z-10">
+      <main className="h-full overflow-y-auto px-12 py-10 font-['Be_Vietnam_Pro'] z-10" style={{ height: '100%' }}>
 
         {/* Nút Quay lại */}
         <button
@@ -480,6 +477,6 @@ export default function EditCafePage() {
         </div>
 
       </main>
-    </div>
+    </>
   )
 }

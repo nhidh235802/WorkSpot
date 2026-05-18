@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import OwnerSidebar from '@/components/OwnerSidebar';
 import { ListFilter, Pen, ChevronDown, Star, Store, Plus, Loader2, CheckCircle2, XCircle, X, AlertCircle } from 'lucide-react';
 
 // Cấu hình Trạng thái Quán (Duyệt)
@@ -153,8 +152,7 @@ export default function DashboardOwnerPage() {
   });
 
   return (
-    <div className="flex h-screen bg-[#FAFAF5] w-full min-w-[1280px] overflow-hidden relative">
-      
+    <>
       {/* TOAST */}
       {toast && (
         <div className={`fixed bottom-10 right-10 z-[100] flex items-center gap-3 px-6 py-4 rounded-xl shadow-lg border font-['Be_Vietnam_Pro'] animate-in slide-in-from-bottom-5 fade-in duration-300 ${
@@ -199,9 +197,7 @@ export default function DashboardOwnerPage() {
         </div>
       )}
 
-      <OwnerSidebar />
-
-      <main className="flex-1 h-full overflow-y-auto px-12 py-10 font-['Be_Vietnam_Pro'] z-10">
+      <main className="h-full overflow-y-auto px-12 py-10 font-['Be_Vietnam_Pro'] z-10" style={{ height: '100%' }}>
         <div className="flex justify-between items-start mb-10">
           <div>
             <h2 className="text-[40px] font-bold text-[#14422D] font-['Manrope'] mb-2 leading-tight">
@@ -424,6 +420,6 @@ export default function DashboardOwnerPage() {
 
         </div>
       </main>
-    </div>
+    </>
   );
 }

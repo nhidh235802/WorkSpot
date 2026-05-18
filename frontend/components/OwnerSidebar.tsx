@@ -5,6 +5,20 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { LayoutGrid, FileSignature, User, LogOut } from 'lucide-react';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+function toAbsUrl(path: string | null | undefined): string | null {
+  if (!path) return null;
+  if (path.startsWith('http')) return path;
+  return `${API_URL}${path}`;
+}
+
+function getInitials(name: string) {
+  const parts = name.trim().split(/\s+/);
+  const last = parts[parts.length - 1];
+  return last ? last.slice(0, 2) : name.slice(0, 2);
+}
+
 const navigationItems = [
   // Sửa lại path cho khớp với cấu trúc thư mục thực tế
   { id: 'overview', label: 'Tổng quan', path: '/dashboard', icon: LayoutGrid },
@@ -78,12 +92,20 @@ export default function OwnerSidebar() {
         
         <div className="flex items-center justify-between px-2 font-['Be_Vietnam_Pro']">
           <div className="flex items-center gap-3 overflow-hidden">
-            <img
-              // Nếu có avatar thì dùng, không thì tự tạo avatar từ tên
-              src={ownerData?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(ownerData?.fullName || 'User')}&background=1A1C19&color=fff&size=40`}
-              alt="Avatar"
-              className="w-10 h-10 rounded-full object-cover shrink-0 border border-[#E7E5E4]"
-            />
+            {toAbsUrl(ownerData?.avatar) ? (
+              <img
+                src={toAbsUrl(ownerData?.avatar)!}
+                alt="Avatar"
+                className="w-10 h-10 rounded-full object-cover shrink-0 border border-[#E7E5E4]"
+              />
+            ) : (
+              <div
+                className="w-10 h-10 rounded-full shrink-0 flex items-center justify-center text-sm font-bold"
+                style={{ background: 'rgba(20,66,45,0.10)', color: '#14422D' }}
+              >
+                {ownerData?.fullName ? getInitials(ownerData.fullName) : 'U'}
+              </div>
+            )}
             <div className="flex flex-col overflow-hidden">
               <span className="text-[#1A1C19] text-[14px] font-bold truncate">
                 {ownerData?.fullName || 'Đang tải...'}

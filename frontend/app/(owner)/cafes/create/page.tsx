@@ -3,7 +3,6 @@
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import React from 'react';
-import Sidebar from '@/components/OwnerSidebar';
 import CancelConfirmDialog from '@/components/CancelCreateDialog';
 import {
   Info,
@@ -384,7 +383,7 @@ export default function CreateCafeForm() {
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div style={{ display: 'flex', height: '100vh', background: '#FAFAF5', width: '100%', minWidth: 1280, overflow: 'hidden', position: 'relative' }}>
+    <>
       {/* Toast */}
       {toast && (
         <div style={{
@@ -398,7 +397,6 @@ export default function CreateCafeForm() {
           {toast}
         </div>
       )}
-      <Sidebar />
       <div
         style={{
           flex: 1,
@@ -921,7 +919,7 @@ export default function CreateCafeForm() {
         isOpen={showCancelDialog}
         onClose={() => setShowCancelDialog(false)}
       />
-    </div>
+    </>
   );
 }
 
