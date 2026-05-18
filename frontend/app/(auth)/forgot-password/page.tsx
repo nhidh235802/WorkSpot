@@ -15,7 +15,11 @@ type FormData = z.infer<typeof schema>
 
 const errorBanner = (msg: string) => (
   <div style={{ width: '100%', padding: 12, background: '#FFDAD6', borderRadius: 8, outline: '1px rgba(186,26,26,0.10) solid', outlineOffset: '-1px', display: 'flex', alignItems: 'center', gap: 8 }}>
-    <div style={{ width: 15, height: 15, flexShrink: 0, background: '#BA1A1A', borderRadius: 9999 }} />
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+      <circle cx="8" cy="8" r="8" fill="#BA1A1A" />
+      <path d="M8 4.5V8.5" stroke="white" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="8" cy="11" r="0.8" fill="white" />
+    </svg>
     <div style={{ color: '#BA1A1A', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '20px' }}>
       {msg}
     </div>
@@ -26,8 +30,13 @@ export default function ForgotPasswordPage() {
   const [serverError, setServerError] = useState('')
   const [sent, setSent] = useState(false)
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } =
-    useForm<FormData>({ resolver: zodResolver(schema) })
+  const { register, handleSubmit, formState: { errors, isSubmitting }, clearErrors } =
+    useForm<FormData>({ resolver: zodResolver(schema), mode: 'onSubmit', reValidateMode: 'onSubmit' })
+
+  const dismissErrors = () => {
+    setServerError('')
+    clearErrors()
+  }
 
   const onSubmit = async (data: FormData) => {
     setServerError('')
@@ -44,7 +53,7 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div style={{ position: 'relative', minHeight: '100vh', background: '#FAFAF5', display: 'flex' }}>
+    <div style={{ position: 'relative', minHeight: '100vh', background: '#FAFAF5', display: 'flex' }} onClick={dismissErrors}>
 
       {/* ══ 左パネル ══ */}
       <div
@@ -102,7 +111,7 @@ export default function ForgotPasswordPage() {
           </div>
 
           {/* フォーム */}
-          <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <form onSubmit={handleSubmit(onSubmit)} onClick={e => e.stopPropagation()} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
 
             {/* メールアドレス */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -110,7 +119,7 @@ export default function ForgotPasswordPage() {
                 メールアドレス
               </label>
               <input
-                {...register('email')}
+                {...register('email', { onChange: () => { setServerError(''); clearErrors('email'); } })}
                 type="email"
                 placeholder="name@example.com"
                 style={{
@@ -146,7 +155,7 @@ export default function ForgotPasswordPage() {
               }}
             >
               {isSubmitting ? '送信中...' : (
-                <>パスワード再設定メールを送信<ArrowLeft size={14} style={{ transform: 'rotate(180deg)' }} /></>
+                <>パスワード再設定メールを送信<Mail size={18} /></>
               )}
             </button>
           </form>
