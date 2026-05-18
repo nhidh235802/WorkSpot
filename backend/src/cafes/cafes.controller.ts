@@ -36,6 +36,9 @@ import { SearchCafeDto } from './dto/search-cafe.dto';
 import { RealtimeStatus } from './entities/cafe.entity';
 import { CreateReviewDto } from '../reviews/dto/create-review.dto';
 
+import { AdminQueryCafeDto } from './dto/admin-query-cafe.dto';
+import { RejectCafeDto } from './dto/reject-cafe.dto';
+
 @Controller('cafes')
 export class CafesController {
   constructor(private readonly cafesService: CafesService) {}
@@ -47,6 +50,55 @@ export class CafesController {
     @Query('lng', ParseFloatPipe) lng: number,
   ) {
     return this.cafesService.getRecommended(lat, lng);
+  }
+
+  // GET /cafes/admin?search=&status=pending&page=1&limit=10
+  @Get('admin')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  findAllForAdmin(@Query() query: AdminQueryCafeDto) {
+    return this.cafesService.findAllForAdmin(query);
+  }
+
+  // GET /cafes/admin/pending  → trang 情報の承認
+  @Get('admin/pending')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  findPending() {
+    // Dùng lại findAllForAdmin với filter status=pending
+    return this.cafesService.findAllForAdmin({
+      status: CafeStatus.PENDING,
+      limit: 100,
+    });
+  }
+
+  // PATCH /cafes/:id/approve  → gọi patchStatus đã có
+  @Patch(':id/approve')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  approve(@Param('id', ParseUUIDPipe) id: string) {
+    return this.cafesService.patchStatus(id, CafeStatus.APPROVED);
+  }
+
+  // PATCH /cafes/:id/reject   → gọi patchStatus đã có
+  // Body: { "rejectionReason": "Thông tin không đầy đủ" }
+  @Patch(':id/reject')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  reject(@Param('id', ParseUUIDPipe) id: string, @Body() dto: RejectCafeDto) {
+    return this.cafesService.patchStatus(
+      id,
+      CafeStatus.REJECTED,
+      dto.rejectionReason,
+    );
+  }
+
+  // PATCH /cafes/:id/visibility  → toggle APPROVED ↔ HIDDEN
+  @Patch(':id/visibility')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  toggleVisibility(@Param('id', ParseUUIDPipe) id: string) {
+    return this.cafesService.toggleVisibility(id);
   }
 
   // API Route: POST http://localhost:3001/cafes
@@ -66,7 +118,10 @@ export class CafesController {
       }),
       fileFilter: (req, file, cb) => {
         if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.mimetype)) {
-          return cb(new BadRequestException('Chỉ chấp nhận ảnh JPEG hoặc PNG.'), false);
+          return cb(
+            new BadRequestException('Chỉ chấp nhận ảnh JPEG hoặc PNG.'),
+            false,
+          );
         }
         cb(null, true);
       },
@@ -95,15 +150,18 @@ export class CafesController {
 
     // 4. Kiểm tra số lượng ảnh bắt buộc (1-5)
     if (!files || files.length === 0) {
-      throw new BadRequestException('Vui lòng tải lên ít nhất 1 hình ảnh của quán.');
+      throw new BadRequestException(
+        'Vui lòng tải lên ít nhất 1 hình ảnh của quán.',
+      );
     }
     if (files.length > 5) {
       throw new BadRequestException('Chỉ được tải lên tối đa 5 ảnh.');
     }
 
     // 5. Mọi thứ đã an toàn, gán link ảnh và gọi Service
-    createCafeDto.images =
-      files.map((f) => `/uploads/cafe-images/${f.filename}`);
+    createCafeDto.images = files.map(
+      (f) => `/uploads/cafe-images/${f.filename}`,
+    );
 
     return this.cafesService.create(createCafeDto, req.user.id);
   }
@@ -196,7 +254,10 @@ export class CafesController {
       }),
       fileFilter: (req, file, cb) => {
         if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.mimetype)) {
-          return cb(new BadRequestException('Chỉ chấp nhận ảnh JPEG hoặc PNG.'), false);
+          return cb(
+            new BadRequestException('Chỉ chấp nhận ảnh JPEG hoặc PNG.'),
+            false,
+          );
         }
         cb(null, true);
       },
@@ -216,12 +277,16 @@ export class CafesController {
     // Validate
     const errors = await validate(updateCafeDto);
     if (errors.length > 0) {
-      throw new BadRequestException('Dữ liệu không hợp lệ. Vui lòng kiểm tra lại!');
+      throw new BadRequestException(
+        'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại!',
+      );
     }
 
     // Gộp ảnh mới (nếu có) vào danh sách ảnh cũ được giữ lại
     if (newFiles && newFiles.length > 0) {
-      const newImageUrls = newFiles.map((f) => `/uploads/cafe-images/${f.filename}`);
+      const newImageUrls = newFiles.map(
+        (f) => `/uploads/cafe-images/${f.filename}`,
+      );
       // existingImages là mảng URL cũ mà frontend muốn giữ lại
       const existingImages: string[] = updateCafeDto.images || [];
       updateCafeDto.images = [...existingImages, ...newImageUrls];
