@@ -244,7 +244,7 @@ export default function EditCafePage() {
   }
 
   return (
-    <div className="flex h-screen bg-[#FAFAF5] font-['Be_Vietnam_Pro'] overflow-hidden">
+    <div className="flex h-screen bg-[#FAFAF5] w-full min-w-[1280px] overflow-hidden relative">
       {/* Toast */}
       {toast && (
         <div style={{
@@ -261,7 +261,7 @@ export default function EditCafePage() {
       <CancelConfirmDialog isOpen={showCancelDialog} onClose={() => setShowCancelDialog(false)} title="Hủy chỉnh sửa?" />
       <OwnerSidebar />
 
-      <main className="flex-1 overflow-y-auto px-10 py-12 lg:px-16 w-full">
+      <main className="flex-1 h-full overflow-y-auto px-12 py-10 font-['Be_Vietnam_Pro'] z-10">
 
         {/* Nút Quay lại */}
         <button
@@ -273,11 +273,11 @@ export default function EditCafePage() {
         </button>
 
         {/* Tiêu đề trang */}
-        <div className="mb-16">
-          <h1 className="text-[36px] font-bold text-[#14422D] font-['Manrope'] mb-2">
+        <div className="mb-10">
+          <h1 className="text-[40px] font-bold text-[#14422D] font-['Manrope'] mb-2 leading-tight">
             Chỉnh sửa thông tin của quán
           </h1>
-          <p className="text-[#57534E] text-[16px]">
+          <p className="text-[#57534E] text-base">
             Cập nhật thông tin chi tiết của quán để khách hàng có thông tin chính xác nhất.
           </p>
         </div>

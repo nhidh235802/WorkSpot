@@ -393,175 +393,193 @@ export default function ProfilePage() {
   )
 
   const profileContent = (
-      <div style={{ paddingLeft: userRole === 'owner' ? 40 : 65, paddingRight: 65 }}>
-        <div style={{ maxWidth: 1152, margin: '0 auto', paddingTop: 64, paddingLeft: 24, paddingRight: 24, paddingBottom: 80, display: 'flex', flexDirection: 'column', gap: 64 }}>
+    <div style={userRole === 'owner' ? { width: '100%' } : { paddingLeft: 65, paddingRight: 65 }}>
+      <div style={userRole === 'owner'
+        ? { maxWidth: 1152, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 40 }
+        : { maxWidth: 1152, margin: '0 auto', paddingTop: 64, paddingLeft: 24, paddingRight: 24, paddingBottom: 80, display: 'flex', flexDirection: 'column', gap: 64 }
+      }>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <h1 style={{ margin: 0, color: '#14422D', fontSize: 48, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '48px' }}>{roleStrings.pageTitle}</h1>
-            <p style={{ margin: 0, maxWidth: 512, color: '#414943', fontSize: 16, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 400, lineHeight: '24px' }}>
-              {roleStrings.pageSubtitle}
-            </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <h1 style={{ margin: 0, color: '#14422D', fontSize: 40, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '48px' }}>{roleStrings.pageTitle}</h1>
+          <p style={{ margin: 0, maxWidth: 512, color: '#414943', fontSize: 16, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 400, lineHeight: '24px' }}>
+            {roleStrings.pageSubtitle}
+          </p>
+        </div>
+
+        <div style={{ display: 'flex', gap: 32, alignItems: 'flex-start' }}>
+
+          {/* ── Left: Avatar card ── */}
+          <div style={{ width: 304, flexShrink: 0, background: 'white', borderRadius: 12, paddingTop: 32, paddingBottom: 40, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+            <div>
+              <div style={{ position: 'relative' }}>
+                {profile?.avatar ? (
+                  <img
+                    src={profile.avatar.startsWith('blob:') || profile.avatar.startsWith('http') ? profile.avatar : `${API}${profile.avatar}`}
+                    alt="avatar"
+                    style={{ width: 128, height: 128, borderRadius: '50%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <div style={{ width: 128, height: 128, borderRadius: '50%', background: '#E3E3DE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#14422D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+                    </svg>
+                  </div>
+                )}
+                <button
+                  onClick={handleAvatarClick}
+                  disabled={uploadingAvatar}
+                  style={{ position: 'absolute', bottom: 0, right: 0, width: 36, height: 36, borderRadius: '50%', background: '#14422D', border: 'none', cursor: uploadingAvatar ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: uploadingAvatar ? 0.6 : 1 }}
+                >
+                  {uploadingAvatar ? (
+                    <div style={{ width: 16, height: 16, border: '2px solid white', borderTop: '2px solid transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                      <path d="M12 15.2a3.2 3.2 0 1 1 0-6.4 3.2 3.2 0 0 1 0 6.4z" />
+                      <path d="M9 2L7.17 4H4C2.9 4 2 4.9 2 6v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L13 2H9zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10z" />
+                    </svg>
+                  )}
+                </button>
+                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
+              </div>
+              {avatarError && (
+                <div style={{ color: '#BA1A1A', fontSize: 12, marginTop: 8, textAlign: 'center', maxWidth: 200, fontFamily: 'Be Vietnam Pro, sans-serif' }}>{avatarError}</div>
+              )}
+              <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+            </div>
+
+            <div style={{ color: '#14422D', fontSize: 24, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '32px', textAlign: 'center', paddingLeft: 16, paddingRight: 16 }}>{profile?.fullName}</div>
+            <div style={{ color: '#78716C', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', lineHeight: '20px', textAlign: 'center', paddingLeft: 16, paddingRight: 16 }}>{memberSince}</div>
+            <div style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 6, paddingBottom: 6, background: '#FFDBC7', borderRadius: 9999 }}>
+              <span style={{ color: '#311300', fontSize: 12, fontFamily: 'Be Vietnam Pro, sans-serif', textTransform: 'uppercase', lineHeight: '16px', letterSpacing: 0.30 }}>
+                {ROLE_LABEL[profile?.role ?? 'customer']}
+              </span>
+            </div>
           </div>
 
-          <div style={{ display: 'flex', gap: 32, alignItems: 'flex-start' }}>
+          {/* ── Right: Forms ── */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 48 }}>
 
-            {/* ── Left: Avatar card ── */}
-            <div style={{ width: 304, flexShrink: 0, background: 'white', borderRadius: 12, paddingTop: 32, paddingBottom: 40, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-              <div>
-                <div style={{ position: 'relative' }}>
-                  {profile?.avatar ? (
-                    <img
-                      src={profile.avatar.startsWith('blob:') || profile.avatar.startsWith('http') ? profile.avatar : `${API}${profile.avatar}`}
-                      alt="avatar"
-                      style={{ width: 128, height: 128, borderRadius: '50%', objectFit: 'cover' }}
-                    />
-                  ) : (
-                    <div style={{ width: 128, height: 128, borderRadius: '50%', background: '#E3E3DE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#14422D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-                      </svg>
-                    </div>
-                  )}
-                  <button
-                    onClick={handleAvatarClick}
-                    disabled={uploadingAvatar}
-                    style={{ position: 'absolute', bottom: 0, right: 0, width: 36, height: 36, borderRadius: '50%', background: '#14422D', border: 'none', cursor: uploadingAvatar ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: uploadingAvatar ? 0.6 : 1 }}
-                  >
-                    {uploadingAvatar ? (
-                      <div style={{ width: 16, height: 16, border: '2px solid white', borderTop: '2px solid transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-                    ) : (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
-                        <path d="M12 15.2a3.2 3.2 0 1 1 0-6.4 3.2 3.2 0 0 1 0 6.4z" />
-                        <path d="M9 2L7.17 4H4C2.9 4 2 4.9 2 6v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L13 2H9zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10z" />
-                      </svg>
-                    )}
-                  </button>
-                  <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
-                </div>
-                {avatarError && (
-                  <div style={{ color: '#BA1A1A', fontSize: 12, marginTop: 8, textAlign: 'center', maxWidth: 200, fontFamily: 'Be Vietnam Pro, sans-serif' }}>{avatarError}</div>
-                )}
-                <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
-              </div>
+            {/* 基本情報 */}
+            <div style={{ background: 'white', borderRadius: 12, paddingTop: 40, paddingBottom: 56, paddingLeft: 40, paddingRight: 40, display: 'flex', flexDirection: 'column', gap: 40 }}>
+              <h2 style={{ margin: 0, color: '#14422D', fontSize: 24, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '32px' }}>{roleStrings.basicInfoTitle}</h2>
 
-              <div style={{ color: '#14422D', fontSize: 24, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '32px', textAlign: 'center', paddingLeft: 16, paddingRight: 16 }}>{profile?.fullName}</div>
-              <div style={{ color: '#78716C', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', lineHeight: '20px', textAlign: 'center', paddingLeft: 16, paddingRight: 16 }}>{memberSince}</div>
-              <div style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 6, paddingBottom: 6, background: '#FFDBC7', borderRadius: 9999 }}>
-                <span style={{ color: '#311300', fontSize: 12, fontFamily: 'Be Vietnam Pro, sans-serif', textTransform: 'uppercase', lineHeight: '16px', letterSpacing: 0.30 }}>
-                  {ROLE_LABEL[profile?.role ?? 'customer']}
-                </span>
-              </div>
-            </div>
-
-            {/* ── Right: Forms ── */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 48 }}>
-
-              {/* 基本情報 */}
-              <div style={{ background: 'white', borderRadius: 12, paddingTop: 40, paddingBottom: 56, paddingLeft: 40, paddingRight: 40, display: 'flex', flexDirection: 'column', gap: 40 }}>
-                <h2 style={{ margin: 0, color: '#14422D', fontSize: 24, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '32px' }}>{roleStrings.basicInfoTitle}</h2>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      <div style={fieldLabelStyle}>{roleStrings.fieldLabels.fullName}</div>
-                      {isEditing ? <input value={editForm.fullName} onChange={e => setEditForm(f => ({ ...f, fullName: e.target.value }))} style={inputStyle} /> : <div style={readOnlyBoxStyle}>{profile?.fullName}</div>}
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      <div style={fieldLabelStyle}>{roleStrings.fieldLabels.email}</div>
-                      {isEditing ? <input type="email" value={editForm.email} onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))} style={inputStyle} /> : <div style={readOnlyBoxStyle}>{profile?.email}</div>}
-                    </div>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      <div style={fieldLabelStyle}>{roleStrings.fieldLabels.phone}</div>
-                      {isEditing ? <input type="tel" value={editForm.phone} onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))} style={inputStyle} /> : <div style={readOnlyBoxStyle}>{profile?.phone || <span style={{ color: '#78716C' }}>—</span>}</div>}
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      <div style={fieldLabelStyle}>{roleStrings.fieldLabels.address}</div>
-                      {isEditing ? <input value={editForm.address} onChange={e => setEditForm(f => ({ ...f, address: e.target.value }))} style={inputStyle} /> : <div style={readOnlyBoxStyle}>{profile?.address || <span style={{ color: '#78716C' }}>—</span>}</div>}
-                    </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div style={fieldLabelStyle}>{roleStrings.fieldLabels.fullName}</div>
+                    {isEditing ? <input value={editForm.fullName} onChange={e => setEditForm(f => ({ ...f, fullName: e.target.value }))} style={inputStyle} /> : <div style={readOnlyBoxStyle}>{profile?.fullName}</div>}
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <div style={fieldLabelStyle}>{roleStrings.fieldLabels.bio}</div>
-                    {isEditing ? <textarea value={editForm.bio} onChange={e => setEditForm(f => ({ ...f, bio: e.target.value }))} rows={4} style={{ ...inputStyle, paddingTop: 16, paddingBottom: 40, resize: 'none' }} /> : <div style={{ ...readOnlyBoxStyle, paddingTop: 16, paddingBottom: 40 }}>{profile?.bio || <span style={{ color: '#78716C' }}>—</span>}</div>}
+                    <div style={fieldLabelStyle}>{roleStrings.fieldLabels.email}</div>
+                    {isEditing ? <input type="email" value={editForm.email} onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))} style={inputStyle} /> : <div style={readOnlyBoxStyle}>{profile?.email}</div>}
                   </div>
                 </div>
-
-                {profileError && (
-                  <div style={{ padding: 12, background: '#FFDAD6', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ width: 15, height: 15, flexShrink: 0, background: '#BA1A1A', borderRadius: 9999 }} />
-                    <div style={{ color: '#BA1A1A', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 500 }}>{profileError}</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div style={fieldLabelStyle}>{roleStrings.fieldLabels.phone}</div>
+                    {isEditing ? <input type="tel" value={editForm.phone} onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))} style={inputStyle} /> : <div style={readOnlyBoxStyle}>{profile?.phone || <span style={{ color: '#78716C' }}>—</span>}</div>}
                   </div>
-                )}
-
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
-                  {isEditing ? (
-                    <>
-                      <button onClick={handleSaveProfile} disabled={savingProfile} style={{ width: 120, padding: '8px 16px', background: '#14422D', borderRadius: 8, border: 'none', cursor: savingProfile ? 'not-allowed' : 'pointer', color: 'white', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 500, opacity: savingProfile ? 0.6 : 1 }}>
-                        {savingProfile ? roleStrings.saving : roleStrings.save}
-                      </button>
-                      <button onClick={handleCancelEdit} style={{ padding: '8px 16px', background: '#FDFFFE', borderRadius: 8, outline: '1px rgba(20,66,45,0.25) solid', outlineOffset: '-1px', border: 'none', cursor: 'pointer', color: '#14422D', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 500 }}>
-                        {roleStrings.cancel}
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button onClick={() => setIsEditing(true)} style={{ width: 120, padding: '8px 16px', background: '#14422D', borderRadius: 8, border: 'none', cursor: 'pointer', color: 'white', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 500 }}>
-                        {roleStrings.edit}
-                      </button>
-                      <button onClick={() => router.push(userRole === 'owner' ? '/dashboard' : '/')} style={{ padding: '8px 16px', background: '#FDFFFE', borderRadius: 8, outline: '1px rgba(20,66,45,0.25) solid', outlineOffset: '-1px', border: 'none', cursor: 'pointer', color: '#14422D', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 500 }}>
-                        {roleStrings.backHome}
-                      </button>
-                    </>
-                  )}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div style={fieldLabelStyle}>{roleStrings.fieldLabels.address}</div>
+                    {isEditing ? <input value={editForm.address} onChange={e => setEditForm(f => ({ ...f, address: e.target.value }))} style={inputStyle} /> : <div style={readOnlyBoxStyle}>{profile?.address || <span style={{ color: '#78716C' }}>—</span>}</div>}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={fieldLabelStyle}>{roleStrings.fieldLabels.bio}</div>
+                  {isEditing ? <textarea value={editForm.bio} onChange={e => setEditForm(f => ({ ...f, bio: e.target.value }))} rows={4} style={{ ...inputStyle, paddingTop: 16, paddingBottom: 40, resize: 'none' }} /> : <div style={{ ...readOnlyBoxStyle, paddingTop: 16, paddingBottom: 40 }}>{profile?.bio || <span style={{ color: '#78716C' }}>—</span>}</div>}
                 </div>
               </div>
 
-              {/* セキュリティ */}
-              <div style={{ background: 'white', borderRadius: 12, padding: 40, display: 'flex', flexDirection: 'column', gap: 40 }}>
-                <h2 style={{ margin: 0, color: '#14422D', fontSize: 24, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '32px' }}>{roleStrings.securityTitle}</h2>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
-                  <div style={{ display: 'flex', gap: 16 }}>
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      <div style={fieldLabelStyle}>{roleStrings.fieldLabels.currentPassword}</div>
-                      <div style={{ position: 'relative' }}>
-                        <input type={showCurrent ? 'text' : 'password'} value={currentPwd} onChange={e => setCurrentPwd(e.target.value)} placeholder="••••••••" style={{ ...inputStyle, paddingTop: 18, paddingBottom: 18, paddingRight: 48 }} />
-                        <button type="button" onClick={() => setShowCurrent(v => !v)} style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}>
-                          <EyeIcon open={showCurrent} />
-                        </button>
-                      </div>
-                    </div>
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      <div style={fieldLabelStyle}>{roleStrings.fieldLabels.newPassword}</div>
-                      <div style={{ position: 'relative' }}>
-                        <input type={showNew ? 'text' : 'password'} value={newPwd} onChange={e => setNewPwd(e.target.value)} placeholder="••••••••" style={{ ...inputStyle, paddingTop: 18, paddingBottom: 18, paddingRight: 48 }} />
-                        <button type="button" onClick={() => setShowNew(v => !v)} style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}>
-                          <EyeIcon open={showNew} />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ paddingTop: 24, borderTop: '1px #E8E8E3 solid', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
-                    {pwdError && <p style={{ margin: 0, fontSize: 14, color: '#BA1A1A', fontFamily: 'Be Vietnam Pro, sans-serif' }}>{pwdError}</p>}
-                    {pwdSuccess && <p style={{ margin: 0, fontSize: 14, color: '#14422D', fontFamily: 'Be Vietnam Pro, sans-serif' }}>{roleStrings.passwordSuccess}</p>}
-                    <button onClick={handleChangePassword} disabled={savingPwd} style={{ padding: '10px 24px', background: '#E8E8E3', borderRadius: 9999, border: 'none', cursor: savingPwd ? 'not-allowed' : 'pointer', color: '#1A1C19', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 600, opacity: savingPwd ? 0.6 : 1 }}>
-                      {savingPwd ? roleStrings.saving : roleStrings.save}
+              {profileError && (
+                <div style={{ padding: 12, background: '#FFDAD6', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ width: 15, height: 15, flexShrink: 0, background: '#BA1A1A', borderRadius: 9999 }} />
+                  <div style={{ color: '#BA1A1A', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 500 }}>{profileError}</div>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+                {isEditing ? (
+                  <>
+                    <button onClick={handleSaveProfile} disabled={savingProfile} style={{ width: 120, padding: '8px 16px', background: '#14422D', borderRadius: 8, border: 'none', cursor: savingProfile ? 'not-allowed' : 'pointer', color: 'white', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 500, opacity: savingProfile ? 0.6 : 1 }}>
+                      {savingProfile ? roleStrings.saving : roleStrings.save}
                     </button>
+                    <button onClick={handleCancelEdit} style={{ padding: '8px 16px', background: '#FDFFFE', borderRadius: 8, outline: '1px rgba(20,66,45,0.25) solid', outlineOffset: '-1px', border: 'none', cursor: 'pointer', color: '#14422D', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 500 }}>
+                      {roleStrings.cancel}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button onClick={() => setIsEditing(true)} style={{ width: 120, padding: '8px 16px', background: '#14422D', borderRadius: 8, border: 'none', cursor: 'pointer', color: 'white', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 500 }}>
+                      {roleStrings.edit}
+                    </button>
+                    <button onClick={() => router.push(userRole === 'owner' ? '/dashboard' : '/')} style={{ padding: '8px 16px', background: '#FDFFFE', borderRadius: 8, outline: '1px rgba(20,66,45,0.25) solid', outlineOffset: '-1px', border: 'none', cursor: 'pointer', color: '#14422D', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 500 }}>
+                      {roleStrings.backHome}
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* セキュリティ */}
+            <div style={{ background: 'white', borderRadius: 12, padding: 40, display: 'flex', flexDirection: 'column', gap: 40 }}>
+              <h2 style={{ margin: 0, color: '#14422D', fontSize: 24, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '32px' }}>{roleStrings.securityTitle}</h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+                <div style={{ display: 'flex', gap: 16 }}>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div style={fieldLabelStyle}>{roleStrings.fieldLabels.currentPassword}</div>
+                    <div style={{ position: 'relative' }}>
+                      <input type={showCurrent ? 'text' : 'password'} value={currentPwd} onChange={e => setCurrentPwd(e.target.value)} placeholder="••••••••" style={{ ...inputStyle, paddingTop: 18, paddingBottom: 18, paddingRight: 48 }} />
+                      <button type="button" onClick={() => setShowCurrent(v => !v)} style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}>
+                        <EyeIcon open={showCurrent} />
+                      </button>
+                    </div>
+                  </div>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div style={fieldLabelStyle}>{roleStrings.fieldLabels.newPassword}</div>
+                    <div style={{ position: 'relative' }}>
+                      <input type={showNew ? 'text' : 'password'} value={newPwd} onChange={e => setNewPwd(e.target.value)} placeholder="••••••••" style={{ ...inputStyle, paddingTop: 18, paddingBottom: 18, paddingRight: 48 }} />
+                      <button type="button" onClick={() => setShowNew(v => !v)} style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}>
+                        <EyeIcon open={showNew} />
+                      </button>
+                    </div>
                   </div>
                 </div>
+                <div style={{ paddingTop: 24, borderTop: '1px #E8E8E3 solid', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
+                  {pwdError && <p style={{ margin: 0, fontSize: 14, color: '#BA1A1A', fontFamily: 'Be Vietnam Pro, sans-serif' }}>{pwdError}</p>}
+                  {pwdSuccess && <p style={{ margin: 0, fontSize: 14, color: '#14422D', fontFamily: 'Be Vietnam Pro, sans-serif' }}>{roleStrings.passwordSuccess}</p>}
+                  <button onClick={handleChangePassword} disabled={savingPwd} style={{ padding: '10px 24px', background: '#E8E8E3', borderRadius: 9999, border: 'none', cursor: savingPwd ? 'not-allowed' : 'pointer', color: '#1A1C19', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 600, opacity: savingPwd ? 0.6 : 1 }}>
+                    {savingPwd ? roleStrings.saving : roleStrings.save}
+                  </button>
+                </div>
               </div>
-
             </div>
+
           </div>
         </div>
       </div>
+    </div>
   )
 
   if (userRole === 'owner') {
     return (
-      <div style={{ display: 'flex', minHeight: '100vh', background: '#FAFAF5' }}>
+      <div style={{ display: 'flex', height: '100vh', background: '#FAFAF5', width: '100%', minWidth: 1280, overflow: 'hidden', position: 'relative' }}>
         <OwnerSidebar />
-        {profileContent}
+        <main
+          style={{
+            flex: 1,
+            height: '100%',
+            overflowY: 'auto',
+            paddingTop: 40,
+            paddingBottom: 40,
+            paddingLeft: 48,
+            paddingRight: 48,
+            boxSizing: 'border-box',
+            position: 'relative',
+            zIndex: 10,
+          }}
+        >
+          {profileContent}
+        </main>
       </div>
     )
   }
@@ -582,7 +600,7 @@ export default function ProfilePage() {
               ) : (
                 <div style={{ width: 40, height: 40, borderRadius: '50%', border: '2px solid #14422D', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#14422D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
                   </svg>
                 </div>
               )}
@@ -591,7 +609,7 @@ export default function ProfilePage() {
               <div style={{ position: 'absolute', top: 'calc(100% + 12px)', right: 0, background: '#EEEEE9', borderRadius: 8, boxShadow: '0 4px 20px rgba(0,0,0,0.08)', minWidth: 140, zIndex: 1600, padding: '14px 16px' }}>
                 <button onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: '#14422D', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'Manrope, sans-serif', width: '100%' }}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#14422D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
                   </svg>
                   <span style={{ lineHeight: '20px' }}>{roleStrings.logout}</span>
                 </button>
