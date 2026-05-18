@@ -66,9 +66,9 @@ const DEFAULT_LAT = 21.0285;
 const DEFAULT_LNG = 105.8542;
 
 const REALTIME_CONFIG: Record<string, { label: string; dot: string; bg: string; text: string }> = {
-  available: { label: 'Còn chỗ',    dot: '#10B981', bg: '#D1FAE5', text: '#065F46' },
-  normal:    { label: 'Bình thường', dot: '#F59E0B', bg: '#FEF3C7', text: '#92400E' },
-  busy:      { label: 'Đông đúc',    dot: '#EF4444', bg: '#FEE2E2', text: '#991B1B' },
+  available: { label: '空きあり', dot: '#10B981', bg: '#D1FAE5', text: '#065F46' },
+  normal:    { label: '普通',     dot: '#F59E0B', bg: '#FEF3C7', text: '#92400E' },
+  busy:      { label: '混雑',     dot: '#EF4444', bg: '#FEE2E2', text: '#991B1B' },
 };
 
 function RealtimeBadge({ status, className = '' }: { status?: string; className?: string }) {
