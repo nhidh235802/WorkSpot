@@ -1,152 +1,448 @@
-﻿'use client'
+'use client'
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { AdminService, AdminUser } from '@/services/admin.service'
-import { Loader2, Search } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 
-const ROLE_LABEL: Record<string, string> = {
-  admin: 'Admin',
-  owner: 'Chủ quán',
-  customer: 'Khách hàng',
+const PAGE_SIZE = 10
+
+const ROLE_CONFIG: Record<string, { label: string; avatarBg: string; avatarText: string }> = {
+  admin:    { label: '管理者',       avatarBg: '#BCEECF', avatarText: '#14422D' },
+  owner:    { label: 'オーナー',     avatarBg: '#FFDBC7', avatarText: '#904C18' },
+  customer: { label: '一般ユーザー', avatarBg: '#FFDBC7', avatarText: '#904C18' },
 }
 
-const STATUS_CLASS: Record<string, string> = {
-  admin: 'badge-gray',
-  owner: 'badge-blue',
-  customer: 'badge-green',
+function formatDate(iso: string) {
+  try {
+    const d = new Date(iso)
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    const h = String(d.getHours()).padStart(2, '0')
+    const min = String(d.getMinutes()).padStart(2, '0')
+    return `${y}/${m}/${day} ${h}:${min}`
+  } catch {
+    return iso
+  }
+}
+
+function getInitials(name: string) {
+  const parts = name.trim().split(/\s+/)
+  return parts.length >= 2 ? parts[0] : name.slice(0, 2)
 }
 
 export default function AdminAccountPage() {
-  const [users, setUsers] = useState<AdminUser[]>([])
-  const [searchName, setSearchName] = useState('')
-  const [searchEmail, setSearchEmail] = useState('')
-  const [role, setRole] = useState('')
-  const [status, setStatus] = useState('')
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [users, setUsers]         = useState<AdminUser[]>([])
+  const [total, setTotal]         = useState(0)
+  const [page, setPage]           = useState(1)
+  const [totalAccounts, setTotalAccounts] = useState<number | null>(null)
 
+  const [nameInput, setNameInput]   = useState('')
+  const [emailInput, setEmailInput] = useState('')
+  const [roleInput, setRoleInput]   = useState('')
+
+  const [appliedName, setAppliedName]   = useState('')
+  const [appliedEmail, setAppliedEmail] = useState('')
+  const [appliedRole, setAppliedRole]   = useState('')
+
+  const [loading, setLoading] = useState(true)
+  const [error, setError]     = useState<string | null>(null)
+
+  // 統計用: 総アカウント数
+  useEffect(() => {
+    AdminService.getStats().then((s) => setTotalAccounts(s.totalAccounts)).catch(() => {})
+  }, [])
+
+  // ユーザー一覧 (ページネーション)
   useEffect(() => {
     setLoading(true)
     setError(null)
-    AdminService.getUsers({ name: undefined, role: undefined, limit: 100 })
-      .then((data) => setUsers(data.items))
+    AdminService.getUsers({
+      name:  appliedName  || undefined,
+      email: appliedEmail || undefined,
+      role:  appliedRole  || undefined,
+      page,
+      limit: PAGE_SIZE,
+    })
+      .then((data) => {
+        setUsers(data.items)
+        setTotal(data.total)
+      })
       .catch((err) => {
         console.error(err)
-        setError(err.message || 'Không thể tải danh sách tài khoản')
+        setError(err.message || 'データを読み込めませんでした')
       })
       .finally(() => setLoading(false))
-  }, [])
+  }, [appliedName, appliedEmail, appliedRole, page])
 
-  const filteredUsers = useMemo(() => {
-    return users.filter((user) => {
-      const matchName = user.fullName.toLowerCase().includes(searchName.toLowerCase())
-      const matchEmail = user.email.toLowerCase().includes(searchEmail.toLowerCase())
-      const matchRole = role ? user.role === role : true
-      return matchName && matchEmail && matchRole
-    })
-  }, [users, searchName, searchEmail, role])
+  const handleSearch = () => {
+    setAppliedName(nameInput)
+    setAppliedEmail(emailInput)
+    setAppliedRole(roleInput)
+    setPage(1)
+  }
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  const startRow   = (page - 1) * PAGE_SIZE + 1
+  const endRow     = Math.min(page * PAGE_SIZE, total)
+
+  // ページ番号リスト (最大 5 個)
+  const pageNumbers = (() => {
+    const half  = 2
+    let start   = Math.max(1, page - half)
+    const end   = Math.min(totalPages, start + 4)
+    start       = Math.max(1, end - 4)
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i)
+  })()
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <div>
-          <div className="page-title">Quản lý tài khoản</div>
-          <div className="page-sub">Xem và giám sát quyền hạn người dùng trong hệ thống.</div>
+    <div style={{ width: '100%', minHeight: '100%', background: '#FAFAF5', paddingTop: 32, paddingBottom: 40, paddingLeft: 32, paddingRight: 32, display: 'flex', flexDirection: 'column', gap: 32 }}>
+
+      {/* ── ヘッダー ── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ color: '#14422D', fontSize: 36, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '40px' }}>
+          アカウント管理
+        </div>
+        <div style={{ color: '#414943', fontSize: 16, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '24px' }}>
+          ユーザーアカウントの権限管理とステータスの監視を行います。
         </div>
       </div>
 
-      <div className="kpi4 grid gap-4 xl:grid-cols-4 mb-5">
-        <div className="kpi-card">
-          <div className="kpi-label">Tổng tài khoản</div>
-          <div className="kpi-value">{filteredUsers.length.toLocaleString('vi-VN')}</div>
-        </div>
-        <div className="kpi-card bg-[#EAF3DE]">
-          <div className="kpi-label">Admin / Chủ quán</div>
-          <div className="kpi-value green">{filteredUsers.filter((u) => u.role === 'admin' || u.role === 'owner').length}</div>
-        </div>
-        <div className="kpi-card bg-[#FAEEDA]">
-          <div className="kpi-label">Khách hàng</div>
-          <div className="kpi-value orange">{filteredUsers.filter((u) => u.role === 'customer').length}</div>
-        </div>
-        <div className="kpi-card bg-[#FCEBEB]">
-          <div className="kpi-label">Tài khoản mới</div>
-          <div className="kpi-value">{Math.max(0, filteredUsers.length - 10)}</div>
-        </div>
-      </div>
-
-      <div className="search-form mb-6 bg-white border border-[#E8E5DF] rounded-3xl p-5">
-        <div className="form-row grid grid-cols-1 gap-4 xl:grid-cols-[1.5fr_1.5fr_1fr_1fr_0.8fr]">
-          <div className="form-group">
-            <label>Tên</label>
-            <input value={searchName} onChange={(event) => setSearchName(event.target.value)} placeholder="Tìm theo tên" />
-          </div>
-          <div className="form-group">
-            <label>Email</label>
-            <input value={searchEmail} onChange={(event) => setSearchEmail(event.target.value)} placeholder="Tìm theo email" />
-          </div>
-          <div className="form-group">
-            <label>Vai trò</label>
-            <select value={role} onChange={(event) => setRole(event.target.value)}>
-              <option value="">Tất cả vai trò</option>
-              <option value="admin">Admin</option>
-              <option value="owner">Chủ quán</option>
-              <option value="customer">Khách hàng</option>
-            </select>
-          </div>
-          <div className="form-group">
-            <label>Trạng thái</label>
-            <select value={status} onChange={(event) => setStatus(event.target.value)}>
-              <option value="">Tất cả trạng thái</option>
-              <option value="active">Hoạt động</option>
-              <option value="inactive">Không hoạt động</option>
-              <option value="stopped">Đã dừng</option>
-            </select>
-          </div>
-          <div className="form-group">
-            <label className="opacity-0">Tìm kiếm</label>
-            <button type="button" className="btn btn-primary w-full">Tìm kiếm</button>
-          </div>
-        </div>
-      </div>
-
-      <div className="cafe-table bg-white border border-[#E8E5DF] rounded-3xl overflow-hidden">
-        <div className="acct-table-header grid grid-cols-[3fr_1.5fr_1.2fr_2fr_1.5fr] px-4 py-3 text-xs uppercase text-[#888780] bg-[#FAFAF8]">
-          <span>Thông tin tài khoản</span>
-          <span>Vai trò</span>
-          <span>Ngày tạo</span>
-          <span>Email</span>
-          <span>Hành động</span>
-        </div>
-        {loading ? (
-          <div className="p-8 text-center text-sm text-[#888780]">Đang tải...</div>
-        ) : error ? (
-          <div className="p-6 text-sm text-[#B91C1C]">{error}</div>
-        ) : filteredUsers.length === 0 ? (
-          <div className="p-6 text-sm text-[#5F5E5A]">Không có tài khoản phù hợp.</div>
-        ) : (
-          filteredUsers.map((user) => (
-            <div key={user.id} className="acct-row grid grid-cols-[3fr_1.5fr_1.2fr_2fr_1.5fr] items-center px-4 py-4 border-b border-[#F1EFE8] hover:bg-[#FAFAF8]">
-              <div className="flex items-center gap-3">
-                <div className="acct-avatar" style={{ background: '#E0DDD6', color: '#5F5E5A' }}>
-                  {user.fullName.charAt(0)}
-                </div>
-                <div>
-                  <div className="font-semibold text-[#2C2C2A]">{user.fullName}</div>
-                </div>
-              </div>
-              <div>
-                <span className={`badge ${STATUS_CLASS[user.role] || 'badge-gray'}`}>{ROLE_LABEL[user.role] || user.role}</span>
-              </div>
-              <div className="text-sm text-[#5F5E5A]">{new Date(user.createdAt).toLocaleDateString('vi-VN')}</div>
-              <div className="text-sm text-[#888780]">{user.email}</div>
-              <div className="btn-actions flex flex-wrap gap-2">
-                <button className="btn btn-primary text-xs">Chi tiết</button>
-                <button className="btn btn-ghost text-xs">Khóa</button>
-              </div>
+      {/* ── 統計カード (縦並び → グリッド) ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, paddingTop: 16 }}>
+        {[
+          { label: '全アカウント数',   value: totalAccounts ?? '—', bg: 'white',   labelColor: '#414943', valueColor: '#14422D' },
+          { label: '有効アカウント',   value: total || '—',          bg: '#BCEECF', labelColor: '#224F39', valueColor: '#002112' },
+          { label: '無効アカウント',   value: 0,                     bg: '#FFDBC7', labelColor: '#733600', valueColor: '#311300' },
+          { label: '停止中アカウント', value: 0,                     bg: '#FFDADA', labelColor: '#69393B', valueColor: '#350F12' },
+        ].map((s) => (
+          <div key={s.label} style={{
+            padding: '32px 32px 34px',
+            background: s.bg,
+            boxShadow: '0px 12px 40px rgba(26,28,25,0.06)',
+            borderRadius: 12,
+            display: 'flex', flexDirection: 'column', gap: 8,
+          }}>
+            <div style={{ color: s.labelColor, fontSize: 12, fontFamily: 'Manrope, sans-serif', fontWeight: 500, textTransform: 'uppercase', lineHeight: '16px', letterSpacing: 1.2 }}>
+              {s.label}
             </div>
-          ))
+            <div style={{ color: s.valueColor, fontSize: 30, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '36px' }}>
+              {s.value}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── 検索フォーム ── */}
+      <div style={{ background: '#F4F4EF', borderRadius: 12, paddingTop: 48, paddingBottom: 32, paddingLeft: 32, paddingRight: 32, display: 'flex', flexDirection: 'column', gap: 32 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
+          {/* 名前 */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <label style={{ color: '#414943', fontSize: 12, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '16px', paddingLeft: 4 }}>
+              名前
+            </label>
+            <input
+              value={nameInput}
+              onChange={(e) => setNameInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              placeholder="例: 山田 太郎"
+              style={{
+                paddingTop: 13, paddingBottom: 12, paddingLeft: 16, paddingRight: 16,
+                background: '#E3E3DE', borderRadius: 8, border: 'none', outline: 'none',
+                color: '#1A1C19', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 500,
+                width: '100%', boxSizing: 'border-box',
+              }}
+            />
+          </div>
+
+          {/* メールアドレス */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <label style={{ color: '#414943', fontSize: 12, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '16px', paddingLeft: 4 }}>
+              メールアドレス
+            </label>
+            <input
+              value={emailInput}
+              onChange={(e) => setEmailInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              placeholder="example@workspot.jp"
+              style={{
+                paddingTop: 13, paddingBottom: 12, paddingLeft: 16, paddingRight: 16,
+                background: '#E3E3DE', borderRadius: 8, border: 'none', outline: 'none',
+                color: '#1A1C19', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 400,
+                width: '100%', boxSizing: 'border-box',
+              }}
+            />
+          </div>
+
+          {/* ロール */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <label style={{ color: '#414943', fontSize: 12, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '16px', paddingLeft: 4 }}>
+              ロール
+            </label>
+            <select
+              value={roleInput}
+              onChange={(e) => setRoleInput(e.target.value)}
+              style={{
+                paddingTop: 11, paddingBottom: 11, paddingLeft: 16, paddingRight: 36,
+                background: '#E3E3DE', borderRadius: 8, border: 'none', outline: 'none',
+                color: '#1A1C19', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 500,
+                width: '100%', boxSizing: 'border-box', appearance: 'none', cursor: 'pointer',
+              }}
+            >
+              <option value="">全てのロール</option>
+              <option value="admin">管理者</option>
+              <option value="owner">オーナー</option>
+              <option value="customer">一般ユーザー</option>
+            </select>
+          </div>
+
+          {/* ステータス (UI のみ) */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <label style={{ color: '#414943', fontSize: 12, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '16px', paddingLeft: 4 }}>
+              ステータス
+            </label>
+            <select
+              style={{
+                paddingTop: 11, paddingBottom: 11, paddingLeft: 16, paddingRight: 36,
+                background: '#E3E3DE', borderRadius: 8, border: 'none', outline: 'none',
+                color: '#1A1C19', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 500,
+                width: '100%', boxSizing: 'border-box', appearance: 'none', cursor: 'pointer',
+              }}
+            >
+              <option>全てのステータス</option>
+              <option>有効</option>
+              <option>無効</option>
+              <option>停止</option>
+            </select>
+          </div>
+        </div>
+
+        {/* 検索ボタン */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <button
+            type="button"
+            onClick={handleSearch}
+            style={{
+              paddingLeft: 32, paddingRight: 32, paddingTop: 12, paddingBottom: 12,
+              background: 'linear-gradient(171deg, #14422D 0%, #2D5A43 100%)',
+              borderRadius: 9999, border: 'none', cursor: 'pointer',
+              boxShadow: '0px 4px 6px -4px rgba(0,0,0,0.10), 0px 10px 15px -3px rgba(0,0,0,0.10)',
+              color: 'white', fontSize: 16, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '24px',
+            }}
+          >
+            検索
+          </button>
+        </div>
+      </div>
+
+      {/* ── テーブル ── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 16 }}>
+
+        {/* ヘッダー行 */}
+        <div style={{
+          paddingLeft: 24, paddingRight: 24, paddingTop: 8, paddingBottom: 8,
+          display: 'grid', gridTemplateColumns: '228fr 152fr 152fr 152fr 228fr',
+          alignItems: 'center',
+        }}>
+          {([
+            { label: 'ユーザー情報', align: 'left'   },
+            { label: 'ロール',       align: 'left'   },
+            { label: 'ステータス',   align: 'left'   },
+            { label: '最終ログイン', align: 'center' },
+            { label: '操作',         align: 'right'  },
+          ] as const).map((h) => (
+            <div key={h.label} style={{
+              color: '#A8A29E', fontSize: 10, fontFamily: 'Manrope, sans-serif', fontWeight: 500,
+              textTransform: 'uppercase', lineHeight: '15px', letterSpacing: 1,
+              textAlign: h.align,
+            }}>
+              {h.label}
+            </div>
+          ))}
+        </div>
+
+        {loading ? (
+          <div style={{ padding: 32, textAlign: 'center', color: '#414943', fontFamily: 'Manrope, sans-serif', fontSize: 14 }}>読み込み中...</div>
+        ) : error ? (
+          <div style={{ padding: 24, color: '#BA1A1A', fontFamily: 'Manrope, sans-serif', fontSize: 14 }}>{error}</div>
+        ) : users.length === 0 ? (
+          <div style={{ padding: 24, color: '#414943', fontFamily: 'Manrope, sans-serif', fontSize: 14 }}>該当するアカウントがありません。</div>
+        ) : (
+          users.map((user) => {
+            const rc = ROLE_CONFIG[user.role] ?? { label: user.role, avatarBg: '#E3E3DE', avatarText: '#717973' }
+            return (
+              <div key={user.id} style={{
+                padding: 24, background: 'white',
+                boxShadow: '0px 12px 40px rgba(26,28,25,0.06)',
+                borderRadius: 12, outline: '1px rgba(192,201,193,0.05) solid', outlineOffset: '-1px',
+                display: 'grid', gridTemplateColumns: '228fr 152fr 152fr 152fr 228fr',
+                alignItems: 'center',
+              }}>
+
+                {/* ユーザー情報 */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                  <div style={{
+                    width: 48, height: 48, borderRadius: 9999, flexShrink: 0,
+                    background: rc.avatarBg,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: rc.avatarText, fontSize: 16, fontFamily: 'Manrope, sans-serif', fontWeight: 500,
+                  }}>
+                    {getInitials(user.fullName)}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                    <div style={{ color: '#1A1C19', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '20px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {user.fullName}
+                    </div>
+                    <div style={{ color: '#414943', fontSize: 12, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 400, lineHeight: '16px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {user.email}
+                    </div>
+                  </div>
+                </div>
+
+                {/* ロール */}
+                <div>
+                  <span style={{
+                    paddingLeft: 12, paddingRight: 12, paddingTop: 3, paddingBottom: 3,
+                    background: '#E3E3DE', borderRadius: 9999,
+                    color: '#414943', fontSize: 10, fontFamily: 'Manrope, sans-serif', fontWeight: 500,
+                    textTransform: 'uppercase', lineHeight: '15px', whiteSpace: 'nowrap',
+                  }}>
+                    {rc.label}
+                  </span>
+                </div>
+
+                {/* ステータス (有効固定 — backend未対応) */}
+                <div>
+                  <div style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    paddingLeft: 12, paddingRight: 12, paddingTop: 4, paddingBottom: 4,
+                    background: '#D1FAE5', borderRadius: 9999,
+                  }}>
+                    <div style={{ width: 6, height: 6, background: '#10B981', borderRadius: 9999 }} />
+                    <span style={{ color: '#065F46', fontSize: 10, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '15px' }}>有効</span>
+                  </div>
+                </div>
+
+                {/* 最終ログイン (createdAt で代用) */}
+                <div style={{ textAlign: 'center', color: '#414943', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 400, lineHeight: '20px' }}>
+                  {formatDate(user.createdAt)}
+                </div>
+
+                {/* 操作 */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                  <button
+                    type="button"
+                    style={{
+                      paddingLeft: 20, paddingRight: 20, paddingTop: 8, paddingBottom: 9,
+                      background: '#14422D', boxShadow: '0px 1px 2px rgba(0,0,0,0.05)',
+                      borderRadius: 9999, border: 'none', cursor: 'pointer',
+                      color: 'white', fontSize: 12, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '16px',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    詳細
+                  </button>
+                  <button
+                    type="button"
+                    style={{
+                      paddingLeft: 20, paddingRight: 20, paddingTop: 8, paddingBottom: 8,
+                      background: 'transparent', borderRadius: 9999,
+                      border: 'none', outline: '1px #717973 solid', outlineOffset: '-1px',
+                      cursor: 'pointer',
+                      color: '#414943', fontSize: 12, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '16px',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    無効化
+                  </button>
+                  <button
+                    type="button"
+                    style={{
+                      paddingLeft: 20, paddingRight: 20, paddingTop: 8, paddingBottom: 8,
+                      background: 'transparent', borderRadius: 9999,
+                      border: 'none', outline: '1px #717973 solid', outlineOffset: '-1px',
+                      cursor: 'pointer',
+                      color: '#414943', fontSize: 12, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '16px',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    停止
+                  </button>
+                </div>
+              </div>
+            )
+          })
         )}
       </div>
+
+      {/* ── ページネーション ── */}
+      {!loading && totalPages > 1 && (
+        <div style={{
+          paddingLeft: 32, paddingRight: 32, paddingTop: 24, paddingBottom: 24,
+          background: '#F4F4EF', borderRadius: 16,
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        }}>
+          <div style={{ color: '#414943', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '20px' }}>
+            全 {total} アカウント中 {startRow}-{endRow} を表示
+          </div>
+
+          <div style={{ display: 'flex', gap: 8 }}>
+            {/* 前へ */}
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              style={{
+                width: 40, height: 40, borderRadius: 9999,
+                background: 'white', boxShadow: '0px 1px 2px rgba(0,0,0,0.05)',
+                border: 'none', cursor: page === 1 ? 'not-allowed' : 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: page === 1 ? '#C0C9C1' : '#14422D',
+                opacity: page === 1 ? 0.5 : 1,
+              }}
+            >
+              <ChevronLeft size={16} />
+            </button>
+
+            {/* ページ番号 */}
+            {pageNumbers.map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => setPage(p)}
+                style={{
+                  width: 40, height: 40, borderRadius: 9999,
+                  background: p === page ? '#14422D' : 'white',
+                  boxShadow: p === page ? '0px 2px 4px -2px rgba(0,0,0,0.10), 0px 4px 6px -1px rgba(0,0,0,0.10)' : '0px 1px 2px rgba(0,0,0,0.05)',
+                  border: 'none', cursor: 'pointer',
+                  color: p === page ? 'white' : '#14422D',
+                  fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 500,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                {p}
+              </button>
+            ))}
+
+            {/* 次へ */}
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              style={{
+                width: 40, height: 40, borderRadius: 9999,
+                background: 'white', boxShadow: '0px 1px 2px rgba(0,0,0,0.05)',
+                border: 'none', cursor: page === totalPages ? 'not-allowed' : 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: page === totalPages ? '#C0C9C1' : '#14422D',
+                opacity: page === totalPages ? 0.5 : 1,
+              }}
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

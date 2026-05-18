@@ -1,60 +1,85 @@
-﻿'use client'
+'use client'
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { AdminService, AdminCafeItem } from '@/services/admin.service'
-import { Eye, EyeOff, Loader2, Search } from 'lucide-react'
+import { Search, ChevronLeft, ChevronRight } from 'lucide-react'
 
-const STATUS_MAP: Record<string, { label: string; badgeClass: string; action: string }> = {
-  approved: { label: 'Đang hiển thị', badgeClass: 'bg-[#DCFCE7] text-[#166534]', action: 'Ẩn quán' },
-  pending: { label: 'Chờ duyệt', badgeClass: 'bg-[#FEF3C7] text-[#B45309]', action: 'Ẩn quán' },
-  rejected: { label: 'Đã từ chối', badgeClass: 'bg-[#FEE2E2] text-[#B91C1C]', action: 'Ẩn quán' },
-  hidden: { label: 'Đã ẩn', badgeClass: 'bg-[#EDE9FE] text-[#4338CA]', action: 'Hiện quán' },
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+
+const PAGE_SIZE = 5
+
+const STATUS_CONFIG: Record<string, { label: string; dot: string; bg: string; text: string; actionLabel: string }> = {
+  approved: { label: '営業中',   dot: '#14422D', bg: 'rgba(20,66,45,0.10)',    text: '#14422D', actionLabel: '非表示' },
+  hidden:   { label: '非表示',   dot: '#BA1A1A', bg: 'rgba(186,26,26,0.10)',   text: '#BA1A1A', actionLabel: '再表示' },
+  pending:  { label: '承認待ち', dot: '#B45309', bg: 'rgba(245,158,11,0.10)',  text: '#B45309', actionLabel: '非表示' },
+  rejected: { label: '休業中',   dot: '#BA1A1A', bg: 'rgba(186,26,26,0.10)',   text: '#BA1A1A', actionLabel: '非表示' },
 }
 
-function AmenityIcon({ type }: { type: string }) {
-  switch (type) {
-    case 'wifi':
-      return <span className="text-[#888780] text-sm">Wi-Fi</span>
-    case 'plug':
-      return <span className="text-[#888780] text-sm">Ổ cắm</span>
-    case 'monitor':
-      return <span className="text-[#888780] text-sm">Màn hình</span>
-    case 'ac':
-      return <span className="text-[#888780] text-sm">Điều hòa</span>
-    case 'group':
-      return <span className="text-[#888780] text-sm">Nhóm</span>
-    default:
-      return <span className="text-[#888780] text-sm">Tiện ích</span>
-  }
+const FACILITY_LABEL: Record<string, string> = {
+  wifi:           'Wi-Fi',
+  socket:         '電源',
+  workspace:      'ワークスペース',
+  desk:           'デスク席',
+  snack:          '軽食・飲料',
+  flexible_hours: '時間柔軟',
+  cleanliness:    '清潔感',
+  smoking_rule:   '禁煙・分煙',
+}
+
+const STATUS_FILTER_OPTIONS = [
+  { value: '',         label: 'ステータス (すべて)' },
+  { value: 'approved', label: '営業中' },
+  { value: 'pending',  label: '承認待ち' },
+  { value: 'hidden',   label: '非表示' },
+  { value: 'rejected', label: '休業中' },
+]
+
+function toAbsUrl(path: string | null | undefined): string | null {
+  if (!path) return null
+  if (path.startsWith('http')) return path
+  return `${API_URL}${path}`
 }
 
 export default function AdminCafesPage() {
-  const [cafes, setCafes] = useState<AdminCafeItem[]>([])
+  const [cafes, setCafes]           = useState<AdminCafeItem[]>([])
+  const [total, setTotal]           = useState(0)
+  const [totalPages, setTotalPages] = useState(1)
+  const [page, setPage]             = useState(1)
+  const [stats, setStats]           = useState<{ totalCafes?: number; activeCafes?: number; pendingCafes?: number } | null>(null)
   const [statusFilter, setStatusFilter] = useState('')
-  const [search, setSearch] = useState('')
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [search, setSearch]         = useState('')
+  const [loading, setLoading]       = useState(true)
+  const [error, setError]           = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
+
+  useEffect(() => {
+    AdminService.getStats().then(setStats).catch(() => {})
+  }, [refreshKey])
 
   useEffect(() => {
     setLoading(true)
     setError(null)
-    AdminService.getCafesForAdmin({ search: search || undefined, status: statusFilter || undefined, limit: 50 })
-      .then((data) => setCafes(data.items))
+    AdminService.getCafesForAdmin({
+      search:  search || undefined,
+      status:  statusFilter || undefined,
+      page,
+      limit:   PAGE_SIZE,
+    })
+      .then((data) => {
+        setCafes(data.items)
+        setTotal(data.total)
+        setTotalPages(data.totalPages)
+      })
       .catch((err) => {
         console.error(err)
-        setError(err.message || 'Không thể tải danh sách quán')
+        setError(err.message || 'データを読み込めませんでした')
       })
       .finally(() => setLoading(false))
-  }, [statusFilter, search, refreshKey])
+  }, [statusFilter, search, page, refreshKey])
 
-  const totalCounts = useMemo(
-    () => ({
-      total: cafes.length,
-      status: statusFilter ? STATUS_MAP[statusFilter]?.label || 'Tất cả' : 'Tất cả',
-    }),
-    [cafes.length, statusFilter]
-  )
+  // フィルター変更時はページを1に戻す
+  const handleStatusFilter = (v: string) => { setStatusFilter(v); setPage(1) }
+  const handleSearch       = (v: string) => { setSearch(v);       setPage(1) }
 
   const toggleVisibility = async (id: string) => {
     try {
@@ -62,110 +87,325 @@ export default function AdminCafesPage() {
       setRefreshKey((prev) => prev + 1)
     } catch (err: any) {
       console.error(err)
-      setError(err.message || 'Không thể thay đổi trạng thái hiển thị')
+      setError(err.message || '操作に失敗しました')
     }
   }
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <div>
-          <div className="page-title">Quản lý quán</div>
-          <div className="page-sub">Theo dõi trạng thái, tìm kiếm và điều chỉnh hiển thị quán.</div>
+    <div style={{ width: '100%', minHeight: '100%', background: '#FAFAF5', padding: 48, display: 'flex', flexDirection: 'column', gap: 40 }}>
+
+      {/* ── ヘッダー + 検索 ── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+
+        {/* タイトル */}
+        <div style={{ maxWidth: 672 }}>
+          <div style={{ color: '#14422D', fontSize: 48, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '48px', marginBottom: 16 }}>
+            既存店舗管理
+          </div>
+          <div style={{ color: '#414943', fontSize: 18, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '29.25px' }}>
+            ハノイ市内の登録済みワークスペースの管理。店舗情報の更新、稼働状況の確認、<br />
+            およびプロモーション設定が可能です。
+          </div>
+        </div>
+
+        {/* 検索 + フィルター */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, maxWidth: 576, position: 'relative' }}>
+            <Search size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: '#414943' }} />
+            <input
+              value={search}
+              onChange={(e) => handleSearch(e.target.value)}
+              placeholder="店舗名で検索"
+              style={{
+                width: '100%', boxSizing: 'border-box',
+                paddingTop: 15, paddingBottom: 14, paddingLeft: 48, paddingRight: 24,
+                background: 'white', borderRadius: 9999, border: 'none',
+                boxShadow: '0px 1px 2px rgba(0,0,0,0.05)',
+                outline: '1px rgba(192,201,193,0.30) solid', outlineOffset: '-1px',
+                color: '#1A1C19', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 500,
+              }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', gap: 12 }}>
+            {/* エリアフィルター (UI のみ) */}
+            <select
+              style={{
+                width: 164, height: 46, paddingLeft: 21, paddingRight: 36,
+                background: 'white', borderRadius: 9999, border: 'none',
+                boxShadow: '0px 1px 2px rgba(0,0,0,0.05)',
+                outline: '1px rgba(192,201,193,0.30) solid', outlineOffset: '-1px',
+                color: '#1A1C19', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 500,
+                appearance: 'none', cursor: 'pointer',
+              }}
+            >
+              <option>エリア (すべて)</option>
+            </select>
+
+            {/* ステータスフィルター */}
+            <select
+              value={statusFilter}
+              onChange={(e) => handleStatusFilter(e.target.value)}
+              style={{
+                width: 192, height: 46, paddingLeft: 21, paddingRight: 36,
+                background: 'white', borderRadius: 9999, border: 'none',
+                boxShadow: '0px 1px 2px rgba(0,0,0,0.05)',
+                outline: '1px rgba(192,201,193,0.30) solid', outlineOffset: '-1px',
+                color: '#1A1C19', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 500,
+                appearance: 'none', cursor: 'pointer',
+              }}
+            >
+              {STATUS_FILTER_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
-      <div className="filter-row mb-5 flex flex-col gap-4 lg:flex-row lg:items-end">
-        <div className="search-box flex-1 relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 text-[#888780] -translate-y-1/2" />
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Tìm kiếm theo tên hoặc địa chỉ"
-            className="w-full rounded-xl border border-[#E0DDD6] bg-white py-3 pl-10 pr-4 text-sm text-[#2C2C2A] outline-none"
-          />
-        </div>
-        <div className="filter-select flex items-center gap-2 rounded-xl border border-[#E0DDD6] bg-white px-4 py-3 text-sm text-[#5F5E5A]">
-          Trạng thái
-          <select
-            value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value)}
-            className="bg-transparent outline-none"
-          >
-            <option value="">Tất cả</option>
-            <option value="pending">Chờ duyệt</option>
-            <option value="approved">Đang hiển thị</option>
-            <option value="rejected">Đã từ chối</option>
-            <option value="hidden">Đã ẩn</option>
-          </select>
-        </div>
+      {/* ── 統計カード ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+        {[
+          { label: '登録店舗総数',   value: stats?.totalCafes   },
+          { label: '公開中の店舗',   value: stats?.activeCafes  },
+          { label: '承認待ちの店舗', value: stats?.pendingCafes },
+        ].map((s) => (
+          <div key={s.label} style={{
+            padding: 24, background: 'white',
+            boxShadow: '0px 12px 40px rgba(26,28,25,0.06)',
+            borderRadius: 12, outline: '1px rgba(192,201,193,0.05) solid', outlineOffset: '-1px',
+            display: 'flex', flexDirection: 'column', gap: 4,
+          }}>
+            <div style={{ color: '#414943', fontSize: 10, fontFamily: 'Manrope, sans-serif', fontWeight: 500, textTransform: 'uppercase', lineHeight: '15px', letterSpacing: 1 }}>
+              {s.label}
+            </div>
+            <div style={{ color: '#14422D', fontSize: 24, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '32px' }}>
+              {s.value ?? '—'}
+            </div>
+          </div>
+        ))}
       </div>
 
-      <div className="stat-cards grid gap-4 lg:grid-cols-3 mb-6">
-        <div className="kpi-card">
-          <div className="kpi-label">Tổng quán</div>
-          <div className="kpi-value">{totalCounts.total.toLocaleString('vi-VN')}</div>
-        </div>
-        <div className="kpi-card">
-          <div className="kpi-label">Trạng thái hiện tại</div>
-          <div className="kpi-value">{totalCounts.status}</div>
-        </div>
-        <div className="kpi-card">
-          <div className="kpi-label">Hành động</div>
-          <div className="kpi-value">Ẩn / Hiện quán</div>
-        </div>
-      </div>
+      {/* ── テーブル ── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
-      <div className="cafe-table">
-        <div className="cafe-row cafe-table-header grid grid-cols-[3fr_2fr_1.3fr_1.5fr] gap-4 bg-[#FAFAF8] px-4 py-3 text-xs uppercase text-[#888780]">
-          <span>Tên quán</span>
-          <span>Địa chỉ / tiện ích</span>
-          <span>Trạng thái</span>
-          <span>Hành động</span>
+        {/* ヘッダー行 */}
+        <div style={{
+          paddingTop: 8, paddingBottom: 8, paddingLeft: 24, paddingRight: 24,
+          borderBottom: '1px rgba(192,201,193,0.10) solid',
+          display: 'grid', gridTemplateColumns: '3fr 2fr 1.3fr 2fr',
+          alignItems: 'center', gap: 16,
+        }}>
+          {([
+            { label: '店舗情報・雰囲気', align: 'left'   },
+            { label: '所在地・アメニティ', align: 'left' },
+            { label: '稼働状況',          align: 'center' },
+            { label: 'アクション',         align: 'right'  },
+          ] as const).map((h) => (
+            <div key={h.label} style={{
+              color: '#A8A29E', fontSize: 10, fontFamily: 'Manrope, sans-serif', fontWeight: 500,
+              textTransform: 'uppercase', lineHeight: '15px', letterSpacing: 1,
+              textAlign: h.align,
+            }}>
+              {h.label}
+            </div>
+          ))}
         </div>
-        <div>
-          {loading ? (
-            <div className="p-8 text-center text-sm text-[#888780]">Đang tải...</div>
-          ) : error ? (
-            <div className="p-6 text-sm text-[#B91C1C]">{error}</div>
-          ) : cafes.length === 0 ? (
-            <div className="p-6 text-sm text-[#5F5E5A]">Không có quán phù hợp.</div>
-          ) : (
-            cafes.map((cafe) => {
-              const status = STATUS_MAP[cafe.status] || { label: cafe.status, badgeClass: 'bg-[#F1EFE8] text-[#5F5E5A]', action: 'Xem' }
-              return (
-                <div key={cafe.id} className="cafe-row grid grid-cols-[3fr_2fr_1.3fr_1.5fr] gap-4 items-center px-4 py-4 border-b border-[#F1EFE8] hover:bg-[#FAFAF8]">
-                  <div className="flex items-center gap-3">
-                    <div className="cafe-img bg-[#3D5A45] text-white flex items-center justify-center rounded-lg">{cafe.name.charAt(0)}</div>
-                    <div>
-                      <div className="font-semibold text-[#2C2C2A] text-sm">{cafe.name}</div>
-                      <div className="text-xs text-[#888780] mt-1">{cafe.owner?.fullName || 'Chưa có chủ'}</div>
+
+        {/* データ行 */}
+        {loading ? (
+          <div style={{ padding: 32, textAlign: 'center', color: '#414943', fontFamily: 'Manrope, sans-serif', fontSize: 14 }}>
+            読み込み中...
+          </div>
+        ) : error ? (
+          <div style={{ padding: 24, color: '#BA1A1A', fontFamily: 'Manrope, sans-serif', fontSize: 14 }}>
+            {error}
+          </div>
+        ) : cafes.length === 0 ? (
+          <div style={{ padding: 24, color: '#414943', fontFamily: 'Manrope, sans-serif', fontSize: 14 }}>
+            該当する店舗がありません。
+          </div>
+        ) : (
+          cafes.map((cafe) => {
+            const sc  = STATUS_CONFIG[cafe.status] ?? STATUS_CONFIG['approved']
+            const img = toAbsUrl(cafe.avatar)
+            const tags = (cafe.facilities ?? []).slice(0, 2).map((f) => FACILITY_LABEL[f] ?? f)
+
+            return (
+              <div key={cafe.id} style={{
+                padding: 16, background: 'white', borderRadius: 12,
+                outline: '1px rgba(192,201,193,0.05) solid', outlineOffset: '-1px',
+                display: 'grid', gridTemplateColumns: '3fr 2fr 1.3fr 2fr',
+                alignItems: 'center', gap: 16,
+              }}>
+
+                {/* 店舗情報 */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                  <div style={{
+                    width: 56, height: 56, borderRadius: 8, flexShrink: 0, overflow: 'hidden',
+                    background: '#14422D',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    {img ? (
+                      <img src={img} alt={cafe.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <span style={{ color: 'white', fontSize: 20, fontFamily: 'Manrope, sans-serif', fontWeight: 700 }}>
+                        {cafe.name.charAt(0)}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
+                    <div style={{ color: '#14422D', fontSize: 16, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '20px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {cafe.name}
                     </div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-[#5F5E5A] mb-2">{cafe.address}</div>
-                    <div className="flex flex-wrap gap-2 text-xs">
-                      {cafe.avgRating != null && <span className="tag tag-blue">{cafe.avgRating} ★</span>}
-                      <span className="tag tag-green">{cafe.reviewCount} đánh giá</span>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      {tags.length > 0 ? tags.map((tag) => (
+                        <span key={tag} style={{
+                          paddingLeft: 8, paddingRight: 8,
+                          background: 'rgba(255,219,199,0.50)', borderRadius: 9999,
+                          color: '#311300', fontSize: 9, fontFamily: 'Manrope, sans-serif', fontWeight: 500,
+                          lineHeight: '18px', whiteSpace: 'nowrap',
+                        }}>
+                          {tag}
+                        </span>
+                      )) : (
+                        <>
+                          {cafe.avgRating != null && (
+                            <span style={{ paddingLeft: 8, paddingRight: 8, background: 'rgba(255,219,199,0.50)', borderRadius: 9999, color: '#311300', fontSize: 9, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '18px', whiteSpace: 'nowrap' }}>
+                              ★ {cafe.avgRating}
+                            </span>
+                          )}
+                          <span style={{ paddingLeft: 8, paddingRight: 8, background: 'rgba(255,219,199,0.50)', borderRadius: 9999, color: '#311300', fontSize: 9, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '18px', whiteSpace: 'nowrap' }}>
+                            {cafe.reviewCount} レビュー
+                          </span>
+                        </>
+                      )}
                     </div>
-                  </div>
-                  <div>
-                    <span className={`inline-flex rounded-full px-3 py-1 text-[11px] font-semibold ${status.badgeClass}`}>{status.label}</span>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => toggleVisibility(cafe.id)}
-                      className="btn btn-ghost text-xs"
-                    >
-                      {status.action}
-                    </button>
                   </div>
                 </div>
-              )
-            })
-          )}
-        </div>
+
+                {/* 住所 */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <div style={{ color: '#1A1C19', fontSize: 12, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '16px' }}>
+                    {cafe.address}
+                  </div>
+                  {cafe.owner && (
+                    <div style={{ color: 'rgba(65,73,67,0.70)', fontSize: 11, fontFamily: 'Manrope, sans-serif', fontWeight: 400 }}>
+                      {cafe.owner.fullName}
+                    </div>
+                  )}
+                </div>
+
+                {/* 稼働状況 */}
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                  <div style={{
+                    paddingLeft: 10, paddingRight: 10, paddingTop: 2, paddingBottom: 2,
+                    background: sc.bg, borderRadius: 9999,
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                  }}>
+                    <div style={{ width: 6, height: 6, background: sc.dot, borderRadius: 9999, flexShrink: 0 }} />
+                    <span style={{ color: sc.text, fontSize: 10, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '15px', whiteSpace: 'nowrap' }}>
+                      {sc.label}
+                    </span>
+                  </div>
+                </div>
+
+                {/* アクション */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+                  <button
+                    type="button"
+                    style={{
+                      paddingLeft: 20, paddingRight: 20, paddingTop: 6, paddingBottom: 6,
+                      background: '#14422D', boxShadow: '0px 1px 2px rgba(0,0,0,0.05)',
+                      borderRadius: 9999, border: 'none', cursor: 'pointer',
+                      color: 'white', fontSize: 12, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '16px',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    詳細を表示
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => toggleVisibility(cafe.id)}
+                    style={{
+                      paddingLeft: 20, paddingRight: 20, paddingTop: 6, paddingBottom: 6,
+                      background: '#7F8181', boxShadow: '0px 1px 2px rgba(0,0,0,0.05)',
+                      borderRadius: 9999, border: 'none', cursor: 'pointer',
+                      color: 'white', fontSize: 12, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '16px',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {sc.actionLabel}
+                  </button>
+                </div>
+              </div>
+            )
+          })
+        )}
+
+        {/* ── ページネーション ── */}
+        {!loading && totalPages > 1 && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 16, paddingLeft: 8, paddingRight: 8 }}>
+            <div style={{ color: '#414943', fontSize: 13, fontFamily: 'Manrope, sans-serif', fontWeight: 500 }}>
+              {total} 件中 {(page - 1) * PAGE_SIZE + 1}〜{Math.min(page * PAGE_SIZE, total)} 件表示
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {/* 前へ */}
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                style={{
+                  width: 36, height: 36, borderRadius: 9999,
+                  border: '1px rgba(192,201,193,0.50) solid',
+                  background: page === 1 ? '#F4F4F1' : 'white',
+                  cursor: page === 1 ? 'not-allowed' : 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: page === 1 ? '#C0C9C1' : '#14422D',
+                }}
+              >
+                <ChevronLeft size={16} />
+              </button>
+
+              {/* ページ番号 */}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setPage(p)}
+                  style={{
+                    width: 36, height: 36, borderRadius: 9999,
+                    border: p === page ? 'none' : '1px rgba(192,201,193,0.50) solid',
+                    background: p === page ? '#14422D' : 'white',
+                    cursor: 'pointer',
+                    color: p === page ? 'white' : '#414943',
+                    fontSize: 13, fontFamily: 'Manrope, sans-serif', fontWeight: p === page ? 700 : 500,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                >
+                  {p}
+                </button>
+              ))}
+
+              {/* 次へ */}
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                style={{
+                  width: 36, height: 36, borderRadius: 9999,
+                  border: '1px rgba(192,201,193,0.50) solid',
+                  background: page === totalPages ? '#F4F4F1' : 'white',
+                  cursor: page === totalPages ? 'not-allowed' : 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: page === totalPages ? '#C0C9C1' : '#14422D',
+                }}
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

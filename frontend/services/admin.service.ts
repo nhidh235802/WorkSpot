@@ -36,6 +36,11 @@ export interface AdminCafeItem {
   name: string;
   address: string;
   status: string;
+  avatar: string | null;
+  realtimeStatus: string;
+  facilities: string[];
+  hasPendingData: boolean;
+  rejectionReason: string | null;
   owner: { id: string; fullName: string; email: string } | null;
   avgRating: number;
   reviewCount: number;
