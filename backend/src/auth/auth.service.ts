@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -75,11 +76,8 @@ export class AuthService {
       where: { email: dto.email },
     });
 
-    // Luôn trả về thành công để tránh email enumeration
     if (!user) {
-      return {
-        message: 'Nếu email tồn tại, chúng tôi đã gửi link đặt lại mật khẩu.',
-      };
+      throw new NotFoundException('メールアドレスが見つかりません。');
     }
 
     const token = crypto.randomBytes(32).toString('hex');

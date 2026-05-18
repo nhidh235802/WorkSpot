@@ -34,8 +34,12 @@ export default function ForgotPasswordPage() {
     try {
       await axios.post('http://localhost:3001/auth/forgot-password', { email: data.email })
       setSent(true)
-    } catch {
-      setServerError('送信に失敗しました。もう一度お試しください。')
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err) && err.response?.status === 404) {
+        setServerError('このメールアドレスは登録されていません。')
+      } else {
+        setServerError('送信に失敗しました。もう一度お試しください。')
+      }
     }
   }
 
