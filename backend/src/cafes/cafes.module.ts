@@ -11,5 +11,6 @@ import { User } from '../users/entities/user.entity';
   imports: [TypeOrmModule.forFeature([Cafe, OperatingHour, Review, User])],
   controllers: [CafesController],
   providers: [CafesService],
+  exports: [CafesService],
 })
 export class CafesModule {}
