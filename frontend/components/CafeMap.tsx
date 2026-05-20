@@ -215,7 +215,8 @@ function LocateControl({ onLocate }: { onLocate?: (pos: [number, number]) => voi
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const position: [number, number] = [pos.coords.latitude, pos.coords.longitude];
-          onLocateRef.current?.(position); // FlyToUserPosition handles the map fly
+          map.flyTo(position, 15, { duration: 1 });
+          onLocateRef.current?.(position);
           btn.innerHTML = LOCATE_SVG;
           btn.style.opacity = '1';
         },
