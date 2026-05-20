@@ -308,15 +308,17 @@ export default function CafeMap({
       <FlyToUserPosition position={dotPosition} />
       <FlyToCafe position={selectedPosition} />
 
-      {/* Search radius circle around USER position */}
-      <Circle
-        center={dotPosition}
-        radius={radiusMeters}
-        pathOptions={{
-          color: '#14422D', fillColor: '#14422D',
-          fillOpacity: 0.06, weight: 1.5, dashArray: '6 4',
-        }}
-      />
+      {/* Search radius circle around USER position — hidden when radius is 0 (e.g. keyword search) */}
+      {radiusMeters > 0 && (
+        <Circle
+          center={dotPosition}
+          radius={radiusMeters}
+          pathOptions={{
+            color: '#14422D', fillColor: '#14422D',
+            fillOpacity: 0.06, weight: 1.5, dashArray: '6 4',
+          }}
+        />
+      )}
 
       {/* Blue area circle around SELECTED cafe */}
       {selectedCafe && (
