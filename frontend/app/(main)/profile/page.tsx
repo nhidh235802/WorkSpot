@@ -245,15 +245,20 @@ const inputStyle: React.CSSProperties = {
 export default function ProfilePage() {
   const router = useRouter()
 
-  const [userRole] = useState<UserRole>(() => {
+  const [userRole, setUserRole] = useState<UserRole>('customer')
+  const [isMounted, setIsMounted] = useState(false)
+
+  useEffect(() => {
+    setIsMounted(true)
     if (typeof window !== 'undefined') {
       try {
         const userStr = localStorage.getItem('user')
-        if (userStr) return JSON.parse(userStr).role || 'customer'
+        if (userStr) {
+          setUserRole(JSON.parse(userStr).role || 'customer')
+        }
       } catch { /* ignore */ }
     }
-    return 'customer'
-  })
+  }, [])
 
   const roleStrings = PROFILE_TEXT[userRole]
 
@@ -402,17 +407,19 @@ export default function ProfilePage() {
     ? `${new Date(profile.createdAt).toLocaleDateString(roleStrings.locale, { year: 'numeric', month: 'long' })} ${roleStrings.memberSinceSuffix}`
     : ''
 
+  if (!isMounted) return null
+
   if (loading) return (
-    <div style={{ minHeight: '100vh', background: '#FAFAF5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#FAFAF5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <p style={{ color: '#414943', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif' }}>{roleStrings.loading}</p>
     </div>
   )
 
   if (loadError) return (
-    <div style={{ minHeight: '100vh', background: '#FAFAF5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ background: 'white', borderRadius: 12, padding: 32, boxShadow: '0 4px 12px rgba(0,0,0,0.08)', textAlign: 'center', maxWidth: 384 }}>
-        <p style={{ color: '#BA1A1A', fontWeight: 600, marginBottom: 8, fontFamily: 'Manrope, sans-serif' }}>{roleStrings.loadErrorTitle}</p>
-        <p style={{ color: '#78716C', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif' }}>{loadError}</p>
+    <div suppressHydrationWarning style={{ minHeight: '100vh', backgroundColor: '#FAFAF5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ backgroundColor: 'white', borderRadius: 12, padding: 32, boxShadow: '0 4px 12px rgba(0,0,0,0.08)', textAlign: 'center', maxWidth: 384 }}>
+        <p suppressHydrationWarning style={{ color: '#BA1A1A', fontWeight: 600, marginBottom: 8, fontFamily: 'Manrope, sans-serif' }}>{roleStrings.loadErrorTitle}</p>
+        <p suppressHydrationWarning style={{ color: '#78716C', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif' }}>{loadError}</p>
       </div>
     </div>
   )

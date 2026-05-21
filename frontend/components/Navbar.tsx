@@ -78,7 +78,7 @@ export default function Navbar({ center }: NavbarProps) {
       top: 0,
       zIndex: 1500, // Cao hơn Sidebar (thường 1000) và Map (400)
       width: '100%',
-      background: 'rgba(250,250,245,0.85)',
+      backgroundColor: 'rgba(250,250,245,0.85)',
       backdropFilter: 'blur(12px)',
       boxShadow: '0 8px 30px 0 rgba(0,0,0,0.04)',
       borderBottom: '1px solid rgba(20,66,45,0.05)',

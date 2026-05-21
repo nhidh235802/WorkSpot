@@ -71,7 +71,7 @@ export default function OwnerSidebar() {
             <Link
               key={item.id}
               href={item.path}
-              className={`flex items-center gap-3 px-4 py-3.5 rounded-[12px] transition-all duration-200 ${
+              className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 ${
                 isActive
                   ? 'bg-[#14422D] text-white shadow-sm'
                   : 'bg-transparent text-[#57534E] hover:bg-[#E8F0EB]/50'
@@ -101,7 +101,7 @@ export default function OwnerSidebar() {
             ) : (
               <div
                 className="w-10 h-10 rounded-full shrink-0 flex items-center justify-center text-sm font-bold"
-                style={{ background: 'rgba(20,66,45,0.10)', color: '#14422D' }}
+                style={{ backgroundColor: 'rgba(20,66,45,0.10)', color: '#14422D' }}
               >
                 {ownerData?.fullName ? getInitials(ownerData.fullName) : 'U'}
               </div>

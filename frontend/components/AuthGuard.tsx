@@ -42,15 +42,14 @@ export default function AuthGuard({
   const router   = useRouter()
   const pathname = usePathname()
 
-  // Sync init: on client navigations this resolves immediately — no flash
-  const [isAuthorized, setIsAuthorized] = useState(() =>
-    syncCheck(pathname, allowedRoles, forbiddenRoles, requireAuth)
-  )
+  const [isAuthorized, setIsAuthorized] = useState(false)
+  const [checked, setChecked] = useState(false)
 
   useEffect(() => {
     const ok = syncCheck(pathname, allowedRoles, forbiddenRoles, requireAuth)
     if (ok) {
       setIsAuthorized(true)
+      setChecked(true)
       return
     }
     // Not authorized → redirect
@@ -63,11 +62,14 @@ export default function AuthGuard({
     else if (role === 'owner')    router.push('/dashboard')
     else if (role === 'customer') router.push('/')
     else                          router.push('/login')
+    setChecked(true)
   }, [router, pathname, allowedRoles, forbiddenRoles, requireAuth])
 
-  if (!isAuthorized) {
+  // Show blank while checking auth (matches SSR blank output)
+  if (!checked || !isAuthorized) {
     return <div style={{ minHeight: '100vh', background: '#FAFAF5' }} />
   }
 
   return <>{children}</>
 }
+
