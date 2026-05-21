@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { Star, MapPin, Clock, Upload, X, Check, Trash2 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import { CafeService } from '@/services/cafe.service';
+import { toast } from 'sonner';
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001').replace(/\/$/, '');
 const toAbsoluteUrl = (path: string | null | undefined) => {
@@ -248,6 +249,7 @@ export default function ReviewPage() {
       };
       await CafeService.createReview(cafeId, reviewPayload);
 
+      toast.success('レビューを投稿しました。');
       setShowSuccess(true);
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -260,7 +262,7 @@ export default function ReviewPage() {
           return;
         }
       }
-      alert('投稿に失敗しました。もう一度お試しください。');
+      toast.error('投稿に失敗しました。もう一度お試しください。');
     } finally {
       setSubmitting(false);
     }

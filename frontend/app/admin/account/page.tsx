@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { AdminService, AdminUser } from '@/services/admin.service'
 import { ChevronLeft, ChevronRight, AlertCircle, CheckCircle2, X } from 'lucide-react'
+import { toast } from 'sonner'
 
 const PAGE_SIZE = 10
 
@@ -114,14 +115,15 @@ export default function AdminAccountPage() {
         prev.map((user) => (user.id === userId ? { ...user, status: status } : user))
       )
       
-      if (status === 'active') setSuccessMessage('アカウントを正常に有効化しました。')
-      if (status === 'disabled') setSuccessMessage('アカウントを正常に無効化しました。')
-      if (status === 'suspended') setSuccessMessage('アカウントを正常に利用停止しました。')
+      
+      if (status === 'active') toast.success('アカウントを正常に有効化しました。')
+      if (status === 'disabled') toast.success('アカウントを正常に無効化しました。')
+      if (status === 'suspended') toast.success('アカウントを正常に利用停止しました。')
 
-      setTimeout(() => setSuccessMessage(null), 3000)
       fetchStats()
     } catch (err: any) {
       console.error(err)
+      toast.error(err.message || 'ステータスの更新に失敗しました。')
       setError(err.message || 'ステータスの更新に失敗しました。')
     } finally {
       setConfirmTarget(null) // Đóng modal xác nhận
@@ -175,19 +177,7 @@ export default function AdminAccountPage() {
       </div>
 
       {/* ── TOAST THÔNG BÁO THÀNH CÔNG ── */}
-      {successMessage && (
-        <div style={{
-          position: 'fixed', top: 24, right: 32, zIndex: 100,
-          display: 'flex', alignItems: 'center', gap: 12, padding: '16px 24px',
-          background: '#E6F4EA', borderRadius: 12, border: '1px solid rgba(16,185,129,0.2)',
-          boxShadow: '0px 20px 40px rgba(0,0,0,0.08)',
-        }}>
-          <CheckCircle2 size={20} color="#10B981" style={{ flexShrink: 0 }} />
-          <div style={{ color: '#137333', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 600 }}>
-            {successMessage}
-          </div>
-        </div>
-      )}
+
 
       {/* ── エラーアラート通知 ── */}
       {error && (

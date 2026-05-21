@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { userService } from '@/services/user.service'
 import OwnerSidebar from '@/components/OwnerSidebar'
+import { toast } from 'sonner'
 
 type UserRole = 'customer' | 'owner' | 'admin'
 
@@ -56,6 +57,9 @@ const PROFILE_TEXT: Record<UserRole, {
   avatarTypeError: string
   avatarSizeError: string
   profileUpdateFailed: string
+  profileSuccess: string
+  avatarSuccess: string
+  passwordSuccessToast: string
 }> = {
   customer: {
     locale: 'ja-JP',
@@ -87,6 +91,9 @@ const PROFILE_TEXT: Record<UserRole, {
     avatarTypeError: '画像ファイル (jpg, jpeg, png, gif) を選択してください。',
     avatarSizeError: '5MB以下の画像を選択してください。',
     profileUpdateFailed: 'プロフィールの更新に失敗しました。',
+    profileSuccess: 'プロフィールを更新しました。',
+    avatarSuccess: 'アバターを更新しました。',
+    passwordSuccessToast: 'パスワードを変更しました。',
   },
   owner: {
     locale: 'vi-VN',
@@ -118,6 +125,9 @@ const PROFILE_TEXT: Record<UserRole, {
     avatarTypeError: 'Vui lòng chọn tệp ảnh (jpg, jpeg, png, gif).',
     avatarSizeError: 'Vui lòng chọn ảnh dưới 5MB.',
     profileUpdateFailed: 'Cập nhật hồ sơ thất bại.',
+    profileSuccess: 'Đã cập nhật hồ sơ cá nhân.',
+    avatarSuccess: 'Đã cập nhật ảnh đại diện.',
+    passwordSuccessToast: 'Đã đổi mật khẩu thành công.',
   },
   admin: {
     locale: 'ja-JP',
@@ -149,6 +159,9 @@ const PROFILE_TEXT: Record<UserRole, {
     avatarTypeError: '画像ファイル (jpg, jpeg, png, gif) を選択してください。',
     avatarSizeError: '5MB以下の画像を選択してください。',
     profileUpdateFailed: 'プロフィールの更新に失敗しました。',
+    profileSuccess: 'プロフィールを更新しました。',
+    avatarSuccess: 'アバターを更新しました。',
+    passwordSuccessToast: 'パスワードを変更しました。',
   },
 }
 
@@ -314,6 +327,7 @@ export default function ProfilePage() {
         bio: editForm.bio.trim() || null,
       } : prev)
       setIsEditing(false)
+      toast.success(roleStrings.profileSuccess)
     } catch (e: unknown) { setProfileError((e as Error).message) }
     finally { setSavingProfile(false) }
   }
@@ -332,6 +346,7 @@ export default function ProfilePage() {
     try {
       await changePassword(currentPwd, newPwd)
       setCurrentPwd(''); setNewPwd(''); setPwdSuccess(true)
+      toast.success(roleStrings.passwordSuccessToast)
     } catch (e: unknown) { setPwdError((e as Error).message) }
     finally { setSavingPwd(false) }
   }
@@ -371,6 +386,7 @@ export default function ProfilePage() {
         } catch { /* ignore */ }
       }
       window.dispatchEvent(new CustomEvent('workspot:user-updated', { detail: { avatar: result.avatar } }))
+      toast.success(roleStrings.avatarSuccess)
     } catch (error: unknown) {
       setAvatarError((error as Error).message)
       // Rollback về avatar cũ nếu thất bại

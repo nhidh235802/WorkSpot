@@ -1,5 +1,6 @@
 import './globals.css';
 import { Manrope } from 'next/font/google';
+import { Toaster } from 'sonner';
 
 const manrope = Manrope({
   subsets: ['latin'],
@@ -16,6 +17,7 @@ export default function RootLayout({
     <html lang="ja">
       <body className={manrope.className}>
         {children}
+        <Toaster position="top-right" richColors />
       </body>
     </html>
   )
