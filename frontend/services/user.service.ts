@@ -14,7 +14,7 @@ export const userService = {
     const formData = new FormData();
     formData.append('avatar', file);
 
-    const response = await fetch(`${API_BASE}/profile/avatar`, {
+    const response = await fetch(`${API_BASE}/users/profile/avatar`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,

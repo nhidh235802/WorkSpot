@@ -186,13 +186,13 @@ async function parseError(res: Response): Promise<string> {
 }
 
 async function fetchProfile(): Promise<UserProfile> {
-  const res = await fetch(`${API}/profile`, { headers: getAuthHeaders() })
+  const res = await fetch(`${API}/users/profile`, { headers: getAuthHeaders() })
   if (!res.ok) throw new Error(await parseError(res))
   return res.json()
 }
 
 async function patchProfile(data: Partial<Pick<UserProfile, 'fullName' | 'email' | 'phone' | 'address' | 'bio'>>): Promise<UserProfile> {
-  const res = await fetch(`${API}/profile`, {
+  const res = await fetch(`${API}/users/profile`, {
     method: 'PATCH',
     headers: getAuthHeaders(),
     body: JSON.stringify(data),
@@ -202,7 +202,7 @@ async function patchProfile(data: Partial<Pick<UserProfile, 'fullName' | 'email'
 }
 
 async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
-  const res = await fetch(`${API}/profile/change-password`, {
+  const res = await fetch(`${API}/users/profile/change-password`, {
     method: 'PUT',
     headers: getAuthHeaders(),
     body: JSON.stringify({ currentPassword, newPassword, confirmPassword: newPassword }),
