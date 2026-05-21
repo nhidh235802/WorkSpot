@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User, UserRole } from '../users/entities/user.entity';
+import { User, UserRole, UserStatus } from '../users/entities/user.entity'; // Bổ sung import UserStatus
 import { Cafe, CafeStatus } from '../cafes/entities/cafe.entity';
 
 @Injectable()
@@ -29,7 +29,6 @@ export class AdminService {
       this.cafeRepo.count({ where: { status: CafeStatus.HIDDEN } }),
     ]);
 
-    // Trend đăng ký cafe theo tháng (năm hiện tại)
     const year = new Date().getFullYear();
     const cafeTrend = await this.cafeRepo
       .createQueryBuilder('c')
@@ -40,7 +39,6 @@ export class AdminService {
       .orderBy('month', 'ASC')
       .getRawMany();
 
-    // Trend tạo account theo tháng
     const accountTrend = await this.userRepo
       .createQueryBuilder('u')
       .select('EXTRACT(MONTH FROM u.createdAt)::int', 'month')
@@ -51,12 +49,12 @@ export class AdminService {
       .getRawMany();
 
     return {
-      totalAccounts, // KPI: tổng tài khoản
-      totalCafes, // KPI: tổng cửa hàng
-      pendingCafes, // KPI: chờ duyệt (màu cam)
-      activeCafes, // KPI: đang hoạt động (màu xanh)
-      rejectedCafes, // dùng cho donut chart
-      cafeTrend, // [{month: 1, count: '5'}, ...]
+      totalAccounts,
+      totalCafes,
+      pendingCafes,
+      activeCafes,
+      rejectedCafes,
+      cafeTrend,
       accountTrend,
     };
   }
@@ -66,23 +64,44 @@ export class AdminService {
     name?: string;
     email?: string;
     role?: UserRole;
-    status?: string;
+    status?: string; // Nhận trạng thái lọc từ query frontend
     page?: number;
     limit?: number;
   }) {
-    const { name, email, role, page = 1, limit = 10 } = filters;
+    const { name, email, role, status, page = 1, limit = 10 } = filters;
     const qb = this.userRepo.createQueryBuilder('u');
 
     if (name) qb.andWhere('u.fullName ILIKE :name', { name: `%${name}%` });
-    if (email) qb.andWhere('u.email    ILIKE :email', { email: `%${email}%` });
+    if (email) qb.andWhere('u.email     ILIKE :email', { email: `%${email}%` });
     if (role) qb.andWhere('u.role = :role', { role });
+    
+    // BỔ SUNG: Điều kiện lọc theo trạng thái tài khoản (active, disabled, suspended)
+    if (status) {
+      qb.andWhere('u.status = :status', { status });
+    }
+
+    // Sắp xếp người dùng mới tạo lên đầu tiên
+    qb.orderBy('u.createdAt', 'DESC');
 
     const [items, total] = await qb
-      .select(['u.id', 'u.fullName', 'u.email', 'u.role', 'u.createdAt'])
+      // BỔ SUNG: select thêm 'u.avatar' và 'u.status' phục vụ render UI
+      .select(['u.id', 'u.fullName', 'u.email', 'u.role', 'u.avatar', 'u.status', 'u.createdAt'])
       .skip((page - 1) * limit)
       .take(limit)
       .getManyAndCount();
 
     return { items, total, page, limit };
+  }
+
+  // BỔ SUNG: Logic xử lý thay đổi trạng thái tài khoản cho nút bấm 無効化 và 停止
+  async updateUserStatus(userId: string, status: UserStatus): Promise<User> {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    
+    if (!user) {
+      throw new NotFoundException('ユーザーが見つかりません。');
+    }
+
+    user.status = status;
+    return await this.userRepo.save(user);
   }
 }

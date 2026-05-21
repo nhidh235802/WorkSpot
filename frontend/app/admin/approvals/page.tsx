@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from 'react'
 import { AdminService, AdminCafeItem } from '@/services/admin.service'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, X, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react'
+import { toast, Toaster } from 'sonner'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 const PAGE_SIZE = 5
@@ -42,8 +43,10 @@ export default function AdminApprovalsPage() {
   const [loading, setLoading]     = useState(true)
   const [error, setError]         = useState<string | null>(null)
   const [acting, setActing]       = useState<string | null>(null)
+  
   const [rejectModal, setRejectModal] = useState<RejectModal | null>(null)
   const [rejectReason, setRejectReason] = useState('')
+  const [approveTarget, setApproveTarget] = useState<{ id: string; name: string } | null>(null)
 
   const fetchData = () => {
     setLoading(true)
@@ -61,19 +64,64 @@ export default function AdminApprovalsPage() {
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => {
+  const fetchStatsData = () => {
     AdminService.getStats().then((s) => setApprovedCount(s.activeCafes)).catch(() => {})
+  }
+
+  useEffect(() => {
+    fetchStatsData()
   }, [])
 
   useEffect(() => { fetchData() }, [page])
 
-  const handleApprove = async (id: string) => {
+  // ── CUSTOM TOAST DESIGN (APPLE-STYLE GLASSMORPHISM) ──────────────────
+  const showCustomToast = (type: 'loading' | 'success' | 'error', message: string, toastId?: string | number) => {
+    const config = {
+      loading: { bg: 'rgba(255, 255, 255, 0.85)', text: '#414943', border: 'rgba(0,0,0,0.05)', icon: <Loader2 size={18} className="animate-spin" color="#14422D" /> },
+      success: { bg: 'rgba(230, 244, 234, 0.90)', text: '#137333', border: 'rgba(16,185,129,0.15)', icon: <CheckCircle2 size={18} color="#10B981" /> },
+      error:   { bg: 'rgba(254, 226, 226, 0.90)', text: '#991B1B', border: 'rgba(239,68,68,0.15)',  icon: <AlertTriangle size={18} color="#EF4444" /> }
+    }[type]
+
+    const toastContent = (
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 12, padding: '14px 20px',
+        background: config.bg, borderRadius: 14, border: `1px solid ${config.border}`,
+        backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
+        boxShadow: '0px 16px 32px rgba(26,28,25,0.08), 0px 4px 8px rgba(26,28,25,0.02)',
+        width: 340, boxSizing: 'border-box'
+      }}>
+        {config.icon}
+        <div style={{ color: config.text, fontSize: 13, fontFamily: 'Manrope, sans-serif', fontWeight: 600, lineHeight: '18px', flex: 1 }}>
+          {message}
+        </div>
+      </div>
+    )
+
+    if (type === 'loading') {
+      return toast.custom(() => toastContent, { duration: Infinity })
+    } else {
+      if (toastId) toast.dismiss(toastId)
+      return toast.custom(() => toastContent, { duration: 3000 })
+    }
+  }
+
+  // ── XỬ LÝ DUYỆT (THỰC THI QUA CUSTOM MODAL) ──────────────────────────
+  const executeApprove = async () => {
+    if (!approveTarget) return
+    const { id, name } = approveTarget
+    
+    setApproveTarget(null)
+    const toastId = showCustomToast('loading', `${name} の申請を承認しています...`)
     setActing(id)
+
     try {
       await AdminService.approveCafe(id)
+      showCustomToast('success', `${name} の掲載申請を承認しました。`, toastId)
       fetchData()
+      fetchStatsData()
     } catch (err: any) {
-      setError(err.message || '承認に失敗しました')
+      console.error(err)
+      showCustomToast('error', err.message || '承認処理に失敗しました。', toastId)
     } finally {
       setActing(null)
     }
@@ -84,16 +132,24 @@ export default function AdminApprovalsPage() {
     setRejectModal({ cafeId: id, cafeName: name })
   }
 
+  // ── XỬ LÝ TỪ CHỐI (THỰC THI QUA CUSTOM MODAL) ────────────────────────
   const handleRejectConfirm = async () => {
     if (!rejectModal) return
-    const { cafeId } = rejectModal
+    const { cafeId, cafeName } = rejectModal
+    const finalReason = rejectReason.trim() || '申請内容に不備があります'
+    
     setRejectModal(null)
+    const toastId = showCustomToast('loading', `${cafeName} の却下処理を実行中...`)
     setActing(cafeId)
+
     try {
-      await AdminService.rejectCafe(cafeId, rejectReason.trim() || '申請内容に不備があります')
+      await AdminService.rejectCafe(cafeId, finalReason)
+      showCustomToast('success', `${cafeName} の申請を却下しました。`, toastId)
       fetchData()
+      fetchStatsData()
     } catch (err: any) {
-      setError(err.message || '却下に失敗しました')
+      console.error(err)
+      showCustomToast('error', err.message || '却下処理に失敗しました。', toastId)
     } finally {
       setActing(null)
     }
@@ -112,6 +168,7 @@ export default function AdminApprovalsPage() {
 
   return (
     <div style={{ width: '100%', minHeight: '100%', background: '#FAFAF5', padding: 48, display: 'flex', flexDirection: 'column', gap: 48 }}>
+      <Toaster position="top-right" toastOptions={{ style: { background: 'transparent', border: 'none', boxShadow: 'none' } }} />
 
       {/* ── ヘッダー ── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
@@ -201,7 +258,7 @@ export default function AdminApprovalsPage() {
         {loading ? (
           <div style={{ padding: 32, textAlign: 'center', color: '#414943', fontFamily: 'Manrope, sans-serif', fontSize: 14 }}>読み込み中...</div>
         ) : cafes.length === 0 ? (
-          <div style={{ padding: 24, color: '#414943', fontFamily: 'Manrope, sans-serif', fontSize: 14 }}>現在、承認待ちの申請はありません。</div>
+          <div style={{ padding: 24, color: '#414943', fontFamily: 'Manrope, sans-serif', fontSize: 14 }}>現在、承認待ち의 申請はありません。</div>
         ) : (
           cafes.map((cafe) => {
             const img = toAbsUrl(cafe.avatar)
@@ -213,7 +270,7 @@ export default function AdminApprovalsPage() {
                 borderRadius: 12,
                 display: 'grid', gridTemplateColumns: '293fr 220fr 147fr 220fr',
                 alignItems: 'center',
-                opacity: isActing ? 0.6 : 1,
+                opacity: isActing ? 0.5 : 1,
                 transition: 'opacity 0.2s',
               }}>
 
@@ -278,7 +335,7 @@ export default function AdminApprovalsPage() {
                       paddingLeft: 24, paddingRight: 24, paddingTop: 10, paddingBottom: 10,
                       background: '#E8E8E3', borderRadius: 9999, border: 'none',
                       cursor: isActing ? 'not-allowed' : 'pointer',
-                      color: '#1A1C19', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '20px',
+                      color: isActing ? '#A8A29E' : '#1A1C19', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '20px',
                       whiteSpace: 'nowrap',
                     }}
                   >
@@ -286,11 +343,11 @@ export default function AdminApprovalsPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleApprove(cafe.id)}
+                    onClick={() => setApproveTarget({ id: cafe.id, name: cafe.name })}
                     disabled={isActing}
                     style={{
                       paddingLeft: 32, paddingRight: 32, paddingTop: 10, paddingBottom: 10,
-                      background: '#14422D',
+                      background: isActing ? '#7F8181' : '#14422D',
                       boxShadow: '0px 4px 6px -4px rgba(20,66,45,0.20), 0px 10px 15px -3px rgba(20,66,45,0.20)',
                       borderRadius: 9999, border: 'none',
                       cursor: isActing ? 'not-allowed' : 'pointer',
@@ -312,8 +369,8 @@ export default function AdminApprovalsPage() {
         <div
           onClick={() => setRejectModal(null)}
           style={{
-            position: 'fixed', inset: 0, zIndex: 50,
-            background: 'rgba(0,0,0,0.40)', backdropFilter: 'blur(2px)',
+            position: 'fixed', inset: 0, zIndex: 110,
+            background: 'rgba(26,28,25,0.25)', backdropFilter: 'blur(4px)',
             display: 'flex', justifyContent: 'center', alignItems: 'center',
           }}
         >
@@ -322,28 +379,32 @@ export default function AdminApprovalsPage() {
             style={{
               width: 512, maxWidth: '90vw',
               padding: 32, background: 'white',
-              boxShadow: '0px 12px 40px rgba(26,28,25,0.06)',
+              boxShadow: '0px 24px 60px rgba(0,0,0,0.12)',
               borderRadius: 16,
-              outline: '1px rgba(192,201,193,0.10) solid',
-              outlineOffset: '-1px',
+              position: 'relative',
               display: 'flex', flexDirection: 'column', gap: 24,
             }}
           >
-            {/* タイトル */}
+            <button 
+              onClick={() => setRejectModal(null)}
+              style={{ position: 'absolute', right: 20, top: 20, background: 'none', border: 'none', cursor: 'pointer', color: '#717973' }}
+            >
+              <X size={18} />
+            </button>
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <div style={{ color: '#14422D', fontSize: 24, fontFamily: 'Manrope, sans-serif', fontWeight: 800, lineHeight: '32px' }}>
                 却下理由の入力
               </div>
               <div style={{ color: '#414943', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 400, lineHeight: '20px' }}>
-                申請を却下する理由をオーナーに通知します。
+                「{rejectModal.cafeName}」の申請を却下する理由をオーナーに通知します。
               </div>
             </div>
 
-            {/* テキストエリア */}
             <textarea
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
-              placeholder="却下理由を入力してください"
+              placeholder="却下理由を入力してください（例: 写真が不鮮明、営業許可証の期限切れなど）"
               rows={5}
               style={{
                 width: '100%', boxSizing: 'border-box',
@@ -354,8 +415,7 @@ export default function AdminApprovalsPage() {
               }}
             />
 
-            {/* ボタン */}
-            <div style={{ paddingTop: 8, display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
               <button
                 type="button"
                 onClick={() => setRejectModal(null)}
@@ -365,26 +425,91 @@ export default function AdminApprovalsPage() {
                   color: '#1A1C19', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '20px',
                   whiteSpace: 'nowrap',
                 }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#D8D8D3' }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = '#E8E8E3' }}
               >
                 キャンセル
               </button>
               <button
                 type="button"
                 onClick={handleRejectConfirm}
+                disabled={!rejectReason.trim()}
                 style={{
                   paddingLeft: 32, paddingRight: 32, paddingTop: 10, paddingBottom: 10,
-                  background: '#BA1A1A',
-                  boxShadow: '0px 4px 6px -4px rgba(186,26,26,0.20), 0px 10px 15px -3px rgba(186,26,26,0.20)',
-                  borderRadius: 9999, border: 'none', cursor: 'pointer',
+                  background: rejectReason.trim() ? '#BA1A1A' : '#7F8181',
+                  boxShadow: rejectReason.trim() ? '0px 4px 12px rgba(186,26,26,0.20)' : 'none',
+                  borderRadius: 9999, border: 'none', 
+                  cursor: rejectReason.trim() ? 'pointer' : 'not-allowed',
                   color: 'white', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '20px',
                   whiteSpace: 'nowrap',
+                  opacity: rejectReason.trim() ? 1 : 0.5,
                 }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#9B1515' }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = '#BA1A1A' }}
               >
                 却下を確定
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── 承認確認カスタムモーダル ── */}
+      {approveTarget && (
+        <div
+          onClick={() => setApproveTarget(null)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 110,
+            background: 'rgba(26,28,25,0.25)', backdropFilter: 'blur(4px)',
+            display: 'flex', justifyContent: 'center', alignItems: 'center',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: 440, maxWidth: '90vw', background: 'white',
+              boxShadow: '0px 24px 60px rgba(0,0,0,0.12)', borderRadius: 16,
+              padding: 32, display: 'flex', flexDirection: 'column', gap: 24,
+              position: 'relative'
+            }}
+          >
+            <button 
+              onClick={() => setApproveTarget(null)}
+              style={{ position: 'absolute', right: 20, top: 20, background: 'none', border: 'none', cursor: 'pointer', color: '#717973' }}
+            >
+              <X size={18} />
+            </button>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ color: '#14422D', fontSize: 20, fontFamily: 'Manrope, sans-serif', fontWeight: 600, lineHeight: '28px' }}>
+                掲載申請の承認
+              </div>
+              <div style={{ color: '#414943', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 400, lineHeight: '22px' }}>
+                「{approveTarget.name}」の掲載申請を承認しますか？承認すると、店舗情報は即座にプラットフォーム上に公開されます。
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+              <button
+                type="button"
+                onClick={() => setApproveTarget(null)}
+                style={{
+                  paddingLeft: 24, paddingRight: 24, paddingTop: 10, paddingBottom: 10,
+                  background: '#E8E8E3', borderRadius: 9999, border: 'none', cursor: 'pointer',
+                  color: '#1A1C19', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 500,
+                }}
+              >
+                キャンセル
+              </button>
+              <button
+                type="button"
+                onClick={executeApprove}
+                style={{
+                  paddingLeft: 24, paddingRight: 24, paddingTop: 10, paddingBottom: 10,
+                  background: '#14422D', borderRadius: 9999, border: 'none', cursor: 'pointer',
+                  color: 'white', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 600,
+                  boxShadow: '0px 4px 12px rgba(20,66,45,0.15)'
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#2D5A43' }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = '#14422D' }}
+              >
+                承認する
               </button>
             </div>
           </div>
@@ -398,7 +523,7 @@ export default function AdminApprovalsPage() {
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         }}>
           <div style={{ color: '#414943', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '20px' }}>
-            {total}件中{startRow}-{endRow}件のリクエストを表示中
+            全 {total}件中 {startRow}-{endRow}件のリクエストを表示中
           </div>
 
           <div style={{ display: 'flex', gap: 8 }}>

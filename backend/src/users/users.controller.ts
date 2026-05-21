@@ -11,6 +11,8 @@ import {
   Post,
   UseInterceptors,
   UploadedFile,
+  Query,
+  Param, // <--- BỔ SUNG THÊM DECORATOR NÀY ĐỂ LẤY ID TỪ URL
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -20,7 +22,12 @@ import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ProfileResponseDto } from './dto/profile-response.dto';
+import { AdminQueryUserDto } from './dto/admin-query-user.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
+import { UserRole } from './entities/user.entity';
+import { UpdateUserStatusDto } from './dto/update-status.dto';  
 
 interface AuthenticatedRequest extends ExpressRequest {
   user?: {
@@ -28,22 +35,49 @@ interface AuthenticatedRequest extends ExpressRequest {
   };
 }
 
-import { UserRole } from './entities/user.entity';
-import { Roles } from '../auth/roles.decorator';
-import { RolesGuard } from '../auth/roles.guard';
-
-/**
- * Mọi route đều yêu cầu JWT và đúng phân quyền.
- * userId được lấy từ req.user.id (do JwtAuthGuard inject sau khi verify token).
- */
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.CUSTOMER, UserRole.OWNER)
-@Controller('profile')
+@Controller('users') 
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  // GET /profile
-  @Get()
+  // =====================================================================
+  // ─── ADMIN ENDPOINTS ─────────────────────────────────────────────────
+  // =====================================================================
+
+  // GET /users/admin/stats
+  @Get('admin/stats')
+  @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  async getStats() {
+    return await this.usersService.getAdminStats();
+  }
+
+  // GET /users/admin/list
+  @Get('admin/list')
+  @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  async findAllForAdmin(@Query() query: AdminQueryUserDto) {
+    return await this.usersService.findAllForAdmin(query);
+  }
+
+  // PATCH /users/admin/:id/status (BỔ SUNG ROUTE THAY ĐỔI TRẠNG THÁI CHO NÚT BẤM)
+  @Patch('admin/:id/status')
+  @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  async updateStatus(
+    @Param('id') id: string,
+    @Body() dto: UpdateUserStatusDto,
+  ) {
+    return await this.usersService.updateStatus(id, dto);
+  }
+
+  // =====================================================================
+  // ─── USER PROFILE ENDPOINTS ──────────────────────────────────────────
+  // =====================================================================
+
+  // GET /users/profile
+  @Get('profile')
+  @Roles(UserRole.CUSTOMER, UserRole.OWNER)
   @HttpCode(HttpStatus.OK)
   async getProfile(
     @Request() req: AuthenticatedRequest,
@@ -51,8 +85,9 @@ export class UsersController {
     return await this.usersService.getProfile(req.user!.id);
   }
 
-  // PATCH /profile
-  @Patch()
+  // PATCH /users/profile
+  @Patch('profile')
+  @Roles(UserRole.CUSTOMER, UserRole.OWNER)
   @HttpCode(HttpStatus.OK)
   async updateProfile(
     @Request() req: AuthenticatedRequest,
@@ -61,8 +96,9 @@ export class UsersController {
     return await this.usersService.updateProfile(req.user!.id, dto);
   }
 
-  // PUT /profile/change-password
-  @Put('change-password')
+  // PUT /users/profile/change-password
+  @Put('profile/change-password')
+  @Roles(UserRole.CUSTOMER, UserRole.OWNER)
   @HttpCode(HttpStatus.OK)
   async changePassword(
     @Request() req: AuthenticatedRequest,
@@ -70,7 +106,10 @@ export class UsersController {
   ): Promise<{ message: string }> {
     return await this.usersService.changePassword(req.user!.id, dto);
   }
-  @Post('avatar')
+
+  // POST /users/profile/avatar
+  @Post('profile/avatar')
+  @Roles(UserRole.CUSTOMER, UserRole.OWNER)
   @UseInterceptors(
     FileInterceptor('avatar', {
       storage: diskStorage({

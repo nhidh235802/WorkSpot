@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { AdminService, AdminUser } from '@/services/admin.service'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, AlertCircle, CheckCircle2, X } from 'lucide-react'
 
 const PAGE_SIZE = 10
 
@@ -10,6 +10,12 @@ const ROLE_CONFIG: Record<string, { label: string; avatarBg: string; avatarText:
   admin:    { label: '管理者',       avatarBg: '#BCEECF', avatarText: '#14422D' },
   owner:    { label: 'オーナー',     avatarBg: '#FFDBC7', avatarText: '#904C18' },
   customer: { label: '一般ユーザー', avatarBg: '#FFDBC7', avatarText: '#904C18' },
+}
+
+const STATUS_CONFIG: Record<string, { label: string; bg: string; dot: string; text: string }> = {
+  active:    { label: '有効', bg: '#D1FAE5', dot: '#10B981', text: '#065F46' },
+  disabled:  { label: '無効', bg: '#FFEDD5', dot: '#F97316', text: '#9A3412' },
+  suspended: { label: '停止', bg: '#FEE2E2', dot: '#EF4444', text: '#991B1B' },
 }
 
 function formatDate(iso: string) {
@@ -28,7 +34,7 @@ function formatDate(iso: string) {
 
 function getInitials(name: string) {
   const parts = name.trim().split(/\s+/)
-  return parts.length >= 2 ? parts[0] : name.slice(0, 2)
+  return parts.length >= 2 ? parts[parts.length - 1].slice(0, 2) : name.slice(0, 2)
 }
 
 export default function AdminAccountPage() {
@@ -48,13 +54,24 @@ export default function AdminAccountPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState<string | null>(null)
   const [detailUser, setDetailUser] = useState<AdminUser | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
-  // 統計用: 総アカウント数
+  // STATE ĐỂ ĐIỀU KHIỂN HỘP THOẠI XÁC NHẬN TÙY CHỈNH CAO CẤP
+  const [confirmTarget, setConfirmTarget] = useState<{ userId: string; userName: string; status: 'active' | 'disabled' | 'suspended' } | null>(null)
+
+  const fetchStats = () => {
+    AdminService.getStats()
+      .then((s) => setTotalAccounts(s.totalAccounts))
+      .catch((err) => {
+        console.error('統計データの取得に失敗しました:', err)
+        setError('ダッシュボードの統計データを読み込めませんでした。')
+      })
+  }
+
   useEffect(() => {
-    AdminService.getStats().then((s) => setTotalAccounts(s.totalAccounts)).catch(() => {})
+    fetchStats()
   }, [])
 
-  // ユーザー一覧 (ページネーション)
   useEffect(() => {
     setLoading(true)
     setError(null)
@@ -71,7 +88,7 @@ export default function AdminAccountPage() {
       })
       .catch((err) => {
         console.error(err)
-        setError(err.message || 'データを読み込めませんでした')
+        setError(err.message || 'ユーザーデータの読み込みに失敗しました。')
       })
       .finally(() => setLoading(false))
   }, [appliedName, appliedEmail, appliedRole, page])
@@ -83,11 +100,42 @@ export default function AdminAccountPage() {
     setPage(1)
   }
 
+  // Hàm thực thi cập nhật thực tế sau khi nhấn Xác nhận trong Custom Modal
+  const executeUpdateStatus = async () => {
+    if (!confirmTarget) return
+
+    const { userId, status } = confirmTarget
+
+    try {
+      setError(null)
+      await AdminService.updateUserStatus(userId, status)
+      
+      setUsers((prev) =>
+        prev.map((user) => (user.id === userId ? { ...user, status: status } : user))
+      )
+      
+      if (status === 'active') setSuccessMessage('アカウントを正常に有効化しました。')
+      if (status === 'disabled') setSuccessMessage('アカウントを正常に無効化しました。')
+      if (status === 'suspended') setSuccessMessage('アカウントを正常に利用停止しました。')
+
+      setTimeout(() => setSuccessMessage(null), 3000)
+      fetchStats()
+    } catch (err: any) {
+      console.error(err)
+      setError(err.message || 'ステータスの更新に失敗しました。')
+    } finally {
+      setConfirmTarget(null) // Đóng modal xác nhận
+    }
+  }
+
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
-  const startRow   = (page - 1) * PAGE_SIZE + 1
+  const startRow   = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1
   const endRow     = Math.min(page * PAGE_SIZE, total)
 
-  // ページ番号リスト (最大 5 個)
+  const activeCount = users.filter((u) => u.status === 'active' || !u.status).length
+  const disabledCount = users.filter((u) => u.status === 'disabled').length
+  const suspendedCount = users.filter((u) => u.status === 'suspended').length
+
   const pageNumbers = (() => {
     const half  = 2
     let start   = Math.max(1, page - half)
@@ -95,6 +143,23 @@ export default function AdminAccountPage() {
     start       = Math.max(1, end - 4)
     return Array.from({ length: end - start + 1 }, (_, i) => start + i)
   })()
+
+  // Hàm chuyển đổi nội dung tiêu đề thông báo trong Custom Modal
+  const getConfirmModalTitle = () => {
+    if (!confirmTarget) return ''
+    if (confirmTarget.status === 'active') return 'アカウントの有効化'
+    if (confirmTarget.status === 'disabled') return 'アカウントの無効化'
+    return 'アカウントの利用停止'
+  }
+
+  // Hàm chuyển đổi văn bản nội dung câu hỏi trong Custom Modal
+  const getConfirmModalBody = () => {
+    if (!confirmTarget) return ''
+    const name = confirmTarget.userName
+    if (confirmTarget.status === 'active') return `本当に「${name}」のアカウント制限を解除し、有効化しますか？`
+    if (confirmTarget.status === 'disabled') return `本当に「${name}」のアカウントを無効化しますか？`
+    return `本当に「${name}」のアカウントを制限（利用停止）しますか？この操作によりユーザーは即座にログアウトされます。`
+  }
 
   return (
     <div style={{ width: '100%', minHeight: '100%', background: '#FAFAF5', paddingTop: 32, paddingBottom: 40, paddingLeft: 32, paddingRight: 32, display: 'flex', flexDirection: 'column', gap: 32 }}>
@@ -109,13 +174,42 @@ export default function AdminAccountPage() {
         </div>
       </div>
 
-      {/* ── 統計カード (縦並び → グリッド) ── */}
+      {/* ── TOAST THÔNG BÁO THÀNH CÔNG ── */}
+      {successMessage && (
+        <div style={{
+          position: 'fixed', top: 24, right: 32, zIndex: 100,
+          display: 'flex', alignItems: 'center', gap: 12, padding: '16px 24px',
+          background: '#E6F4EA', borderRadius: 12, border: '1px solid rgba(16,185,129,0.2)',
+          boxShadow: '0px 20px 40px rgba(0,0,0,0.08)',
+        }}>
+          <CheckCircle2 size={20} color="#10B981" style={{ flexShrink: 0 }} />
+          <div style={{ color: '#137333', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 600 }}>
+            {successMessage}
+          </div>
+        </div>
+      )}
+
+      {/* ── エラーアラート通知 ── */}
+      {error && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 12, padding: '16px 24px',
+          background: '#FFDADA', borderRadius: 12, border: '1px solid rgba(186,26,26,0.2)',
+          boxShadow: '0px 4px 20px rgba(0,0,0,0.02)'
+        }}>
+          <AlertCircle size={20} color="#BA1A1A" style={{ flexShrink: 0 }} />
+          <div style={{ color: '#350F12', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 500 }}>
+            {error}
+          </div>
+        </div>
+      )}
+
+      {/* ── 統計カード ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, paddingTop: 16 }}>
         {[
           { label: '全アカウント数',   value: totalAccounts ?? '—', bg: 'white',   labelColor: '#414943', valueColor: '#14422D' },
-          { label: '有効アカウント',   value: total || '—',          bg: '#BCEECF', labelColor: '#224F39', valueColor: '#002112' },
-          { label: '無効アカウント',   value: 0,                     bg: '#FFDBC7', labelColor: '#733600', valueColor: '#311300' },
-          { label: '停止中アカウント', value: 0,                     bg: '#FFDADA', labelColor: '#69393B', valueColor: '#350F12' },
+          { label: '有効アカウント',   value: total ? activeCount : '—', bg: '#BCEECF', labelColor: '#224F39', valueColor: '#002112' },
+          { label: '無効アカウント',   value: total ? disabledCount : 0, bg: '#FFDBC7', labelColor: '#733600', valueColor: '#311300' },
+          { label: '停止中アカウント', value: total ? suspendedCount : 0, bg: '#FFDADA', labelColor: '#69393B', valueColor: '#350F12' },
         ].map((s) => (
           <div key={s.label} style={{
             padding: '32px 32px 34px',
@@ -137,7 +231,6 @@ export default function AdminAccountPage() {
       {/* ── 検索フォーム ── */}
       <div style={{ background: '#F4F4EF', borderRadius: 12, paddingTop: 48, paddingBottom: 32, paddingLeft: 32, paddingRight: 32, display: 'flex', flexDirection: 'column', gap: 32 }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
-          {/* 名前 */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <label style={{ color: '#414943', fontSize: 12, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '16px', paddingLeft: 4 }}>
               名前
@@ -156,7 +249,6 @@ export default function AdminAccountPage() {
             />
           </div>
 
-          {/* メールアドレス */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <label style={{ color: '#414943', fontSize: 12, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '16px', paddingLeft: 4 }}>
               メールアドレス
@@ -175,7 +267,6 @@ export default function AdminAccountPage() {
             />
           </div>
 
-          {/* ロール */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <label style={{ color: '#414943', fontSize: 12, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '16px', paddingLeft: 4 }}>
               ロール
@@ -197,7 +288,6 @@ export default function AdminAccountPage() {
             </select>
           </div>
 
-          {/* ステータス (UI のみ) */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <label style={{ color: '#414943', fontSize: 12, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '16px', paddingLeft: 4 }}>
               ステータス
@@ -218,7 +308,6 @@ export default function AdminAccountPage() {
           </div>
         </div>
 
-        {/* 検索ボタン */}
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <button
             type="button"
@@ -239,7 +328,6 @@ export default function AdminAccountPage() {
       {/* ── テーブル ── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 16 }}>
 
-        {/* ヘッダー行 */}
         <div style={{
           paddingLeft: 24, paddingRight: 24, paddingTop: 8, paddingBottom: 8,
           display: 'grid', gridTemplateColumns: '228fr 152fr 152fr 152fr 228fr',
@@ -264,13 +352,13 @@ export default function AdminAccountPage() {
 
         {loading ? (
           <div style={{ padding: 32, textAlign: 'center', color: '#414943', fontFamily: 'Manrope, sans-serif', fontSize: 14 }}>読み込み中...</div>
-        ) : error ? (
-          <div style={{ padding: 24, color: '#BA1A1A', fontFamily: 'Manrope, sans-serif', fontSize: 14 }}>{error}</div>
         ) : users.length === 0 ? (
           <div style={{ padding: 24, color: '#414943', fontFamily: 'Manrope, sans-serif', fontSize: 14 }}>該当するアカウントがありません。</div>
         ) : (
           users.map((user) => {
             const rc = ROLE_CONFIG[user.role] ?? { label: user.role, avatarBg: '#E3E3DE', avatarText: '#717973' }
+            const sc = STATUS_CONFIG[user.status || 'active'] || STATUS_CONFIG.active
+
             return (
               <div key={user.id} style={{
                 padding: 24, background: 'white',
@@ -280,16 +368,24 @@ export default function AdminAccountPage() {
                 alignItems: 'center',
               }}>
 
-                {/* ユーザー情報 */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                  <div style={{
-                    width: 48, height: 48, borderRadius: 9999, flexShrink: 0,
-                    background: rc.avatarBg,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: rc.avatarText, fontSize: 16, fontFamily: 'Manrope, sans-serif', fontWeight: 500,
-                  }}>
-                    {getInitials(user.fullName)}
-                  </div>
+                  {user.avatar ? (
+                    <img 
+                      src={user.avatar} 
+                      alt={user.fullName}
+                      style={{ width: 48, height: 48, borderRadius: 9999, objectFit: 'cover', flexShrink: 0 }}
+                      onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none' }}
+                    />
+                  ) : (
+                    <div style={{
+                      width: 48, height: 48, borderRadius: 9999, flexShrink: 0,
+                      background: rc.avatarBg,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: rc.avatarText, fontSize: 16, fontFamily: 'Manrope, sans-serif', fontWeight: 500,
+                    }}>
+                      {getInitials(user.fullName)}
+                    </div>
+                  )}
                   <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                     <div style={{ color: '#1A1C19', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '20px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {user.fullName}
@@ -300,7 +396,6 @@ export default function AdminAccountPage() {
                   </div>
                 </div>
 
-                {/* ロール */}
                 <div>
                   <span style={{
                     paddingLeft: 12, paddingRight: 12, paddingTop: 3, paddingBottom: 3,
@@ -312,24 +407,23 @@ export default function AdminAccountPage() {
                   </span>
                 </div>
 
-                {/* ステータス (有効固定 — backend未対応) */}
                 <div>
                   <div style={{
                     display: 'inline-flex', alignItems: 'center', gap: 6,
                     paddingLeft: 12, paddingRight: 12, paddingTop: 4, paddingBottom: 4,
-                    background: '#D1FAE5', borderRadius: 9999,
+                    background: sc.bg, borderRadius: 9999,
                   }}>
-                    <div style={{ width: 6, height: 6, background: '#10B981', borderRadius: 9999 }} />
-                    <span style={{ color: '#065F46', fontSize: 10, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '15px' }}>有効</span>
+                    <div style={{ width: 6, height: 6, background: sc.dot, borderRadius: 9999 }} />
+                    <span style={{ color: sc.text, fontSize: 10, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '15px' }}>
+                      {sc.label}
+                    </span>
                   </div>
                 </div>
 
-                {/* 最終ログイン (createdAt で代用) */}
                 <div style={{ textAlign: 'center', color: '#414943', fontSize: 14, fontFamily: 'Be Vietnam Pro, sans-serif', fontWeight: 400, lineHeight: '20px' }}>
                   {formatDate(user.createdAt)}
                 </div>
 
-                {/* 操作 */}
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
                   <button
                     type="button"
@@ -344,32 +438,53 @@ export default function AdminAccountPage() {
                   >
                     詳細
                   </button>
-                  <button
-                    type="button"
-                    style={{
-                      paddingLeft: 20, paddingRight: 20, paddingTop: 8, paddingBottom: 8,
-                      background: 'transparent', borderRadius: 9999,
-                      border: 'none', outline: '1px #717973 solid', outlineOffset: '-1px',
-                      cursor: 'pointer',
-                      color: '#414943', fontSize: 12, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '16px',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    無効化
-                  </button>
-                  <button
-                    type="button"
-                    style={{
-                      paddingLeft: 20, paddingRight: 20, paddingTop: 8, paddingBottom: 8,
-                      background: 'transparent', borderRadius: 9999,
-                      border: 'none', outline: '1px #717973 solid', outlineOffset: '-1px',
-                      cursor: 'pointer',
-                      color: '#414943', fontSize: 12, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '16px',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    停止
-                  </button>
+
+                  {/* THAY THẾ ĐOẠN ĐIỀU KHIỂN NÚT ĐỂ KÍCH HOẠT CUSTOM MODAL THAY VÌ CONFIRM CŨ */}
+                  {user.status && user.status !== 'active' ? (
+                    <button
+                      type="button"
+                      onClick={() => setConfirmTarget({ userId: user.id, userName: user.fullName, status: 'active' })}
+                      style={{
+                        paddingLeft: 20, paddingRight: 20, paddingTop: 8, paddingBottom: 8,
+                        background: '#BCEECF', borderRadius: 9999, border: 'none', cursor: 'pointer',
+                        color: '#14422D', fontSize: 12, fontFamily: 'Manrope, sans-serif', fontWeight: 600, lineHeight: '16px',
+                        whiteSpace: 'nowrap', boxShadow: '0px 1px 2px rgba(0,0,0,0.05)',
+                      }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#A7DFBB' }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = '#BCEECF' }}
+                    >
+                      有効化
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmTarget({ userId: user.id, userName: user.fullName, status: 'disabled' })}
+                        style={{
+                          paddingLeft: 20, paddingRight: 20, paddingTop: 8, paddingBottom: 8,
+                          background: 'transparent', borderRadius: 9999,
+                          border: 'none', outline: '1px #717973 solid', outlineOffset: '-1px',
+                          cursor: 'pointer', color: '#414943', fontSize: 12, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '16px',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        無効化
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmTarget({ userId: user.id, userName: user.fullName, status: 'suspended' })}
+                        style={{
+                          paddingLeft: 20, paddingRight: 20, paddingTop: 8, paddingBottom: 8,
+                          background: 'transparent', borderRadius: 9999,
+                          border: 'none', outline: '1px #717973 solid', outlineOffset: '-1px',
+                          cursor: 'pointer', color: '#414943', fontSize: 12, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '16px',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        停止
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             )
@@ -380,6 +495,8 @@ export default function AdminAccountPage() {
       {/* ── ユーザー詳細モーダル ── */}
       {detailUser && (() => {
         const rc = ROLE_CONFIG[detailUser.role] ?? { label: detailUser.role, avatarBg: '#E3E3DE', avatarText: '#717973' }
+        const sc = STATUS_CONFIG[detailUser.status || 'active'] || STATUS_CONFIG.active
+
         return (
           <div
             onClick={() => setDetailUser(null)}
@@ -392,31 +509,31 @@ export default function AdminAccountPage() {
             <div
               onClick={(e) => e.stopPropagation()}
               style={{
-                width: 512, maxWidth: '90vw',
-                background: 'white',
-                boxShadow: '0px 12px 40px rgba(26,28,25,0.06)',
-                borderRadius: 16,
-                outline: '1px rgba(192,201,193,0.10) solid',
-                outlineOffset: '-1px',
-                overflow: 'hidden',
-                display: 'flex', flexDirection: 'column',
+                width: 512, maxWidth: '90vw', background: 'white',
+                boxShadow: '0px 12px 40px rgba(26,28,25,0.06)', borderRadius: 16,
+                outline: '1px rgba(192,201,193,0.10) solid', outlineOffset: '-1px',
+                overflow: 'hidden', display: 'flex', flexDirection: 'column',
               }}
             >
-              {/* ── ヘッダー (緑背景) ── */}
               <div style={{
                 background: 'linear-gradient(171deg, #14422D 0%, #2D5A43 100%)',
-                padding: '32px 32px 40px',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16,
+                padding: '32px 32px 40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16,
               }}>
-                <div style={{
-                  width: 80, height: 80, borderRadius: 9999,
-                  background: rc.avatarBg,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: rc.avatarText, fontSize: 24, fontFamily: 'Manrope, sans-serif', fontWeight: 700,
-                  flexShrink: 0,
-                }}>
-                  {getInitials(detailUser.fullName)}
-                </div>
+                {detailUser.avatar ? (
+                  <img 
+                    src={detailUser.avatar} 
+                    alt={detailUser.fullName}
+                    style={{ width: 80, height: 80, borderRadius: 9999, objectFit: 'cover', flexShrink: 0 }}
+                  />
+                ) : (
+                  <div style={{
+                    width: 80, height: 80, borderRadius: 9999,
+                    background: rc.avatarBg, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: rc.avatarText, fontSize: 24, fontFamily: 'Manrope, sans-serif', fontWeight: 700, flexShrink: 0,
+                  }}>
+                    {getInitials(detailUser.fullName)}
+                  </div>
+                )}
                 <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 4 }}>
                   <div style={{ color: 'white', fontSize: 22, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '28px' }}>
                     {detailUser.fullName}
@@ -425,7 +542,6 @@ export default function AdminAccountPage() {
                     {detailUser.email}
                   </div>
                 </div>
-                {/* ロールバッジ */}
                 <div style={{
                   paddingLeft: 16, paddingRight: 16, paddingTop: 4, paddingBottom: 4,
                   background: 'rgba(255,255,255,0.15)', borderRadius: 9999,
@@ -436,29 +552,23 @@ export default function AdminAccountPage() {
                 </div>
               </div>
 
-              {/* ── 詳細情報 ── */}
               <div style={{ padding: '28px 32px 32px', display: 'flex', flexDirection: 'column', gap: 0 }}>
-
-                {/* ステータス */}
                 <div style={{
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  paddingTop: 16, paddingBottom: 16,
-                  borderBottom: '1px rgba(192,201,193,0.20) solid',
+                  paddingTop: 16, paddingBottom: 16, borderBottom: '1px rgba(192,201,193,0.20) solid',
                 }}>
                   <span style={{ color: '#A8A29E', fontSize: 12, fontFamily: 'Manrope, sans-serif', fontWeight: 500, textTransform: 'uppercase', letterSpacing: 1 }}>
                     アカウントステータス
                   </span>
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, paddingLeft: 12, paddingRight: 12, paddingTop: 4, paddingBottom: 4, background: '#D1FAE5', borderRadius: 9999 }}>
-                    <div style={{ width: 6, height: 6, background: '#10B981', borderRadius: 9999 }} />
-                    <span style={{ color: '#065F46', fontSize: 10, fontFamily: 'Manrope, sans-serif', fontWeight: 500 }}>有効</span>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, paddingLeft: 12, paddingRight: 12, paddingTop: 4, paddingBottom: 4, background: sc.bg, borderRadius: 9999 }}>
+                    <div style={{ width: 6, height: 6, background: sc.dot, borderRadius: 9999 }} />
+                    <span style={{ color: sc.text, fontSize: 10, fontFamily: 'Manrope, sans-serif', fontWeight: 500 }}>{sc.label}</span>
                   </div>
                 </div>
 
-                {/* 登録日 */}
                 <div style={{
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  paddingTop: 16, paddingBottom: 16,
-                  borderBottom: '1px rgba(192,201,193,0.20) solid',
+                  paddingTop: 16, paddingBottom: 16, borderBottom: '1px rgba(192,201,193,0.20) solid',
                 }}>
                   <span style={{ color: '#A8A29E', fontSize: 12, fontFamily: 'Manrope, sans-serif', fontWeight: 500, textTransform: 'uppercase', letterSpacing: 1 }}>
                     登録日
@@ -468,11 +578,9 @@ export default function AdminAccountPage() {
                   </span>
                 </div>
 
-                {/* 最終ログイン */}
                 <div style={{
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  paddingTop: 16, paddingBottom: 16,
-                  borderBottom: '1px rgba(192,201,193,0.20) solid',
+                  paddingTop: 16, paddingBottom: 16, borderBottom: '1px rgba(192,201,193,0.20) solid',
                 }}>
                   <span style={{ color: '#A8A29E', fontSize: 12, fontFamily: 'Manrope, sans-serif', fontWeight: 500, textTransform: 'uppercase', letterSpacing: 1 }}>
                     最終ログイン
@@ -482,7 +590,6 @@ export default function AdminAccountPage() {
                   </span>
                 </div>
 
-                {/* ユーザーID */}
                 <div style={{
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                   paddingTop: 16, paddingBottom: 16,
@@ -495,7 +602,6 @@ export default function AdminAccountPage() {
                   </span>
                 </div>
 
-                {/* ボタン */}
                 <div style={{ paddingTop: 8, display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
                   <button
                     type="button"
@@ -503,8 +609,7 @@ export default function AdminAccountPage() {
                     style={{
                       paddingLeft: 32, paddingRight: 32, paddingTop: 12, paddingBottom: 12,
                       background: '#E8E8E3', borderRadius: 9999, border: 'none', cursor: 'pointer',
-                      color: '#1A1C19', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 500,
-                      whiteSpace: 'nowrap',
+                      color: '#1A1C19', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 500, whiteSpace: 'nowrap',
                     }}
                     onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#D8D8D3' }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = '#E8E8E3' }}
@@ -518,6 +623,83 @@ export default function AdminAccountPage() {
         )
       })()}
 
+      {/* ── 5. HỘP THOẠI XÁC NHẬN TÙY CHỈNH CAO CẤP (CUSTOM CONFIRM MODAL APPLE-STYLE) ── */}
+      {confirmTarget && (
+        <div
+          onClick={() => setConfirmTarget(null)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 110,
+            background: 'rgba(26,28,25,0.25)', backdropFilter: 'blur(4px)',
+            display: 'flex', justifyContent: 'center', alignItems: 'center',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: 440, maxWidth: '90vw', background: 'white',
+              boxShadow: '0px 24px 60px rgba(0,0,0,0.12)', borderRadius: 16,
+              padding: 32, display: 'flex', flexDirection: 'column', gap: 24,
+              position: 'relative'
+            }}
+          >
+            {/* Nút X đóng góc trên */}
+            <button 
+              onClick={() => setConfirmTarget(null)}
+              style={{ position: 'absolute', right: 20, top: 20, background: 'none', border: 'none', cursor: 'pointer', color: '#717973' }}
+            >
+              <X size={18} />
+            </button>
+
+            {/* Nội dung tiêu đề */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ color: '#1A1C19', fontSize: 20, fontFamily: 'Manrope, sans-serif', fontWeight: 600, lineHeight: '28px' }}>
+                {getConfirmModalTitle()}
+              </div>
+              <div style={{ color: '#414943', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 400, lineHeight: '22px' }}>
+                {getConfirmModalBody()}
+              </div>
+            </div>
+
+            {/* Cụm nút xác nhận hủy */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+              <button
+                type="button"
+                onClick={() => setConfirmTarget(null)}
+                style={{
+                  paddingLeft: 24, paddingRight: 24, paddingTop: 10, paddingBottom: 10,
+                  background: '#E8E8E3', borderRadius: 9999, border: 'none', cursor: 'pointer',
+                  color: '#1A1C19', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 500,
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#D8D8D3' }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = '#E8E8E3' }}
+              >
+                キャンセル
+              </button>
+              <button
+                type="button"
+                onClick={executeUpdateStatus}
+                style={{
+                  paddingLeft: 24, paddingRight: 24, paddingTop: 10, paddingBottom: 10,
+                  // Đổi màu nút linh hoạt: kích hoạt lại dùng màu xanh lá của WorkSpot, các hình phạt dùng màu đỏ hệ thống
+                  background: confirmTarget.status === 'active' ? '#14422D' : '#BA1A1A',
+                  borderRadius: 9999, border: 'none', cursor: 'pointer',
+                  color: 'white', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 600,
+                  boxShadow: '0px 4px 12px rgba(0,0,0,0.05)'
+                }}
+                onMouseEnter={(e) => { 
+                  (e.currentTarget as HTMLElement).style.background = confirmTarget.status === 'active' ? '#2D5A43' : '#93000A' 
+                }}
+                onMouseLeave={(e) => { 
+                  (e.currentTarget as HTMLElement).style.background = confirmTarget.status === 'active' ? '#14422D' : '#BA1A1A' 
+                }}
+              >
+                確認
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── ページネーション ── */}
       {!loading && totalPages > 1 && (
         <div style={{
@@ -530,7 +712,6 @@ export default function AdminAccountPage() {
           </div>
 
           <div style={{ display: 'flex', gap: 8 }}>
-            {/* 前へ */}
             <button
               type="button"
               onClick={() => setPage((p) => Math.max(1, p - 1))}
@@ -540,14 +721,12 @@ export default function AdminAccountPage() {
                 background: 'white', boxShadow: '0px 1px 2px rgba(0,0,0,0.05)',
                 border: 'none', cursor: page === 1 ? 'not-allowed' : 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: page === 1 ? '#C0C9C1' : '#14422D',
-                opacity: page === 1 ? 0.5 : 1,
+                color: page === 1 ? '#C0C9C1' : '#14422D', opacity: page === 1 ? 0.5 : 1,
               }}
             >
               <ChevronLeft size={16} />
             </button>
 
-            {/* ページ番号 */}
             {pageNumbers.map((p) => (
               <button
                 key={p}
@@ -567,7 +746,6 @@ export default function AdminAccountPage() {
               </button>
             ))}
 
-            {/* 次へ */}
             <button
               type="button"
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
@@ -577,8 +755,7 @@ export default function AdminAccountPage() {
                 background: 'white', boxShadow: '0px 1px 2px rgba(0,0,0,0.05)',
                 border: 'none', cursor: page === totalPages ? 'not-allowed' : 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: page === totalPages ? '#C0C9C1' : '#14422D',
-                opacity: page === totalPages ? 0.5 : 1,
+                color: page === totalPages ? '#C0C9C1' : '#14422D', opacity: page === totalPages ? 0.5 : 1,
               }}
             >
               <ChevronRight size={16} />

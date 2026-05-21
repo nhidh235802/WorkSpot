@@ -15,6 +15,8 @@ import { User } from './entities/user.entity';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ProfileResponseDto } from './dto/profile-response.dto';
+import { AdminQueryUserDto } from './dto/admin-query-user.dto'; 
+import { UpdateUserStatusDto } from './dto/update-status.dto';
 
 @Injectable()
 export class UsersService {
@@ -22,6 +24,51 @@ export class UsersService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
   ) {}
+
+  async getAdminStats(): Promise<{ totalAccounts: number }> {
+    const totalAccounts = await this.userRepository.count();
+    return { totalAccounts };
+  }
+
+  async findAllForAdmin(query: AdminQueryUserDto): Promise<{ items: Partial<User>[]; total: number }> {
+    const { name, email, role, page = 1, limit = 10 } = query;
+    const skip = (page - 1) * limit;
+
+    const queryBuilder = this.userRepository.createQueryBuilder('user');
+
+    // BỔ SUNG 'user.status' VÀO DANH SÁCH SELECT ĐỂ FRONTEND LẤY ĐƯỢC TRẠNG THÁI
+    queryBuilder.select([
+      'user.id',
+      'user.fullName',
+      'user.email',
+      'user.phone',
+      'user.avatar',
+      'user.address',
+      'user.bio',
+      'user.role',
+      'user.status', // <--- Thêm dòng này
+      'user.createdAt',
+    ]);
+
+    if (name) {
+      queryBuilder.andWhere('user.fullName ILIKE :name', { name: `%${name}%` });
+    }
+
+    if (email) {
+      queryBuilder.andWhere('user.email ILIKE :email', { email: `%${email}%` });
+    }
+
+    if (role) {
+      queryBuilder.andWhere('user.role = :role', { role });
+    }
+
+    queryBuilder.orderBy('user.createdAt', 'DESC');
+    queryBuilder.skip(skip).take(limit);
+
+    const [items, total] = await queryBuilder.getManyAndCount();
+
+    return { items, total };
+  }
 
   async getProfile(userId: string): Promise<ProfileResponseDto> {
     const user = await this.findUserOrThrow(userId);
@@ -33,9 +80,8 @@ export class UsersService {
     dto: UpdateProfileDto,
   ): Promise<ProfileResponseDto> {
     const user = await this.findUserOrThrow(userId);
-    // Xử lý avatar mới
+    
     if (dto.avatar && dto.avatar !== user.avatar) {
-      // Xóa avatar cũ nếu có
       if (user.avatar) {
         const oldAvatarPath = path.join(
           process.cwd(),
@@ -97,6 +143,12 @@ export class UsersService {
       throw new NotFoundException('ユーザーが見つかりません。');
     }
     return user;
+  }
+
+  async updateStatus(id: string, dto: UpdateUserStatusDto): Promise<User> {
+    const user = await this.findOne(id); 
+    user.status = dto.status;
+    return await this.userRepository.save(user);
   }
 
   private async findUserOrThrow(id: string): Promise<User> {

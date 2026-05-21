@@ -48,7 +48,9 @@ export default function LoginPage() {
       }
     } catch (err: unknown) {
       if (axios.isAxiosError(err) && err.response?.status === 401) {
-        setServerError('メールアドレスまたはパスワードが正しくありません')
+        // ĐỌC THÔNG BÁO ĐỘNG TỪ SERVER (CHẶN SAI MẬT KHẨU, VÔ HIỆU HÓA HOẶC ĐÌNH CHỈ)
+        const errorMessage = err.response?.data?.message || 'メールアドレスまたはパスワードが正しくありません'
+        setServerError(errorMessage)
       } else {
         setServerError('ログインに失敗しました。もう一度お試しください。')
       }

@@ -20,6 +20,13 @@ export enum UserRole {
   ADMIN = 'admin',
 }
 
+// 1. ĐỊNH NGHĨA ENUM CHO TRẠNG THÁI TÀI KHOẢN (ĐỒNG BỘ VỚI TYPE CỦA POSTGRESQL)
+export enum UserStatus {
+  ACTIVE = 'active',
+  DISABLED = 'disabled',
+  SUSPENDED = 'suspended',
+}
+
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
@@ -50,7 +57,13 @@ export class User {
   @Column({ type: 'enum', enum: UserRole })
   role!: UserRole;
 
-  // --- QUAN HỆ (RELATIONS) ---
+  @Column({
+    type: 'enum',
+    enum: UserStatus,
+    default: UserStatus.ACTIVE,
+  })
+  status!: UserStatus;
+
 
   @OneToMany(() => Cafe, (cafe) => cafe.owner)
   cafes!: Cafe[];
@@ -64,7 +77,6 @@ export class User {
   @Column({ type: 'timestamptz', nullable: true })
   resetPasswordExpiry!: Date | null;
 
-  // Thông tin về thời gian tạo và cập nhật tài khoản
   @CreateDateColumn()
   createdAt!: Date;
 

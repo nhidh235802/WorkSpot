@@ -22,6 +22,8 @@ export interface AdminUser {
   email: string;
   role: string;
   createdAt: string;
+  avatar?: string | null;
+  status?: 'active' | 'disabled' | 'suspended';
 }
 
 export interface AdminUserList {
@@ -106,11 +108,12 @@ export const AdminService = {
     });
   },
 
-  getUsers: async (params?: { name?: string; email?: string; role?: string; page?: number; limit?: number }): Promise<AdminUserList> => {
+  getUsers: async (params?: { name?: string; email?: string; role?: string; status?: string; page?: number; limit?: number }): Promise<AdminUserList> => {
     const searchParams = new URLSearchParams();
     if (params?.name) searchParams.append('name', params.name);
     if (params?.email) searchParams.append('email', params.email);
     if (params?.role) searchParams.append('role', params.role);
+    if (params?.status) searchParams.append('status', params.status);
     searchParams.append('page', String(params?.page ?? 1));
     searchParams.append('limit', String(params?.limit ?? 10));
 
@@ -147,4 +150,14 @@ export const AdminService = {
       },
     });
   },
+  async updateUserStatus(userId: string, status: 'active' | 'disabled' | 'suspended'): Promise<void> {
+    return requestJson(`${BACKEND_API_URL}/admin/users/${userId}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders(),
+      },
+      body: JSON.stringify({ status }),
+    });
+  }
 };

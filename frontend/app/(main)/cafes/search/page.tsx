@@ -421,7 +421,7 @@ export default function CafesSearchPage() {
                 className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] bg-white rounded-[32px] shadow-2xl border border-[#e3e3de] transition-all duration-500 ease-in-out flex flex-col overflow-hidden`}
                 style={{ 
                   width: 400, 
-                  height: isExpanded ? '600px' : '215px', 
+                  height: isExpanded ? '600px' : '240px', 
                   maxWidth: 'calc(100% - 32px)',
                 }}
               >

@@ -11,7 +11,7 @@ import { ConfigService } from '@nestjs/config';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
-import { User, UserRole } from '../users/entities/user.entity';
+import { User, UserRole, UserStatus } from '../users/entities/user.entity'; 
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -56,10 +56,25 @@ export class AuthService {
       where: { email: loginDto.email },
     });
 
+    // 1. Kiểm tra sự tồn tại tài khoản và đối chiếu mật khẩu hash
     if (!user || !(await bcrypt.compare(loginDto.password, user.password))) {
       throw new UnauthorizedException(
         'メールアドレスまたはパスワードが正しくありません',
       );
+    }
+
+    // 2. CHẶN ĐĂNG NHẬP NẾU TÀI KHOẢN KHÔNG Ở TRẠNG THÁI ACTIVE
+    if (user.status && user.status !== UserStatus.ACTIVE) {
+      if (user.status === UserStatus.DISABLED) {
+        throw new UnauthorizedException(
+          'このアカウントは無効化されています。管理者にお問い合わせください。',
+        );
+      }
+      if (user.status === UserStatus.SUSPENDED) {
+        throw new UnauthorizedException(
+          'このアカウントは利用停止処分を受けています。',
+        );
+      }
     }
 
     const { password: _, ...userWithoutPassword } = user;
