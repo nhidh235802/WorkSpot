@@ -141,13 +141,14 @@ export const AdminService = {
     });
   },
 
-  toggleCafeVisibility: async (id: string) => {
+  toggleCafeVisibility: async (id: string, rejectionReason?: string) => {
     return requestJson(`${BACKEND_API_URL}/cafes/${id}/visibility`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
         ...getAuthHeaders(),
       },
+      body: JSON.stringify({ rejectionReason }),
     });
   },
   async updateUserStatus(userId: string, status: 'active' | 'disabled' | 'suspended'): Promise<void> {

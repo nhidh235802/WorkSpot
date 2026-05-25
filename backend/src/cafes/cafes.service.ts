@@ -650,6 +650,7 @@ export class CafesService {
   // ── Admin: ẩn / hiện cafe (APPROVED ↔ HIDDEN) ────────────────────────
   async toggleVisibility(
     id: string,
+    rejectionReason?: string,
   ): Promise<{ id: string; status: CafeStatus }> {
     const cafe = await this.cafesRepository.findOneBy({ id });
 
@@ -663,10 +664,15 @@ export class CafesService {
       );
     }
 
-    cafe.status =
-      cafe.status === CafeStatus.APPROVED
-        ? CafeStatus.HIDDEN
-        : CafeStatus.APPROVED;
+    if (cafe.status === CafeStatus.APPROVED) {
+      cafe.status = CafeStatus.HIDDEN;
+      if (rejectionReason) {
+        cafe.rejectionReason = rejectionReason;
+      }
+    } else {
+      cafe.status = CafeStatus.APPROVED;
+      cafe.rejectionReason = null as any; // clear the reason when unhiding
+    }
 
     await this.cafesRepository.save(cafe);
 

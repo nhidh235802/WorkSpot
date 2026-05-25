@@ -61,6 +61,12 @@ export default function AdminCafesPage() {
   const [rejectTarget, setRejectTarget] = useState<{ id: string; name: string } | null>(null)
   const [rejectionInput, setRejectionInput] = useState('')
 
+  // Trạng thái điều khiển Custom Modal ẩn cửa hàng
+  const [hideTarget, setHideTarget] = useState<{ id: string; name: string } | null>(null)
+  const [hideReason, setHideReason] = useState('')
+  const [hideError, setHideError] = useState('')
+  const [hasSubmittedHide, setHasSubmittedHide] = useState(false)
+
   // Lấy thống kê dashboard cafe
   useEffect(() => {
     AdminService.getStats().then(setStats).catch(() => {})
@@ -101,15 +107,59 @@ export default function AdminCafesPage() {
   const handleSearch       = (v: string) => { setSearch(v);       setPage(1) }
 
   // 1. Thao tác Ẩn / Hiện quán cà phê đã được duyệt công khai
-  const handleToggleVisibility = async (id: string, currentName: string) => {
-    toast.promise(AdminService.toggleCafeVisibility(id), {
-      loading: `${currentName} の表示状態を更新中...`,
+  const handleToggleVisibility = async (id: string, currentName: string, currentStatus: string) => {
+    if (currentStatus === 'hidden') {
+      // Nếu đang ẩn -> hiện lại thì không cần nhập lý do
+      toast.promise(AdminService.toggleCafeVisibility(id), {
+        loading: `${currentName} の表示状態を更新中...`,
+        success: () => {
+          setRefreshKey((prev) => prev + 1)
+          return `${currentName} の表示状態を更新しました。`
+        },
+        error: (err: any) => err.message || '操作に失敗しました'
+      })
+    } else {
+      // Nếu đang hiện -> ẩn đi thì yêu cầu nhập lý do qua Pop-up
+      setHideTarget({ id, name: currentName })
+      setHideReason('')
+      setHideError('')
+      setHasSubmittedHide(false)
+    }
+  }
+
+  const handleHideSubmit = async () => {
+    setHasSubmittedHide(true)
+    if (!hideReason.trim()) {
+      setHideError('理由の入力 là 必須です。')
+      return
+    }
+    if (hideReason.length > 500) {
+      setHideError('理由は500文字以内で入力してください。')
+      return
+    }
+
+    if (!hideTarget) return
+    const { id, name } = hideTarget
+
+    toast.promise(AdminService.toggleCafeVisibility(id, hideReason), {
+      loading: `${name} の非表示処理を実行中...`,
       success: () => {
         setRefreshKey((prev) => prev + 1)
-        return `${currentName} の表示状態を更新しました。`
+        setHideTarget(null)
+        setHideReason('')
+        setHideError('')
+        setHasSubmittedHide(false)
+        return `${name} を非表示にしました。`
       },
-      error: (err: any) => err.message || '操作に失敗しました'
+      error: (err: any) => err.message || '非表示処理に失敗しました'
     })
+  }
+
+  const handleCloseHideModal = () => {
+    setHideTarget(null)
+    setHideReason('')
+    setHideError('')
+    setHasSubmittedHide(false)
   }
 
   // 2. Luồng thao tác Duyệt đồng ý hoạt động cho cơ sở đăng ký mới
@@ -338,7 +388,7 @@ export default function AdminCafesPage() {
                     // NẾU LÀ QUÁN ĐÃ DUYỆT HOẶC ĐANG ẨN: Hiện nút Ẩn/Hiện thông thường
                     <button
                       type="button"
-                      onClick={() => handleToggleVisibility(cafe.id, cafe.name)}
+                      onClick={() => handleToggleVisibility(cafe.id, cafe.name, cafe.status)}
                       style={{
                         paddingLeft: 16, paddingRight: 16, paddingTop: 6, paddingBottom: 6,
                         background: cafe.status === 'hidden' ? '#065F46' : '#7F8181',
@@ -398,6 +448,88 @@ export default function AdminCafesPage() {
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
               <button type="button" onClick={() => setRejectTarget(null)} style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 10, paddingBottom: 10, background: '#E8E8E3', borderRadius: 9999, border: 'none', cursor: 'pointer', color: '#1A1C19', fontSize: 14 }}>キャンセル</button>
               <button type="button" onClick={handleRejectSubmit} disabled={!rejectionInput.trim()} style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 10, paddingBottom: 10, background: '#EF4444', borderRadius: 9999, border: 'none', cursor: rejectionInput.trim() ? 'pointer' : 'not-allowed', color: 'white', fontSize: 14, fontWeight: 600, opacity: rejectionInput.trim() ? 1 : 0.5 }}>却下する</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── CUSTOM HIDE MODAL ── */}
+      {hideTarget && (
+        <div onClick={handleCloseHideModal} style={{ position: 'fixed', inset: 0, zIndex: 110, background: 'rgba(26,28,25,0.25)', backdropFilter: 'blur(4px)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ width: 500, maxWidth: '90vw', padding: 32, background: 'white', boxShadow: '0px 12px 40px rgba(26, 28, 25, 0.06)', borderRadius: 16, outline: '1px rgba(192, 201, 193, 0.10) solid', outlineOffset: '-1px', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: 24, display: 'inline-flex' }}>
+            <div style={{alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: 8, display: 'flex'}}>
+                <div style={{alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'flex'}}>
+                    <div style={{alignSelf: 'stretch', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: '#14422D', fontSize: 24, fontFamily: 'Alfa Slab One', fontWeight: '400', lineHeight: '32px', wordWrap: 'break-word'}}>非表示の理由</div>
+                </div>
+                <div style={{alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'flex'}}>
+                    <div style={{alignSelf: 'stretch', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: '#414943', fontSize: 14, fontFamily: 'Aleo', fontWeight: '400', lineHeight: '20px', wordWrap: 'break-word'}}>理由を教えてください</div>
+                </div>
+            </div>
+            
+            <div style={{ alignSelf: 'stretch', display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <textarea
+                value={hideReason}
+                onChange={(e) => {
+                  setHideReason(e.target.value)
+                  if (e.target.value.trim() !== '') {
+                    setHideError('')
+                  }
+                }}
+                placeholder="理由を入力してください"
+                style={{
+                  alignSelf: 'stretch',
+                  height: 160,
+                  padding: 16,
+                  background: '#F4F4EF',
+                  border: hideError ? '1.5px solid #BA1A1A' : 'none',
+                  borderRadius: 12,
+                  outline: 'none',
+                  resize: 'none',
+                  fontSize: 16,
+                  fontFamily: 'Acme',
+                  fontWeight: '400',
+                  lineHeight: '24px',
+                  color: '#1A1C19',
+                }}
+              />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', minHeight: '20px' }}>
+                {hideError ? (
+                  <span style={{ color: '#BA1A1A', fontSize: 13, fontFamily: 'Aleo', fontWeight: 'bold' }}>
+                    {hideError}
+                  </span>
+                ) : (
+                  <span />
+                )}
+                <span style={{ color: hideReason.length > 500 ? '#BA1A1A' : '#A8A29E', fontSize: 12, fontFamily: 'Acme' }}>
+                  {hideReason.length}/500
+                </span>
+              </div>
+            </div>
+
+            <div style={{alignSelf: 'stretch', paddingTop: 8, justifyContent: 'flex-end', alignItems: 'flex-start', gap: 12, display: 'inline-flex'}}>
+                <button
+                  type="button"
+                  onClick={handleCloseHideModal}
+                  style={{
+                    paddingLeft: 24, paddingRight: 24, paddingTop: 10, paddingBottom: 10,
+                    background: '#E8E8E3', borderRadius: 9999, border: 'none', cursor: 'pointer',
+                    flexDirection: 'column', justifyContent: 'center', alignItems: 'center', display: 'inline-flex'
+                  }}
+                >
+                    <div style={{textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: '#414943', fontSize: 14, fontFamily: 'WenQuanYi Zen Hei', fontWeight: '700', lineHeight: '20px', wordWrap: 'break-word'}}>キャンセル</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleHideSubmit}
+                  style={{
+                    paddingLeft: 32, paddingRight: 32, paddingTop: 10, paddingBottom: 10,
+                    position: 'relative', background: '#14422D', borderRadius: 9999, border: 'none', cursor: 'pointer',
+                    flexDirection: 'column', justifyContent: 'center', alignItems: 'center', display: 'inline-flex'
+                  }}
+                >
+                    <div style={{width: '100%', height: '100%', left: 0, top: 0, position: 'absolute', background: 'rgba(255, 255, 255, 0)', boxShadow: '0px 4px 6px -4px rgba(20, 66, 45, 0.20), 0px 10px 15px -3px rgba(20, 66, 45, 0.20)', borderRadius: 9999}} />
+                    <div style={{textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'white', fontSize: 14, fontFamily: 'WenQuanYi Zen Hei', fontWeight: '700', lineHeight: '20px', wordWrap: 'break-word', position: 'relative', zIndex: 1}}>確認</div>
+                </button>
             </div>
           </div>
         </div>

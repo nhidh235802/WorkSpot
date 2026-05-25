@@ -98,8 +98,11 @@ export class CafesController {
   @Patch(':id/visibility')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
-  toggleVisibility(@Param('id', ParseUUIDPipe) id: string) {
-    return this.cafesService.toggleVisibility(id);
+  toggleVisibility(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('rejectionReason') rejectionReason?: string,
+  ) {
+    return this.cafesService.toggleVisibility(id, rejectionReason);
   }
 
   // API Route: POST http://localhost:3001/cafes
