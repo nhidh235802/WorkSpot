@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { AdminService, AdminCafeItem } from '@/services/admin.service'
 import { Search, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2, X } from 'lucide-react'
 import { toast, Toaster } from 'sonner'
@@ -45,6 +46,7 @@ const HANOI_AREAS = [
 ]
 
 export default function AdminCafesPage() {
+  const router = useRouter()
   const [cafes, setCafes]           = useState<AdminCafeItem[]>([])
   const [total, setTotal]           = useState(0)
   const [totalPages, setTotalPages] = useState(1)
@@ -294,21 +296,22 @@ export default function AdminCafesPage() {
       {/* ── テーブル ── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div style={{
-          paddingTop: 8, paddingBottom: 8, paddingLeft: 24, paddingRight: 24,
-          borderBottom: '1px rgba(192,201,193,0.10) solid',
-          display: 'grid', gridTemplateColumns: '2.5fr 2fr 1.2fr 2.3fr',
-          alignItems: 'center', gap: 16,
+          alignSelf: 'stretch', paddingTop: 8, paddingBottom: 8, paddingLeft: 24, paddingRight: 24.02,
+          borderBottom: '1px rgba(192, 201, 193, 0.10) solid', justifyContent: 'space-between',
+          alignItems: 'center', display: 'flex'
         }}>
-          {([
-            { label: '店舗情報・雰囲気', align: 'left'   },
-            { label: '所在地・アメニティ', align: 'left' },
-            { label: '稼働状況',          align: 'center' },
-            { label: 'アクション',         align: 'right'  },
-          ] as const).map((h) => (
-            <div key={h.label} style={{ color: '#A8A29E', fontSize: 10, fontFamily: 'Manrope, sans-serif', fontWeight: 500, textTransform: 'uppercase', lineHeight: '15px', letterSpacing: 1, textAlign: h.align }}>
-              {h.label}
-            </div>
-          ))}
+          <div style={{width: 297.98, flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'inline-flex'}}>
+            <div style={{width: 88, height: 15, justifyContent: 'center', display: 'flex', flexDirection: 'column', color: '#A8A29E', fontSize: 10, fontFamily: 'Manrope', fontWeight: '500', textTransform: 'uppercase', lineHeight: '15px', letterSpacing: 1, wordWrap: 'break-word'}}>店舗情報・雰囲気</div>
+          </div>
+          <div style={{width: 223.50, flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'inline-flex'}}>
+            <div style={{width: 100.17, height: 15, justifyContent: 'center', display: 'flex', flexDirection: 'column', color: '#A8A29E', fontSize: 10, fontFamily: 'Manrope', fontWeight: '500', textTransform: 'uppercase', lineHeight: '15px', letterSpacing: 1, wordWrap: 'break-word'}}>所在地・アメニティ</div>
+          </div>
+          <div style={{width: 149, flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', display: 'inline-flex'}}>
+            <div style={{width: 44, height: 15, textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: '#A8A29E', fontSize: 10, fontFamily: 'Manrope', fontWeight: '500', textTransform: 'uppercase', lineHeight: '15px', letterSpacing: 1, wordWrap: 'break-word'}}>稼働状況</div>
+          </div>
+          <div style={{width: 223.50, flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-end', display: 'inline-flex'}}>
+            <div style={{width: 56.17, height: 15, textAlign: 'right', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: '#A8A29E', fontSize: 10, fontFamily: 'Manrope', fontWeight: '500', textTransform: 'uppercase', lineHeight: '15px', letterSpacing: 1, wordWrap: 'break-word'}}>アクション</div>
+          </div>
         </div>
 
         {loading ? (
@@ -323,83 +326,91 @@ export default function AdminCafesPage() {
             const tags = (cafe.facilities ?? []).slice(0, 2).map((f) => FACILITY_LABEL[f] ?? f)
 
             return (
-              <div key={cafe.id} style={{ padding: 16, background: 'white', borderRadius: 12, boxShadow: '0px 2px 8px rgba(0,0,0,0.02)', display: 'grid', gridTemplateColumns: '2.5fr 2fr 1.2fr 2.3fr', alignItems: 'center', gap: 16 }}>
+              <div key={cafe.id} style={{
+                alignSelf: 'stretch', padding: 16, background: 'white', borderRadius: 12,
+                outline: '1px rgba(192, 201, 193, 0.05) solid', outlineOffset: '-1px',
+                justifyContent: 'space-between', alignItems: 'center', display: 'flex'
+              }}>
                 
-                {/* Cột 1: Thông tin quán */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                  <div style={{ width: 56, height: 56, borderRadius: 8, flexShrink: 0, overflow: 'hidden', background: '#14422D', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {/* Column 1: cafe info */}
+                <div style={{ width: 297.98, justifyContent: 'flex-start', alignItems: 'center', gap: 16, display: 'flex' }}>
+                  <div style={{ width: 56, height: 56, background: '#E7E5E4', overflow: 'hidden', borderRadius: 8, flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-start', display: 'inline-flex' }}>
                     {cafe.avatar ? (
-                      <img src={cafe.avatar.startsWith('http') ? cafe.avatar : `${API_URL}${cafe.avatar}`} alt={cafe.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <img src={cafe.avatar.startsWith('http') ? cafe.avatar : `${API_URL}${cafe.avatar}`} alt={cafe.name} style={{ alignSelf: 'stretch', flex: '1 1 0', position: 'relative', objectFit: 'cover' }} />
                     ) : (
-                      <span style={{ color: 'white', fontSize: 20, fontWeight: 700 }}>{cafe.name.charAt(0)}</span>
+                      <div style={{ alignSelf: 'stretch', flex: '1 1 0', background: '#14422D', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 20, fontWeight: 700 }}>
+                        {cafe.name.charAt(0)}
+                      </div>
                     )}
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
-                    <div style={{ color: '#14422D', fontSize: 16, fontFamily: 'Manrope, sans-serif', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {cafe.name}
+                  <div style={{ flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: 4, display: 'inline-flex', minWidth: 0, flex: 1 }}>
+                    <div style={{ alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'flex' }}>
+                      <div style={{ width: 186.69, height: 20, justifyContent: 'center', display: 'flex', flexDirection: 'column', color: '#14422D', fontSize: 16, fontFamily: 'Manrope', fontWeight: '700', lineHeight: '20px', wordWrap: 'break-word', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {cafe.name}
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    <div style={{ alignSelf: 'stretch', justifyContent: 'flex-start', alignItems: 'flex-start', gap: 8, display: 'inline-flex' }}>
                       {tags.map((tag) => (
-                        <span key={tag} style={{ paddingLeft: 8, paddingRight: 8, background: 'rgba(255,219,199,0.50)', borderRadius: 9999, color: '#311300', fontSize: 9, fontWeight: 500, lineHeight: '18px' }}>
-                          {tag}
-                        </span>
+                        <div key={tag} style={{ alignSelf: 'stretch', paddingLeft: 8, paddingRight: 8, background: 'rgba(255, 219, 199, 0.50)', borderRadius: 9999, flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'inline-flex' }}>
+                          <div style={{ height: 14, justifyContent: 'center', display: 'flex', flexDirection: 'column', color: '#311300', fontSize: 9, fontFamily: 'Manrope', fontWeight: '500', lineHeight: '13.50px', wordWrap: 'break-word' }}>
+                            {tag}
+                          </div>
+                        </div>
                       ))}
                     </div>
                   </div>
                 </div>
 
-                {/* Cột 2: Địa chỉ & Chủ sở hữu */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
-                  <div style={{ color: '#1A1C19', fontSize: 12, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {cafe.address}
+                {/* Column 2: location & owner */}
+                <div style={{ width: 223.50, flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: 4, display: 'inline-flex', minWidth: 0 }}>
+                  <div style={{ alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'flex' }}>
+                    <div style={{ alignSelf: 'stretch', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: '#1A1C19', fontSize: 12, fontFamily: 'Manrope', fontWeight: '500', lineHeight: '16px', wordWrap: 'break-word', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {cafe.address}
+                    </div>
                   </div>
                   {cafe.owner && (
-                    <div style={{ color: 'rgba(65,73,67,0.70)', fontSize: 11 }}>
+                    <div style={{ color: 'rgba(65, 73, 67, 0.70)', fontSize: 10, fontFamily: 'Manrope', fontWeight: '500' }}>
                       オーナー: {cafe.owner.fullName}
                     </div>
                   )}
                 </div>
 
-                {/* Cột 3: Trạng thái duyệt */}
-                <div style={{ display: 'flex', justifyContent: 'center' }}>
-                  <div style={{ paddingLeft: 10, paddingRight: 10, paddingTop: 2, paddingBottom: 2, background: sc.bg, borderRadius: 9999, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                {/* Column 3: status */}
+                <div style={{ width: 149, flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', display: 'inline-flex' }}>
+                  <div style={{ paddingLeft: 10, paddingRight: 10, paddingTop: 2, paddingBottom: 2, background: sc.bg, borderRadius: 9999, justifyContent: 'flex-start', alignItems: 'center', gap: 6, display: 'inline-flex' }}>
                     <div style={{ width: 6, height: 6, background: sc.dot, borderRadius: 9999 }} />
-                    <span style={{ color: sc.text, fontSize: 10, fontWeight: 500, whiteSpace: 'nowrap' }}>{sc.label}</span>
+                    <div style={{ height: 15, textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: sc.text, fontSize: 10, fontFamily: 'Manrope', fontWeight: '500', lineHeight: '15px', wordWrap: 'break-word' }}>
+                      {sc.label}
+                    </div>
                   </div>
                 </div>
 
-                {/* Cột 4: Tổ hợp nút hành động phân tách logic nâng cao */}
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-                  <button type="button" style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 6, paddingBottom: 6, background: '#14422D', borderRadius: 9999, border: 'none', cursor: 'pointer', color: 'white', fontSize: 12, fontWeight: 500 }}>
-                    詳細
-                  </button>
-
-                  {cafe.status === 'pending' ? (
-                    // NẾU LÀ QUÁN CHỜ DUYỆT: Hiện cụm nút Duyệt và Từ chối
-                    <>
-                      <button onClick={() => handleApprove(cafe.id, cafe.name)} type="button" style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 6, paddingBottom: 6, background: '#10B981', borderRadius: 9999, border: 'none', cursor: 'pointer', color: 'white', fontSize: 12, fontWeight: 600 }}>
-                        承認
-                      </button>
-                      <button onClick={() => setRejectTarget({ id: cafe.id, name: cafe.name })} type="button" style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 6, paddingBottom: 6, background: '#EF4444', borderRadius: 9999, border: 'none', cursor: 'pointer', color: 'white', fontSize: 12, fontWeight: 600 }}>
-                        却下
-                      </button>
-                    </>
-                  ) : (
-                    // NẾU LÀ QUÁN ĐÃ DUYỆT HOẶC ĐANG ẨN: Hiện nút Ẩn/Hiện thông thường
-                    <button
-                      type="button"
-                      onClick={() => handleToggleVisibility(cafe.id, cafe.name, cafe.status)}
-                      style={{
-                        paddingLeft: 16, paddingRight: 16, paddingTop: 6, paddingBottom: 6,
-                        background: cafe.status === 'hidden' ? '#065F46' : '#7F8181',
-                        borderRadius: 9999, border: 'none', cursor: 'pointer', color: 'white', fontSize: 12, fontWeight: 500, whiteSpace: 'nowrap'
-                      }}
-                    >
-                      {cafe.status === 'hidden' ? '再表示' : '非表示'}
+                {/* Column 4: action buttons */}
+                {cafe.status === 'pending' ? (
+                  <div style={{ width: 223.50, justifyContent: 'flex-end', alignItems: 'center', gap: 12, display: 'flex' }}>
+                    <button type="button" onClick={() => router.push(`/cafes/${cafe.id}`)} style={{ border: 'none', paddingLeft: 20, paddingRight: 20, paddingTop: 6, paddingBottom: 6, background: '#14422D', boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)', borderRadius: 9999, flexDirection: 'column', justifyContent: 'center', alignItems: 'center', display: 'inline-flex', cursor: 'pointer' }}>
+                      <div style={{ width: 60.28, height: 16, textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'white', fontSize: 12, fontFamily: 'Manrope', fontWeight: '500', lineHeight: '16px', wordWrap: 'break-word' }}>詳細を表示</div>
                     </button>
-                  )}
-                </div>
-
+                    <button onClick={() => handleApprove(cafe.id, cafe.name)} type="button" style={{ border: 'none', paddingLeft: 20, paddingRight: 20, paddingTop: 6, paddingBottom: 6, background: '#10B981', boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)', borderRadius: 9999, flexDirection: 'column', justifyContent: 'center', alignItems: 'center', display: 'inline-flex', cursor: 'pointer' }}>
+                      <div style={{ width: 60.28, height: 16, textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'white', fontSize: 12, fontFamily: 'Manrope', fontWeight: '500', lineHeight: '16px', wordWrap: 'break-word' }}>承認</div>
+                    </button>
+                    <button onClick={() => setRejectTarget({ id: cafe.id, name: cafe.name })} type="button" style={{ border: 'none', paddingLeft: 20, paddingRight: 20, paddingTop: 6, paddingBottom: 6, background: '#EF4444', boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)', borderRadius: 9999, flexDirection: 'column', justifyContent: 'center', alignItems: 'center', display: 'inline-flex', cursor: 'pointer' }}>
+                      <div style={{ width: 60.28, height: 16, textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'white', fontSize: 12, fontFamily: 'Manrope', fontWeight: '500', lineHeight: '16px', wordWrap: 'break-word' }}>却下</div>
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ width: 223.50, justifyContent: 'flex-end', alignItems: 'center', gap: 12, display: 'flex' }}>
+                    <button type="button" onClick={() => router.push(`/cafes/${cafe.id}`)} style={{ border: 'none', paddingLeft: 20, paddingRight: 20, paddingTop: 6, paddingBottom: 6, background: '#14422D', boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)', borderRadius: 9999, flexDirection: 'column', justifyContent: 'center', alignItems: 'center', display: 'inline-flex', cursor: 'pointer' }}>
+                      <div style={{ width: 60.28, height: 16, textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'white', fontSize: 12, fontFamily: 'Manrope', fontWeight: '500', lineHeight: '16px', wordWrap: 'break-word' }}>詳細を表示</div>
+                    </button>
+                    <button onClick={() => handleToggleVisibility(cafe.id, cafe.name, cafe.status)} type="button" style={{ border: 'none', paddingLeft: 20, paddingRight: 20, paddingTop: 6, paddingBottom: 6, background: '#7F8181', boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)', borderRadius: 9999, flexDirection: 'column', justifyContent: 'center', alignItems: 'center', display: 'inline-flex', cursor: 'pointer' }}>
+                      <div style={{ width: 60.28, height: 16, textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'white', fontSize: 12, fontFamily: 'Manrope', fontWeight: '500', lineHeight: '16px', wordWrap: 'break-word' }}>
+                        {cafe.status === 'hidden' ? '再表示' : '非表示'}
+                      </div>
+                    </button>
+                  </div>
+                )}
+                
               </div>
             )
           })

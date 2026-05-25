@@ -42,4 +42,28 @@ export class MailService {
       `,
     });
   }
+
+  async sendCafeHiddenNotification(toEmail: string, cafeName: string, reason: string): Promise<void> {
+    await this.transporter.sendMail({
+      from: `"WorkSpot" <${this.config.get<string>('MAIL_USER')}>`,
+      to: toEmail,
+      subject: `【WorkSpot】店舗非表示のご案内: ${cafeName}`,
+      html: `
+        <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;border:1px solid #e3e3de;border-radius:12px">
+          <h2 style="color:#ba1a1a;margin-bottom:8px">店舗非表示のお知らせ</h2>
+          <p style="color:#414943;line-height:1.6">
+            いつもWorkSpotをご利用いただきありがとうございます。<br/>
+            管理者により、登録されている店舗「<strong>${cafeName}</strong>」が非表示に設定されました。
+          </p>
+          <div style="background:#f4f4ef;padding:16px;border-radius:8px;margin:16px 0;border-left:4px solid #ba1a1a">
+            <strong style="color:#1a1c19">非表示の理由:</strong>
+            <p style="color:#414943;margin:8px 0 0 0;white-space:pre-wrap">${reason}</p>
+          </div>
+          <p style="color:#414943;line-height:1.6">
+            ご不明な点がある場合や、修正が完了し再申請をご希望の場合は、管理者までお問い合わせください。
+          </p>
+        </div>
+      `,
+    });
+  }
 }

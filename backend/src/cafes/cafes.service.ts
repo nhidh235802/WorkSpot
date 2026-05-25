@@ -18,6 +18,7 @@ import { CafeDetailResponseDto } from './dto/cafe-detail-response.dto';
 import { SearchCafeDto } from './dto/search-cafe.dto';
 
 import { CreateReviewDto } from './dto/create-review.dto';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class CafesService {
@@ -33,6 +34,8 @@ export class CafesService {
 
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
+
+    private readonly mailService: MailService,
   ) {}
 
   async getRecommended(userLat: number, userLng: number): Promise<any[]> {
@@ -652,7 +655,10 @@ export class CafesService {
     id: string,
     rejectionReason?: string,
   ): Promise<{ id: string; status: CafeStatus }> {
-    const cafe = await this.cafesRepository.findOneBy({ id });
+    const cafe = await this.cafesRepository.findOne({
+      where: { id },
+      relations: { owner: true },
+    });
 
     if (!cafe) {
       throw new NotFoundException(`Quán cà phê ${id} không tìm thấy`);
@@ -668,6 +674,18 @@ export class CafesService {
       cafe.status = CafeStatus.HIDDEN;
       if (rejectionReason) {
         cafe.rejectionReason = rejectionReason;
+      }
+      // Gửi email thông báo cho chủ quán
+      if (cafe.owner && cafe.owner.email) {
+        try {
+          await this.mailService.sendCafeHiddenNotification(
+            cafe.owner.email,
+            cafe.name,
+            rejectionReason || '管理者による非表示設定',
+          );
+        } catch (mailErr) {
+          console.error('Failed to send email notification to owner:', mailErr);
+        }
       }
     } else {
       cafe.status = CafeStatus.APPROVED;
