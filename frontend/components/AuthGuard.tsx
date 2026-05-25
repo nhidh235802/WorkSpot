@@ -28,6 +28,10 @@ function syncCheck(
   // Profile is accessible to customer and owner
   if (pathname === '/profile') return role === 'customer' || role === 'owner'
 
+  // Cafe detail page is accessible to admin and owner as well
+  const isCafeDetail = /^\/cafes\/[^/]+$/.test(pathname) && !pathname.endsWith('/search')
+  if (isCafeDetail && (role === 'admin' || role === 'owner')) return true
+
   const isAllowed  = allowedRoles  ? allowedRoles.includes(role)  : true
   const isForbidden = forbiddenRoles ? forbiddenRoles.includes(role) : false
   return isAllowed && !isForbidden

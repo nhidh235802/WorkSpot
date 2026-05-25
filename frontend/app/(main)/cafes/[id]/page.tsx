@@ -1,7 +1,7 @@
 'use client';
 
-import { JSX, useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { JSX, useEffect, useState, Suspense } from 'react';
+import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import { CafeService } from '@/services/cafe.service';
@@ -114,8 +114,10 @@ const REALTIME_CONFIG: Record<string, { label: string; dot: string; bg: string; 
 };
 
 // ── Main Page ──────────────────────────────────────────────────────
-export default function CafeDetailPage() {
+function CafeDetailContent() {
   const { id } = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
+  const isAdminView = searchParams.get('view') === 'admin';
   const [cafe, setCafe] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -328,7 +330,7 @@ export default function CafeDetailPage() {
             </div>
 
             {/* 地図で表示 button */}
-            {cafe.latitude && cafe.longitude && (
+            {!isAdminView && cafe.latitude && cafe.longitude && (
               <div style={{ marginTop: 24 }}>
                 <Link
                   href={`/cafes/search?lat=${cafe.latitude}&lng=${cafe.longitude}&selectedId=${id}&showRoute=1`}
@@ -457,25 +459,27 @@ export default function CafeDetailPage() {
               }}>
                 ユーザーレビュー
               </h2>
-              <Link
-                href={`/cafes/${id}/reviews`} // Đường dẫn tới trang review mới của bạn
-                style={{
-                  background: 'linear-gradient(135deg, #14422D 0%, #2D5A43 100%)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: 9999,
-                  padding: '12px 28px',
-                  fontSize: 14,
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  fontFamily: 'Manrope, sans-serif',
-                  boxShadow: '0 4px 12px rgba(20,66,45,0.25)',
-                  textDecoration: 'none',       // Xóa gạch chân mặc định của thẻ a
-                  display: 'inline-flex',       // Căn giữa text trong thẻ Link
-                  alignItems: 'center',
-                }}>
-                レビューを書く
-              </Link>
+              {!isAdminView && (
+                <Link
+                  href={`/cafes/${id}/reviews`} // Đường dẫn tới trang review mới của bạn
+                  style={{
+                    background: 'linear-gradient(135deg, #14422D 0%, #2D5A43 100%)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 9999,
+                    padding: '12px 28px',
+                    fontSize: 14,
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    fontFamily: 'Manrope, sans-serif',
+                    boxShadow: '0 4px 12px rgba(20,66,45,0.25)',
+                    textDecoration: 'none',       // Xóa gạch chân mặc định của thẻ a
+                    display: 'inline-flex',       // Căn giữa text trong thẻ Link
+                    alignItems: 'center',
+                  }}>
+                  レビューを書く
+                </Link>
+              )}
             </div>
 
             {/* Review list */}
@@ -575,5 +579,17 @@ export default function CafeDetailPage() {
         </main>
       </div>
     </>
+  );
+}
+
+export default function CafeDetailPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh', color: '#737770', fontFamily: 'Manrope, sans-serif' }}>
+        読み込み中...
+      </div>
+    }>
+      <CafeDetailContent />
+    </Suspense>
   );
 }

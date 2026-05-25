@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { AdminService, AdminCafeItem } from '@/services/admin.service'
-import { Search, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2, X } from 'lucide-react'
+import { Search, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2, X, Wifi, Plug, Users, Coffee, Snowflake, Laptop } from 'lucide-react'
 import { toast, Toaster } from 'sonner'
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 const PAGE_SIZE = 5
@@ -24,6 +24,15 @@ const FACILITY_LABEL: Record<string, string> = {
   flexible_hours: '時間柔軟',
   cleanliness:    '清潔感',
   smoking_rule:   '禁煙・分煙',
+}
+
+const FACILITY_ICONS: Record<string, React.ComponentType<any>> = {
+  wifi: Wifi,
+  socket: Plug,
+  workspace: Users,
+  desk: Laptop,
+  snack: Coffee,
+  cleanliness: Snowflake,
 }
 
 const STATUS_FILTER_OPTIONS = [
@@ -368,11 +377,14 @@ export default function AdminCafesPage() {
                       {cafe.address}
                     </div>
                   </div>
-                  {cafe.owner && (
-                    <div style={{ color: 'rgba(65, 73, 67, 0.70)', fontSize: 10, fontFamily: 'Manrope', fontWeight: '500' }}>
-                      オーナー: {cafe.owner.fullName}
-                    </div>
-                  )}
+                  {/* Facility Icons */}
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                    {(cafe.facilities ?? []).map((f) => {
+                      const IconComponent = FACILITY_ICONS[f];
+                      if (!IconComponent) return null;
+                      return <IconComponent key={f} size={14} style={{ color: '#7F8181' }} />;
+                    })}
+                  </div>
                 </div>
 
                 {/* Column 3: status */}
@@ -388,7 +400,7 @@ export default function AdminCafesPage() {
                 {/* Column 4: action buttons */}
                 {cafe.status === 'pending' ? (
                   <div style={{ width: 223.50, justifyContent: 'flex-end', alignItems: 'center', gap: 12, display: 'flex' }}>
-                    <button type="button" onClick={() => router.push(`/cafes/${cafe.id}`)} style={{ border: 'none', paddingLeft: 20, paddingRight: 20, paddingTop: 6, paddingBottom: 6, background: '#14422D', boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)', borderRadius: 9999, flexDirection: 'column', justifyContent: 'center', alignItems: 'center', display: 'inline-flex', cursor: 'pointer' }}>
+                    <button type="button" onClick={() => router.push(`/cafes/${cafe.id}?view=admin`)} style={{ border: 'none', paddingLeft: 20, paddingRight: 20, paddingTop: 6, paddingBottom: 6, background: '#14422D', boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)', borderRadius: 9999, flexDirection: 'column', justifyContent: 'center', alignItems: 'center', display: 'inline-flex', cursor: 'pointer' }}>
                       <div style={{ width: 60.28, height: 16, textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'white', fontSize: 12, fontFamily: 'Manrope', fontWeight: '500', lineHeight: '16px', wordWrap: 'break-word' }}>詳細を表示</div>
                     </button>
                     <button onClick={() => handleApprove(cafe.id, cafe.name)} type="button" style={{ border: 'none', paddingLeft: 20, paddingRight: 20, paddingTop: 6, paddingBottom: 6, background: '#10B981', boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)', borderRadius: 9999, flexDirection: 'column', justifyContent: 'center', alignItems: 'center', display: 'inline-flex', cursor: 'pointer' }}>
@@ -400,7 +412,7 @@ export default function AdminCafesPage() {
                   </div>
                 ) : (
                   <div style={{ width: 223.50, justifyContent: 'flex-end', alignItems: 'center', gap: 12, display: 'flex' }}>
-                    <button type="button" onClick={() => router.push(`/cafes/${cafe.id}`)} style={{ border: 'none', paddingLeft: 20, paddingRight: 20, paddingTop: 6, paddingBottom: 6, background: '#14422D', boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)', borderRadius: 9999, flexDirection: 'column', justifyContent: 'center', alignItems: 'center', display: 'inline-flex', cursor: 'pointer' }}>
+                    <button type="button" onClick={() => router.push(`/cafes/${cafe.id}?view=admin`)} style={{ border: 'none', paddingLeft: 20, paddingRight: 20, paddingTop: 6, paddingBottom: 6, background: '#14422D', boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)', borderRadius: 9999, flexDirection: 'column', justifyContent: 'center', alignItems: 'center', display: 'inline-flex', cursor: 'pointer' }}>
                       <div style={{ width: 60.28, height: 16, textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'white', fontSize: 12, fontFamily: 'Manrope', fontWeight: '500', lineHeight: '16px', wordWrap: 'break-word' }}>詳細を表示</div>
                     </button>
                     <button onClick={() => handleToggleVisibility(cafe.id, cafe.name, cafe.status)} type="button" style={{ border: 'none', paddingLeft: 20, paddingRight: 20, paddingTop: 6, paddingBottom: 6, background: '#7F8181', boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)', borderRadius: 9999, flexDirection: 'column', justifyContent: 'center', alignItems: 'center', display: 'inline-flex', cursor: 'pointer' }}>
