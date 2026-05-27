@@ -310,16 +310,16 @@ export default function AdminCafesPage() {
           alignItems: 'center', display: 'flex'
         }}>
           <div style={{width: 297.98, flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'inline-flex'}}>
-            <div style={{width: 88, height: 15, justifyContent: 'center', display: 'flex', flexDirection: 'column', color: '#A8A29E', fontSize: 10, fontFamily: 'Manrope', fontWeight: '500', textTransform: 'uppercase', lineHeight: '15px', letterSpacing: 1, wordWrap: 'break-word'}}>店舗情報・雰囲気</div>
+            <div style={{justifyContent: 'center', display: 'flex', flexDirection: 'column', color: '#A8A29E', fontSize: 10, fontFamily: 'Manrope', fontWeight: '500', textTransform: 'uppercase', lineHeight: '15px', letterSpacing: 1, whiteSpace: 'nowrap'}}>店舗情報・雰囲気</div>
           </div>
           <div style={{width: 223.50, flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'inline-flex'}}>
-            <div style={{width: 100.17, height: 15, justifyContent: 'center', display: 'flex', flexDirection: 'column', color: '#A8A29E', fontSize: 10, fontFamily: 'Manrope', fontWeight: '500', textTransform: 'uppercase', lineHeight: '15px', letterSpacing: 1, wordWrap: 'break-word'}}>所在地・アメニティ</div>
+            <div style={{justifyContent: 'center', display: 'flex', flexDirection: 'column', color: '#A8A29E', fontSize: 10, fontFamily: 'Manrope', fontWeight: '500', textTransform: 'uppercase', lineHeight: '15px', letterSpacing: 1, whiteSpace: 'nowrap'}}>所在地・アメニティ</div>
           </div>
           <div style={{width: 149, flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', display: 'inline-flex'}}>
-            <div style={{width: 44, height: 15, textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: '#A8A29E', fontSize: 10, fontFamily: 'Manrope', fontWeight: '500', textTransform: 'uppercase', lineHeight: '15px', letterSpacing: 1, wordWrap: 'break-word'}}>稼働状況</div>
+            <div style={{textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: '#A8A29E', fontSize: 10, fontFamily: 'Manrope', fontWeight: '500', textTransform: 'uppercase', lineHeight: '15px', letterSpacing: 1, whiteSpace: 'nowrap'}}>稼働状況</div>
           </div>
           <div style={{width: 223.50, flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-end', display: 'inline-flex'}}>
-            <div style={{width: 56.17, height: 15, textAlign: 'right', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: '#A8A29E', fontSize: 10, fontFamily: 'Manrope', fontWeight: '500', textTransform: 'uppercase', lineHeight: '15px', letterSpacing: 1, wordWrap: 'break-word'}}>アクション</div>
+            <div style={{textAlign: 'right', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: '#A8A29E', fontSize: 10, fontFamily: 'Manrope', fontWeight: '500', textTransform: 'uppercase', lineHeight: '15px', letterSpacing: 1, whiteSpace: 'nowrap'}}>アクション</div>
           </div>
         </div>
 

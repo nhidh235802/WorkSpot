@@ -2,11 +2,20 @@
 
 import React, { useEffect, useState } from 'react'
 import { AdminService, AdminCafeItem } from '@/services/admin.service'
-import { ChevronLeft, ChevronRight, X, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, X, CheckCircle2, AlertTriangle, Loader2, Wifi, Plug, Users, Laptop, Coffee, Snowflake } from 'lucide-react'
 import { toast, Toaster } from 'sonner'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 const PAGE_SIZE = 5
+
+const FACILITY_ICONS: Record<string, React.ComponentType<any>> = {
+  wifi: Wifi,
+  socket: Plug,
+  workspace: Users,
+  desk: Laptop,
+  snack: Coffee,
+  cleanliness: Snowflake,
+}
 
 function toAbsUrl(path: string | null | undefined): string | null {
   if (!path) return null
@@ -303,16 +312,19 @@ export default function AdminApprovalsPage() {
                   </div>
                 </div>
 
-                {/* 所在地 */}
+                {/* 所在地 & 設備 */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   <div style={{ color: '#1A1C19', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '20px' }}>
                     {cafe.address}
                   </div>
-                  {cafe.owner && (
-                    <div style={{ color: 'rgba(65,73,67,0.70)', fontSize: 12, fontFamily: 'Manrope, sans-serif', fontWeight: 400 }}>
-                      {cafe.owner.fullName}
-                    </div>
-                  )}
+                  {/* Facility Icons */}
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                    {(cafe.facilities ?? []).map((f) => {
+                      const IconComponent = FACILITY_ICONS[f];
+                      if (!IconComponent) return null;
+                      return <IconComponent key={f} size={14} style={{ color: '#7F8181' }} />;
+                    })}
+                  </div>
                 </div>
 
                 {/* 申請日 */}

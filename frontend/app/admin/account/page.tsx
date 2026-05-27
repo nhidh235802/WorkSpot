@@ -51,6 +51,8 @@ export default function AdminAccountPage() {
   const [appliedName, setAppliedName]   = useState('')
   const [appliedEmail, setAppliedEmail] = useState('')
   const [appliedRole, setAppliedRole]   = useState('')
+  const [statusInput, setStatusInput]   = useState('')
+  const [appliedStatus, setAppliedStatus] = useState('')
 
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState<string | null>(null)
@@ -77,9 +79,10 @@ export default function AdminAccountPage() {
     setLoading(true)
     setError(null)
     AdminService.getUsers({
-      name:  appliedName  || undefined,
-      email: appliedEmail || undefined,
-      role:  appliedRole  || undefined,
+      name:   appliedName   || undefined,
+      email:  appliedEmail  || undefined,
+      role:   appliedRole   || undefined,
+      status: appliedStatus || undefined,
       page,
       limit: PAGE_SIZE,
     })
@@ -92,12 +95,13 @@ export default function AdminAccountPage() {
         setError(err.message || 'ユーザーデータの読み込みに失敗しました。')
       })
       .finally(() => setLoading(false))
-  }, [appliedName, appliedEmail, appliedRole, page])
+  }, [appliedName, appliedEmail, appliedRole, appliedStatus, page])
 
   const handleSearch = () => {
     setAppliedName(nameInput)
     setAppliedEmail(emailInput)
     setAppliedRole(roleInput)
+    setAppliedStatus(statusInput)
     setPage(1)
   }
 
@@ -282,6 +286,8 @@ export default function AdminAccountPage() {
               ステータス
             </label>
             <select
+              value={statusInput}
+              onChange={(e) => setStatusInput(e.target.value)}
               style={{
                 paddingTop: 11, paddingBottom: 11, paddingLeft: 16, paddingRight: 36,
                 background: '#E3E3DE', borderRadius: 8, border: 'none', outline: 'none',
@@ -289,10 +295,10 @@ export default function AdminAccountPage() {
                 width: '100%', boxSizing: 'border-box', appearance: 'none', cursor: 'pointer',
               }}
             >
-              <option>全てのステータス</option>
-              <option>有効</option>
-              <option>無効</option>
-              <option>停止</option>
+              <option value="">全てのステータス</option>
+              <option value="active">有効</option>
+              <option value="disabled">無効</option>
+              <option value="suspended">停止</option>
             </select>
           </div>
         </div>
@@ -445,34 +451,19 @@ export default function AdminAccountPage() {
                       有効化
                     </button>
                   ) : (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => setConfirmTarget({ userId: user.id, userName: user.fullName, status: 'disabled' })}
-                        style={{
-                          paddingLeft: 20, paddingRight: 20, paddingTop: 8, paddingBottom: 8,
-                          background: 'transparent', borderRadius: 9999,
-                          border: 'none', outline: '1px #717973 solid', outlineOffset: '-1px',
-                          cursor: 'pointer', color: '#414943', fontSize: 12, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '16px',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        無効化
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setConfirmTarget({ userId: user.id, userName: user.fullName, status: 'suspended' })}
-                        style={{
-                          paddingLeft: 20, paddingRight: 20, paddingTop: 8, paddingBottom: 8,
-                          background: 'transparent', borderRadius: 9999,
-                          border: 'none', outline: '1px #717973 solid', outlineOffset: '-1px',
-                          cursor: 'pointer', color: '#414943', fontSize: 12, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '16px',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        停止
-                      </button>
-                    </>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmTarget({ userId: user.id, userName: user.fullName, status: 'disabled' })}
+                      style={{
+                        paddingLeft: 20, paddingRight: 20, paddingTop: 8, paddingBottom: 8,
+                        background: 'transparent', borderRadius: 9999,
+                        border: 'none', outline: '1px #717973 solid', outlineOffset: '-1px',
+                        cursor: 'pointer', color: '#414943', fontSize: 12, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '16px',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      無効化
+                    </button>
                   )}
                 </div>
               </div>
