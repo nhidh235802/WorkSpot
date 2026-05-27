@@ -21,7 +21,12 @@ export class AdminService {
       rejectedCafes,
       hiddenCafes,
     ] = await Promise.all([
-      this.userRepo.count(),
+      this.userRepo.count({
+        where: [
+          { role: UserRole.CUSTOMER },
+          { role: UserRole.OWNER },
+        ],
+      }),
       this.cafeRepo.count(),
       this.cafeRepo.count({ where: { status: CafeStatus.PENDING } }),
       this.cafeRepo.count({ where: { status: CafeStatus.APPROVED } }),
@@ -44,6 +49,7 @@ export class AdminService {
       .select('EXTRACT(MONTH FROM u.createdAt)::int', 'month')
       .addSelect('COUNT(*)', 'count')
       .where('EXTRACT(YEAR FROM u.createdAt) = :year', { year })
+      .andWhere('u.role != :adminRole', { adminRole: UserRole.ADMIN })
       .groupBy('EXTRACT(MONTH FROM u.createdAt)')
       .orderBy('month', 'ASC')
       .getRawMany();
@@ -70,6 +76,9 @@ export class AdminService {
   }) {
     const { name, email, role, status, page = 1, limit = 10 } = filters;
     const qb = this.userRepo.createQueryBuilder('u');
+
+    // Exclude admin accounts by default
+    qb.andWhere('u.role != :adminRole', { adminRole: UserRole.ADMIN });
 
     if (name) qb.andWhere('u.fullName ILIKE :name', { name: `%${name}%` });
     if (email) qb.andWhere('u.email     ILIKE :email', { email: `%${email}%` });

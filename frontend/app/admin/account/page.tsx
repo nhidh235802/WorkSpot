@@ -272,7 +272,6 @@ export default function AdminAccountPage() {
               }}
             >
               <option value="">全てのロール</option>
-              <option value="admin">管理者</option>
               <option value="owner">オーナー</option>
               <option value="customer">一般ユーザー</option>
             </select>

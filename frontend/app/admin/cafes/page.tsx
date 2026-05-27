@@ -354,7 +354,7 @@ export default function AdminCafesPage() {
                   </div>
                   <div style={{ flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: 4, display: 'inline-flex', minWidth: 0, flex: 1 }}>
                     <div style={{ alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'flex' }}>
-                      <div style={{ width: 186.69, height: 20, justifyContent: 'center', display: 'flex', flexDirection: 'column', color: '#14422D', fontSize: 16, fontFamily: 'Manrope', fontWeight: '700', lineHeight: '20px', wordWrap: 'break-word', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div style={{ alignSelf: 'stretch', color: '#14422D', fontSize: 16, fontFamily: 'Manrope', fontWeight: '700', lineHeight: '20px', wordWrap: 'break-word' }}>
                         {cafe.name}
                       </div>
                     </div>
