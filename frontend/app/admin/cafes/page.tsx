@@ -38,7 +38,6 @@ const FACILITY_ICONS: Record<string, React.ComponentType<any>> = {
 const STATUS_FILTER_OPTIONS = [
   { value: '',         label: 'ステータス (すべて)' },
   { value: 'approved', label: '営業中' },
-  { value: 'pending',  label: '承認待ち' },
   { value: 'hidden',   label: '非表示' },
   { value: 'rejected', label: '却下済み' },
 ]

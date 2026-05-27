@@ -612,6 +612,8 @@ export class CafesService {
 
     if (status) {
       qb.andWhere('cafe.status = :status', { status });
+    } else {
+      qb.andWhere('cafe.status != :pendingStatus', { pendingStatus: CafeStatus.PENDING });
     }
 
     qb.orderBy('cafe.createdAt', 'DESC')
@@ -622,7 +624,11 @@ export class CafesService {
 
     // Đếm riêng để lấy total (không bị ảnh hưởng bởi skip/take)
     const total = await this.cafesRepository.count({
-      where: status ? { status } : {},
+      where: status ? { status } : [
+        { status: CafeStatus.APPROVED },
+        { status: CafeStatus.REJECTED },
+        { status: CafeStatus.HIDDEN },
+      ],
     });
 
     const items = entities.map((cafe, i) => ({
