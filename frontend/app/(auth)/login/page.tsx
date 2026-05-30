@@ -13,6 +13,7 @@ export default function LoginPage() {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [serverError, setServerError] = useState('')
+  const [bannedReason, setBannedReason] = useState<string | null>(null)
   const { register, handleSubmit, formState: { isSubmitting } } =
     useForm<FormData>()
 
@@ -32,6 +33,7 @@ export default function LoginPage() {
 
   const onSubmit = async (data: FormData) => {
     setServerError('')
+    setBannedReason(null)
     try {
       const res = await axios.post('http://localhost:3001/auth/login', data)
       const user = res.data.user
@@ -48,9 +50,19 @@ export default function LoginPage() {
       }
     } catch (err: unknown) {
       if (axios.isAxiosError(err) && err.response?.status === 401) {
-        // ĐỌC THÔNG BÁO ĐỘNG TỪ SERVER (CHẶN SAI MẬT KHẨU, VÔ HIỆU HÓA HOẶC ĐÌNH CHỈ)
-        const errorMessage = err.response?.data?.message || 'メールアドレスまたはパスワードが正しくありません'
-        setServerError(errorMessage)
+        const responseData = err.response?.data
+        const errorMessage = responseData?.message || 'メールアドレスまたはパスワードが正しくありません'
+        // Nếu là tài khoản bị hạn chế, hiển popup với lý do
+        const isRestricted = responseData?.code === 'ACCOUNT_DISABLED'
+          || responseData?.status === 'disabled'
+          || errorMessage.includes('無効') || errorMessage.includes('disabled') || errorMessage.includes('制限')
+        if (isRestricted && responseData?.reason) {
+          setBannedReason(responseData.reason)
+        } else if (isRestricted) {
+          setBannedReason('')
+        } else {
+          setServerError(errorMessage)
+        }
       } else {
         setServerError('ログインに失敗しました。もう一度お試しください。')
       }
@@ -253,6 +265,96 @@ export default function LoginPage() {
         <ArrowLeft size={14} />
         ホームへ戻る
       </Link>
+
+      {/* ══ POPUP THÔNG BÁO TÀI KHOẢN BọA HẠN CHẾ ══ */}
+      {bannedReason !== null && (
+        <div
+          onClick={() => setBannedReason(null)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 200,
+            background: 'rgba(26,28,25,0.35)', backdropFilter: 'blur(6px)',
+            display: 'flex', justifyContent: 'center', alignItems: 'center',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: 480, maxWidth: '90vw',
+              background: 'white',
+              borderRadius: 20,
+              boxShadow: '0px 24px 60px rgba(0,0,0,0.18)',
+              overflow: 'hidden',
+              display: 'flex', flexDirection: 'column',
+            }}
+          >
+            {/* Header đỏ */}
+            <div style={{
+              background: 'linear-gradient(135deg, #BA1A1A 0%, #93000A 100%)',
+              padding: '28px 32px 24px',
+              display: 'flex', flexDirection: 'column', gap: 8,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: 9999,
+                  background: 'rgba(255,255,255,0.15)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0,
+                }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                </div>
+                <div style={{ color: 'white', fontSize: 18, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '24px' }}>
+                  アカウントが無効化されています
+                </div>
+              </div>
+              <div style={{ color: 'rgba(255,218,214,0.85)', fontSize: 13, fontFamily: 'Manrope, sans-serif', fontWeight: 400, paddingLeft: 46 }}>
+                このアカウントは管理者によりアクセスが制限されています。
+              </div>
+            </div>
+
+            {/* Body */}
+            <div style={{ padding: '24px 32px 28px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+              {bannedReason ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ color: '#A8A29E', fontSize: 11, fontFamily: 'Manrope, sans-serif', fontWeight: 500, textTransform: 'uppercase', letterSpacing: 1 }}>
+                    管理者からのメッセージ
+                  </div>
+                  <div style={{
+                    background: '#FEF2F2',
+                    border: '1px solid rgba(186,26,26,0.15)',
+                    borderRadius: 12,
+                    padding: '14px 18px',
+                    color: '#350F12',
+                    fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 400, lineHeight: '22px',
+                  }}>
+                    {bannedReason}
+                  </div>
+                </div>
+              ) : (
+                <div style={{ color: '#57736A', fontSize: 14, fontFamily: 'Manrope, sans-serif', lineHeight: '22px' }}>
+                  詳しい理由は提供されていません。お問い合わせが必要な場合はサポートまでご連絡ください。
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setBannedReason(null)}
+                style={{
+                  width: '100%', height: 48,
+                  background: '#E8E8E3',
+                  borderRadius: 9999, border: 'none', cursor: 'pointer',
+                  color: '#1A1C19', fontSize: 15, fontFamily: 'Manrope, sans-serif', fontWeight: 600,
+                }}
+              >
+                閉じる
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

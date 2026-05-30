@@ -160,5 +160,16 @@ export const AdminService = {
       },
       body: JSON.stringify({ status, ...(reason ? { reason } : {}) }),
     });
+  },
+
+  async disableOwnerCafes(ownerId: string, reason: string): Promise<void> {
+    return requestJson(`${BACKEND_API_URL}/admin/users/${ownerId}/disable-cafes`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders(),
+      },
+      body: JSON.stringify({ reason }),
+    });
   }
 };

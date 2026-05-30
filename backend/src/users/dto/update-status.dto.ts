@@ -1,7 +1,12 @@
-import { IsEnum } from 'class-validator';
+import { IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
 import { UserStatus } from '../entities/user.entity'; 
 
 export class UpdateUserStatusDto {
   @IsEnum(UserStatus)
-  status!: UserStatus; 
+  status!: UserStatus;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  reason?: string;
 }

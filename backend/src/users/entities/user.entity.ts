@@ -64,6 +64,9 @@ export class User {
   })
   status!: UserStatus;
 
+  @Column({ type: 'text', nullable: true })
+  disabledReason!: string | null;
+
 
   @OneToMany(() => Cafe, (cafe) => cafe.owner)
   cafes!: Cafe[];

@@ -66,14 +66,20 @@ export class AuthService {
     // 2. CHẶN ĐĂNG NHẬP NẾU TÀI KHOẢN KHÔNG Ở TRẠNG THÁI ACTIVE
     if (user.status && user.status !== UserStatus.ACTIVE) {
       if (user.status === UserStatus.DISABLED) {
-        throw new UnauthorizedException(
-          'このアカウントは無効化されています。管理者にお問い合わせください。',
-        );
+        throw new UnauthorizedException({
+          message: 'このアカウントは無効化されています。管理者にお問い合わせください。',
+          code: 'ACCOUNT_DISABLED',
+          status: 'disabled',
+          reason: user.disabledReason ?? null,
+        });
       }
       if (user.status === UserStatus.SUSPENDED) {
-        throw new UnauthorizedException(
-          'このアカウントは利用停止処分を受けています。',
-        );
+        throw new UnauthorizedException({
+          message: 'このアカウントは利用停止処分を受けています。',
+          code: 'ACCOUNT_DISABLED',
+          status: 'suspended',
+          reason: user.disabledReason ?? null,
+        });
       }
     }
 

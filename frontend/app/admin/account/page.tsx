@@ -62,6 +62,12 @@ export default function AdminAccountPage() {
   // STATE ĐỂ ĐIỀU KHIỂN HỘP THOẠI XÁC NHẬN TÙY CHỈNH CAO CẤP
   const [confirmTarget, setConfirmTarget] = useState<{ userId: string; userName: string; status: 'active' | 'disabled' | 'suspended' } | null>(null)
 
+  // STATE CHO MODAL NHẬP LÝ DO VÔ HIỆU HÓA
+  const [disableTarget, setDisableTarget] = useState<{ userId: string; userName: string; userRole: string } | null>(null)
+  const [disableReason, setDisableReason] = useState('')
+  const [disableReasonError, setDisableReasonError] = useState('')
+  const [hasSubmittedDisable, setHasSubmittedDisable] = useState(false)
+
   const fetchStats = () => {
     AdminService.getStats()
       .then((s) => setTotalAccounts(s.totalAccounts))
@@ -106,19 +112,18 @@ export default function AdminAccountPage() {
   }
 
   // Hàm thực thi cập nhật thực tế sau khi nhấn Xác nhận trong Custom Modal
-  const executeUpdateStatus = async () => {
+  const executeUpdateStatus = async (reason?: string) => {
     if (!confirmTarget) return
 
     const { userId, status } = confirmTarget
 
     try {
       setError(null)
-      await AdminService.updateUserStatus(userId, status)
+      await AdminService.updateUserStatus(userId, status, reason)
       
       setUsers((prev) =>
         prev.map((user) => (user.id === userId ? { ...user, status: status } : user))
       )
-      
       
       if (status === 'active') toast.success('アカウントを正常に有効化しました。')
       if (status === 'disabled') toast.success('アカウントを正常に無効化しました。')
@@ -130,8 +135,62 @@ export default function AdminAccountPage() {
       toast.error(err.message || 'ステータスの更新に失敗しました。')
       setError(err.message || 'ステータスの更新に失敗しました。')
     } finally {
-      setConfirmTarget(null) // Đóng modal xác nhận
+      setConfirmTarget(null)
     }
+  }
+
+  // Hàm xử lý submit disable modal (có lý do)
+  const handleDisableSubmit = async () => {
+    setHasSubmittedDisable(true)
+    if (!disableReason.trim()) {
+      setDisableReasonError('理由の入力は必須です。')
+      return
+    }
+    if (disableReason.length > 500) {
+      setDisableReasonError('理由は500文字以内で入力してください。')
+      return
+    }
+    if (!disableTarget) return
+
+    const { userId, userName, userRole } = disableTarget
+
+    try {
+      setError(null)
+      // Vô hiệu hóa tài khoản với lý do
+      await AdminService.updateUserStatus(userId, 'disabled', disableReason)
+      setUsers((prev) =>
+        prev.map((user) => (user.id === userId ? { ...user, status: 'disabled' } : user))
+      )
+      toast.success(`${userName} のアカウントを無効化しました。`)
+
+      // Nếu là owner → ẩn tất cả quán của owner đó
+      if (userRole === 'owner') {
+        try {
+          await AdminService.disableOwnerCafes(userId, disableReason)
+          toast.success(`${userName} の店舗もあわせて非表示にしました。`)
+        } catch (cafeErr: any) {
+          toast.error('店舗の非表示処理に失敗しました: ' + (cafeErr.message || ''))
+        }
+      }
+
+      fetchStats()
+    } catch (err: any) {
+      console.error(err)
+      toast.error(err.message || '無効化処理に失敗しました。')
+      setError(err.message || '無効化処理に失敗しました。')
+    } finally {
+      setDisableTarget(null)
+      setDisableReason('')
+      setDisableReasonError('')
+      setHasSubmittedDisable(false)
+    }
+  }
+
+  const handleCloseDisableModal = () => {
+    setDisableTarget(null)
+    setDisableReason('')
+    setDisableReasonError('')
+    setHasSubmittedDisable(false)
   }
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
@@ -434,7 +493,7 @@ export default function AdminAccountPage() {
                     詳細
                   </button>
 
-                  {/* THAY THẾ ĐOẠN ĐIỀU KHIỂN NÚT ĐỂ KÍCH HOẠT CUSTOM MODAL THAY VÌ CONFIRM CŨ */}
+                  {/* NÚT VÔ HIỆU HÓA → MỞ MODAL NHẬP LÝ DO */}
                   {user.status && user.status !== 'active' ? (
                     <button
                       type="button"
@@ -453,7 +512,7 @@ export default function AdminAccountPage() {
                   ) : (
                     <button
                       type="button"
-                      onClick={() => setConfirmTarget({ userId: user.id, userName: user.fullName, status: 'disabled' })}
+                      onClick={() => setDisableTarget({ userId: user.id, userName: user.fullName, userRole: user.role })}
                       style={{
                         paddingLeft: 20, paddingRight: 20, paddingTop: 8, paddingBottom: 8,
                         background: 'transparent', borderRadius: 9999,
@@ -603,7 +662,6 @@ export default function AdminAccountPage() {
         )
       })()}
 
-      {/* ── 5. HỘP THOẠI XÁC NHẬN TÙY CHỈNH CAO CẤP (CUSTOM CONFIRM MODAL APPLE-STYLE) ── */}
       {confirmTarget && (
         <div
           onClick={() => setConfirmTarget(null)}
@@ -622,7 +680,6 @@ export default function AdminAccountPage() {
               position: 'relative'
             }}
           >
-            {/* Nút X đóng góc trên */}
             <button 
               onClick={() => setConfirmTarget(null)}
               style={{ position: 'absolute', right: 20, top: 20, background: 'none', border: 'none', cursor: 'pointer', color: '#717973' }}
@@ -630,7 +687,6 @@ export default function AdminAccountPage() {
               <X size={18} />
             </button>
 
-            {/* Nội dung tiêu đề */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <div style={{ color: '#1A1C19', fontSize: 20, fontFamily: 'Manrope, sans-serif', fontWeight: 600, lineHeight: '28px' }}>
                 {getConfirmModalTitle()}
@@ -640,7 +696,6 @@ export default function AdminAccountPage() {
               </div>
             </div>
 
-            {/* Cụm nút xác nhận hủy */}
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
               <button
                 type="button"
@@ -657,10 +712,9 @@ export default function AdminAccountPage() {
               </button>
               <button
                 type="button"
-                onClick={executeUpdateStatus}
+                onClick={() => executeUpdateStatus()}
                 style={{
                   paddingLeft: 24, paddingRight: 24, paddingTop: 10, paddingBottom: 10,
-                  // Đổi màu nút linh hoạt: kích hoạt lại dùng màu xanh lá của WorkSpot, các hình phạt dùng màu đỏ hệ thống
                   background: confirmTarget.status === 'active' ? '#14422D' : '#BA1A1A',
                   borderRadius: 9999, border: 'none', cursor: 'pointer',
                   color: 'white', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 600,
@@ -672,6 +726,114 @@ export default function AdminAccountPage() {
                 onMouseLeave={(e) => { 
                   (e.currentTarget as HTMLElement).style.background = confirmTarget.status === 'active' ? '#14422D' : '#BA1A1A' 
                 }}
+              >
+                確認
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL NHẬP LÝ DO VÔ HIỆU HÓA TÀI KHOẢN ── */}
+      {disableTarget && (
+        <div
+          onClick={handleCloseDisableModal}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 110,
+            background: 'rgba(26,28,25,0.25)', backdropFilter: 'blur(4px)',
+            display: 'flex', justifyContent: 'center', alignItems: 'center',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: 500, maxWidth: '90vw', padding: 32, background: 'white',
+              boxShadow: '0px 12px 40px rgba(26,28,25,0.06)', borderRadius: 16,
+              outline: '1px rgba(192,201,193,0.10) solid', outlineOffset: '-1px',
+              display: 'flex', flexDirection: 'column', gap: 24,
+            }}
+          >
+            {/* Tiêu đề */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ color: '#14422D', fontSize: 24, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '32px' }}>
+                アカウント無効化の理由
+              </div>
+              <div style={{ color: '#414943', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 400, lineHeight: '20px' }}>
+                「{disableTarget.userName}」のアカウントを無効化する理由を入力してください。
+                {disableTarget.userRole === 'owner' && (
+                  <span style={{ display: 'block', marginTop: 6, color: '#F97316', fontWeight: 500 }}>
+                    ⚠ このオーナーの店舗もあわせて非表示になります。
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Textarea lý do */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <textarea
+                value={disableReason}
+                onChange={(e) => {
+                  setDisableReason(e.target.value)
+                  if (e.target.value.trim() !== '') setDisableReasonError('')
+                }}
+                placeholder="理由を入力してください"
+                style={{
+                  alignSelf: 'stretch',
+                  height: 160,
+                  padding: 16,
+                  background: '#F4F4EF',
+                  border: disableReasonError ? '1.5px solid #BA1A1A' : 'none',
+                  borderRadius: 12,
+                  outline: 'none',
+                  resize: 'none',
+                  fontSize: 15,
+                  fontFamily: 'Manrope, sans-serif',
+                  fontWeight: 400,
+                  lineHeight: '24px',
+                  color: '#1A1C19',
+                  width: '100%',
+                  boxSizing: 'border-box',
+                }}
+              />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', minHeight: 20 }}>
+                {disableReasonError ? (
+                  <span style={{ color: '#BA1A1A', fontSize: 13, fontFamily: 'Manrope, sans-serif', fontWeight: 600 }}>
+                    {disableReasonError}
+                  </span>
+                ) : <span />}
+                <span style={{ color: disableReason.length > 500 ? '#BA1A1A' : '#A8A29E', fontSize: 12, fontFamily: 'Manrope, sans-serif' }}>
+                  {disableReason.length}/500
+                </span>
+              </div>
+            </div>
+
+            {/* Nút action */}
+            <div style={{ paddingTop: 8, display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+              <button
+                type="button"
+                onClick={handleCloseDisableModal}
+                style={{
+                  paddingLeft: 24, paddingRight: 24, paddingTop: 10, paddingBottom: 10,
+                  background: '#E8E8E3', borderRadius: 9999, border: 'none', cursor: 'pointer',
+                  color: '#414943', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 700,
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#D8D8D3' }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = '#E8E8E3' }}
+              >
+                キャンセル
+              </button>
+              <button
+                type="button"
+                onClick={handleDisableSubmit}
+                style={{
+                  paddingLeft: 32, paddingRight: 32, paddingTop: 10, paddingBottom: 10,
+                  background: '#BA1A1A', borderRadius: 9999, border: 'none', cursor: 'pointer',
+                  color: 'white', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 700,
+                  boxShadow: '0px 4px 6px -4px rgba(186,26,26,0.20), 0px 10px 15px -3px rgba(186,26,26,0.20)',
+                  position: 'relative',
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#93000A' }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = '#BA1A1A' }}
               >
                 確認
               </button>

@@ -50,6 +50,15 @@ export class AdminController {
     @Param('id') id: string,
     @Body() dto: UpdateUserStatusDto,
   ) {
-    return await this.adminService.updateUserStatus(id, dto.status);
+    return await this.adminService.updateUserStatus(id, dto.status, dto.reason);
+  }
+
+  @Patch('users/:id/disable-cafes')
+  @HttpCode(HttpStatus.OK)
+  async disableOwnerCafes(
+    @Param('id') ownerId: string,
+    @Body('reason') reason: string,
+  ) {
+    return await this.adminService.disableOwnerCafes(ownerId, reason);
   }
 }

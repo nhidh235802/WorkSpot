@@ -102,8 +102,8 @@ export class AdminService {
     return { items, total, page, limit };
   }
 
-  // BỔ SUNG: Logic xử lý thay đổi trạng thái tài khoản cho nút bấm 無効化 và 停止
-  async updateUserStatus(userId: string, status: UserStatus): Promise<User> {
+  // BỔ SUNG: Logic xử lý thay đổi trạng thái tài khoản + lưu lý do
+  async updateUserStatus(userId: string, status: UserStatus, reason?: string): Promise<User> {
     const user = await this.userRepo.findOne({ where: { id: userId } });
     
     if (!user) {
@@ -111,6 +111,27 @@ export class AdminService {
     }
 
     user.status = status;
+    // Lưu lý do khi disable/suspended, xóa khi kích hoạt lại
+    if (status === UserStatus.ACTIVE) {
+      user.disabledReason = null;
+    } else if (reason) {
+      user.disabledReason = reason;
+    }
+
     return await this.userRepo.save(user);
+  }
+
+  // Ẩn toàn bộ quán đang approved của owner bị hạn chế
+  async disableOwnerCafes(ownerId: string, reason: string): Promise<void> {
+    await this.cafeRepo
+      .createQueryBuilder()
+      .update()
+      .set({
+        status: CafeStatus.HIDDEN,
+        rejectionReason: reason,
+      })
+      .where('"ownerId" = :ownerId', { ownerId })
+      .andWhere('status = :status', { status: CafeStatus.APPROVED })
+      .execute();
   }
 }
