@@ -151,14 +151,14 @@ export const AdminService = {
       body: JSON.stringify({ rejectionReason }),
     });
   },
-  async updateUserStatus(userId: string, status: 'active' | 'disabled' | 'suspended'): Promise<void> {
+  async updateUserStatus(userId: string, status: 'active' | 'disabled' | 'suspended', reason?: string): Promise<void> {
     return requestJson(`${BACKEND_API_URL}/admin/users/${userId}/status`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
         ...getAuthHeaders(),
       },
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ status, ...(reason ? { reason } : {}) }),
     });
   }
 };

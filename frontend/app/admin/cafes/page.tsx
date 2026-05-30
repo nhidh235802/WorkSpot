@@ -399,7 +399,7 @@ export default function AdminCafesPage() {
                 {/* Column 4: action buttons */}
                 {cafe.status === 'pending' ? (
                   <div style={{ width: 223.50, justifyContent: 'flex-end', alignItems: 'center', gap: 12, display: 'flex' }}>
-                    <button type="button" onClick={() => router.push(`/cafes/${cafe.id}?view=admin`)} style={{ border: 'none', paddingLeft: 20, paddingRight: 20, paddingTop: 6, paddingBottom: 6, background: '#14422D', boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)', borderRadius: 9999, flexDirection: 'column', justifyContent: 'center', alignItems: 'center', display: 'inline-flex', cursor: 'pointer' }}>
+                    <button type="button" onClick={() => router.push(`/admin/cafes/${cafe.id}`)} style={{ border: 'none', paddingLeft: 20, paddingRight: 20, paddingTop: 6, paddingBottom: 6, background: '#14422D', boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)', borderRadius: 9999, flexDirection: 'column', justifyContent: 'center', alignItems: 'center', display: 'inline-flex', cursor: 'pointer' }}>
                       <div style={{ width: 60.28, height: 16, textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'white', fontSize: 12, fontFamily: 'Manrope', fontWeight: '500', lineHeight: '16px', wordWrap: 'break-word' }}>詳細を表示</div>
                     </button>
                     <button onClick={() => handleApprove(cafe.id, cafe.name)} type="button" style={{ border: 'none', paddingLeft: 20, paddingRight: 20, paddingTop: 6, paddingBottom: 6, background: '#10B981', boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)', borderRadius: 9999, flexDirection: 'column', justifyContent: 'center', alignItems: 'center', display: 'inline-flex', cursor: 'pointer' }}>
@@ -411,7 +411,7 @@ export default function AdminCafesPage() {
                   </div>
                 ) : (
                   <div style={{ width: 223.50, justifyContent: 'flex-end', alignItems: 'center', gap: 12, display: 'flex' }}>
-                    <button type="button" onClick={() => router.push(`/cafes/${cafe.id}?view=admin`)} style={{ border: 'none', paddingLeft: 20, paddingRight: 20, paddingTop: 6, paddingBottom: 6, background: '#14422D', boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)', borderRadius: 9999, flexDirection: 'column', justifyContent: 'center', alignItems: 'center', display: 'inline-flex', cursor: 'pointer' }}>
+                    <button type="button" onClick={() => router.push(`/admin/cafes/${cafe.id}`)} style={{ border: 'none', paddingLeft: 20, paddingRight: 20, paddingTop: 6, paddingBottom: 6, background: '#14422D', boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)', borderRadius: 9999, flexDirection: 'column', justifyContent: 'center', alignItems: 'center', display: 'inline-flex', cursor: 'pointer' }}>
                       <div style={{ width: 60.28, height: 16, textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'white', fontSize: 12, fontFamily: 'Manrope', fontWeight: '500', lineHeight: '16px', wordWrap: 'break-word' }}>詳細を表示</div>
                     </button>
                     <button onClick={() => handleToggleVisibility(cafe.id, cafe.name, cafe.status)} type="button" style={{ border: 'none', paddingLeft: 20, paddingRight: 20, paddingTop: 6, paddingBottom: 6, background: '#7F8181', boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)', borderRadius: 9999, flexDirection: 'column', justifyContent: 'center', alignItems: 'center', display: 'inline-flex', cursor: 'pointer' }}>
