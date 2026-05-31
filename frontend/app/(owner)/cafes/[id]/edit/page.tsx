@@ -196,6 +196,19 @@ export default function EditCafePage() {
     try {
       const token = localStorage.getItem('access_token');
 
+      // 1. Geocode
+      const geocodeRes = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(form.address.trim() + ', Việt Nam')}`,
+        { headers: { 'Accept-Language': 'vi' } }
+      );
+      const geocodeData = await geocodeRes.json();
+      const lat = geocodeData?.[0] ? parseFloat(geocodeData[0].lat) : undefined;
+      const lng = geocodeData?.[0] ? parseFloat(geocodeData[0].lon) : undefined;
+
+      if (lat === undefined || lng === undefined) {
+        throw new Error('Địa chỉ này không thể định vị trên bản đồ. Vui lòng nhập địa chỉ chính xác và chi tiết hơn (ví dụ: số nhà, tên đường, phường, quận, Hà Nội).');
+      }
+
       // Mở rộng 3 block → 7 ngày cho backend
       const expandedHours: any[] = [];
       form.operatingHours.forEach(oh => {
@@ -208,6 +221,8 @@ export default function EditCafePage() {
         name: form.name.trim(),
         address: form.address.trim(),
         description: form.description.trim(),
+        latitude: lat,
+        longitude: lng,
         facilities: form.facilities,
         isClosedOnHolidays: form.isClosedOnHolidays,
         operatingHours: expandedHours,

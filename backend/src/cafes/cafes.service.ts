@@ -20,6 +20,15 @@ import { SearchCafeDto } from './dto/search-cafe.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { MailService } from '../mail/mail.service';
 
+function removeVietnameseTones(str: string): string {
+  if (!str) return str;
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D');
+}
+
 @Injectable()
 export class CafesService {
   constructor(
@@ -95,6 +104,9 @@ export class CafesService {
     createCafeDto: CreateCafeDto,
     ownerId: string,
   ): Promise<CafeDetailResponseDto> {
+    if (createCafeDto.address) {
+      createCafeDto.address = removeVietnameseTones(createCafeDto.address);
+    }
     const { operatingHours, ...cafeData } = createCafeDto;
 
     const owner = await this.usersRepository.findOne({
@@ -242,6 +254,10 @@ export class CafesService {
 
     if (cafe.owner.id !== requesterId) {
       throw new ForbiddenException('Bạn không có quyền chỉnh sửa quán này');
+    }
+
+    if (updateDto.address) {
+      updateDto.address = removeVietnameseTones(updateDto.address);
     }
 
     const { operatingHours, ...cafeData } = updateDto;

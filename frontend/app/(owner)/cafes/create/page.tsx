@@ -323,6 +323,10 @@ export default function CreateCafeForm() {
       const lat = geocodeData?.[0] ? parseFloat(geocodeData[0].lat) : undefined;
       const lng = geocodeData?.[0] ? parseFloat(geocodeData[0].lon) : undefined;
 
+      if (lat === undefined || lng === undefined) {
+        throw new Error('Địa chỉ này không thể định vị trên bản đồ. Vui lòng nhập địa chỉ chính xác và chi tiết hơn (ví dụ: số nhà, tên đường, phường, quận, Hà Nội).');
+      }
+
       // 2. Chuyển schedule → mảng OperatingHours cho backend
       const operatingHours: { dayOfWeek: string; openTime: string | null; closeTime: string | null; isDayOff: boolean }[] = [];
       const dayMap: Record<string, string[]> = {
