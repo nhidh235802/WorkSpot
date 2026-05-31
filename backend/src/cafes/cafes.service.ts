@@ -26,8 +26,8 @@ function removeVietnameseTones(str: string): string {
   return str
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/g, 'd')
-    .replace(/Đ/g, 'D');
+    .replace(/\u0111/g, 'd')
+    .replace(/\u0110/g, 'D');
 }
 
 @Injectable()
@@ -480,7 +480,8 @@ export class CafesService {
   }
 
   async searchCafes(query: SearchCafeDto): Promise<any[]> {
-    const { lat, lng, radius, keyword } = query;
+    const { lat, lng, radius } = query;
+    const keyword = removeVietnameseTones(query.keyword?.trim() ?? '');
 
     const distanceSql = [
       '(6371 * acos(',
@@ -491,6 +492,7 @@ export class CafesService {
     ].join('');
 
     const avgRatingExpr = 'COALESCE(AVG(review.rating), 0)';
+    const reviewCountExpr = 'COUNT(review.id)';
 
     const queryBuilder = this.cafesRepository
       .createQueryBuilder('cafe')
@@ -501,6 +503,7 @@ export class CafesService {
       .groupBy('cafe.id')
       .addSelect(distanceSql, 'distance')
       .addSelect(avgRatingExpr, 'avg_rating')
+      .addSelect(reviewCountExpr, 'review_count')
       .setParameters({
         searchLat: lat,
         searchLng: lng,
@@ -555,8 +558,9 @@ export class CafesService {
 
     return entities.map((entity, i) => ({
       ...entity,
-      distance: Math.round(raw[i].distance * 10) / 10,
-      rating: Math.round(raw[i].avg_rating * 10) / 10,
+      distance: Math.round(Number(raw[i].distance) * 10) / 10,
+      rating: Math.round(Number(raw[i].avg_rating) * 10) / 10,
+      reviewCount: Number(raw[i].review_count),
     }));
   }
 
