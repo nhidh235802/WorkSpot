@@ -19,6 +19,7 @@ import { SearchCafeDto } from './dto/search-cafe.dto';
 
 import { CreateReviewDto } from './dto/create-review.dto';
 import { MailService } from '../mail/mail.service';
+import { SupabaseService } from '../supabase/supabase.service';
 
 function removeVietnameseTones(str: string): string {
   if (!str) return str;
@@ -45,7 +46,18 @@ export class CafesService {
     private readonly usersRepository: Repository<User>,
 
     private readonly mailService: MailService,
+    private readonly supabaseService: SupabaseService,
   ) {}
+
+  private async deleteImagesFromStorage(bucket: string, imageUrls: string[]): Promise<void> {
+    if (!imageUrls || imageUrls.length === 0) return;
+    for (const url of imageUrls) {
+      const filePath = this.supabaseService.extractFilePath(bucket, url);
+      if (filePath) {
+        await this.supabaseService.deleteFile(bucket, filePath);
+      }
+    }
+  }
 
   async getRecommended(userLat: number, userLng: number): Promise<any[]> {
     const maxDist = 10;
@@ -268,6 +280,17 @@ export class CafesService {
         const pendingHours =
           operatingHours !== undefined ? operatingHours : undefined;
 
+        // Clean up previous pending/draft images that are no longer used (neither in the new updateDto.images nor in active cafe.images)
+        if (cafe.pendingData && cafe.pendingData.images) {
+          const oldPendingImages = cafe.pendingData.images || [];
+          const newImages = cafeData.images || [];
+          const activeImages = cafe.images || [];
+          const discardedImages = oldPendingImages.filter(
+            (img: string) => !newImages.includes(img) && !activeImages.includes(img),
+          );
+          await this.deleteImagesFromStorage('cafe-images', discardedImages);
+        }
+
         // 2. Lưu toàn bộ thay đổi vào pendingData (JSON snapshot)
         //    Bản ghi chính (name, address, images...) KHÔNG bị thay đổi
         //    → Public user vẫn thấy dữ liệu cũ đã được duyệt
@@ -288,7 +311,36 @@ export class CafesService {
   }
 
   async remove(id: string): Promise<void> {
-    const cafe = await this.findOneEntity(id);
+    const cafe = await this.cafesRepository.findOne({
+      where: { id },
+      relations: {
+        owner: true,
+        operatingHours: true,
+        reviews: true,
+      },
+    });
+
+    if (!cafe) {
+      throw new NotFoundException(`Quán cà phê ${id} không tìm thấy`);
+    }
+
+    // 1. Collect all cafe images (active and pending)
+    const activeImages = cafe.images || [];
+    const pendingImages = cafe.pendingData?.images || [];
+    const allCafeImages = Array.from(new Set([...activeImages, ...pendingImages]));
+    await this.deleteImagesFromStorage('cafe-images', allCafeImages);
+
+    // 2. Collect all review images of this cafe
+    const reviewImages: string[] = [];
+    if (cafe.reviews) {
+      for (const review of cafe.reviews) {
+        if (review.images && review.images.length > 0) {
+          reviewImages.push(...review.images);
+        }
+      }
+    }
+    await this.deleteImagesFromStorage('review-images', reviewImages);
+
     await this.cafesRepository.remove(cafe);
   }
 
@@ -375,6 +427,12 @@ export class CafesService {
         ...pendingFields
       } = cafe.pendingData;
 
+      // Clean up old active images that are not in the new approved images
+      const oldImages = cafe.images || [];
+      const newImages = pendingFields.images || [];
+      const obsoleteImages = oldImages.filter((img: string) => !newImages.includes(img));
+      await this.deleteImagesFromStorage('cafe-images', obsoleteImages);
+
       // Ghi đè các field cơ bản
       Object.assign(cafe, pendingFields);
 
@@ -402,6 +460,14 @@ export class CafesService {
       cafe.pendingData = null;
     } else if (status === CafeStatus.REJECTED) {
       // ─── Admin TỪ CHỐI: chỉ ghi lý do, xóa snapshot, giữ nguyên dữ liệu cũ ───
+      // Clean up new images uploaded in pendingData that are not in the current active cafe.images
+      if (cafe.pendingData && cafe.pendingData.images) {
+        const activeImages = cafe.images || [];
+        const pendingImages = cafe.pendingData.images || [];
+        const discardedImages = pendingImages.filter((img: string) => !activeImages.includes(img));
+        await this.deleteImagesFromStorage('cafe-images', discardedImages);
+      }
+
       cafe.pendingData = null;
       if (rejectionReason !== undefined) cafe.rejectionReason = rejectionReason;
     }
@@ -609,6 +675,11 @@ export class CafesService {
 
     if (review.user.id !== requesterId) {
       throw new ForbiddenException('Bạn không có quyền xoá đánh giá này');
+    }
+
+    // Clean up review images from Supabase Storage
+    if (review.images && review.images.length > 0) {
+      await this.deleteImagesFromStorage('review-images', review.images);
     }
 
     await this.reviewRepository.remove(review);

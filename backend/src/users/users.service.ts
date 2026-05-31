@@ -17,12 +17,14 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { ProfileResponseDto } from './dto/profile-response.dto';
 import { AdminQueryUserDto } from './dto/admin-query-user.dto'; 
 import { UpdateUserStatusDto } from './dto/update-status.dto';
+import { SupabaseService } from '../supabase/supabase.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly supabaseService: SupabaseService,
   ) {}
 
   async getAdminStats(): Promise<{ totalAccounts: number }> {
@@ -83,13 +85,9 @@ export class UsersService {
     
     if (dto.avatar && dto.avatar !== user.avatar) {
       if (user.avatar) {
-        const oldAvatarPath = path.join(
-          process.cwd(),
-          'uploads',
-          user.avatar.replace('/uploads/', ''),
-        );
-        if (fs.existsSync(oldAvatarPath)) {
-          fs.unlinkSync(oldAvatarPath);
+        const filePath = this.supabaseService.extractFilePath('avatars', user.avatar);
+        if (filePath) {
+          await this.supabaseService.deleteFile('avatars', filePath);
         }
       }
     }
