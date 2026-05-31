@@ -1,7 +1,7 @@
 'use client';
 
-import { JSX, useEffect, useState, Suspense } from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
+import { JSX, useEffect, useState, Suspense, MouseEvent } from 'react';
+import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import { CafeService } from '@/services/cafe.service';
@@ -109,16 +109,25 @@ function PhotoGalleryModal({ images, initialIndex, onClose }: {
 
 const REALTIME_CONFIG: Record<string, { label: string; dot: string; bg: string; text: string }> = {
   available: { label: '空きあり', dot: '#10B981', bg: '#D1FAE5', text: '#065F46' },
-  normal:    { label: '普通',     dot: '#F59E0B', bg: '#FEF3C7', text: '#92400E' },
-  busy:      { label: '混雑',     dot: '#EF4444', bg: '#FEE2E2', text: '#991B1B' },
+  normal: { label: '普通', dot: '#F59E0B', bg: '#FEF3C7', text: '#92400E' },
+  busy: { label: '混雑', dot: '#EF4444', bg: '#FEE2E2', text: '#991B1B' },
 };
 
 // ── Main Page ──────────────────────────────────────────────────────
 function CafeDetailContent() {
   const { id } = useParams<{ id: string }>();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const isAdminView = searchParams.get('view') === 'admin';
   const [cafe, setCafe] = useState<any>(null);
+
+  const handleWriteReview = (e: MouseEvent<HTMLAnchorElement>) => {
+    const token = localStorage.getItem('accessToken') || localStorage.getItem('access_token');
+    if (!token) {
+      e.preventDefault();
+      router.push('/login');
+    }
+  };
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -462,6 +471,7 @@ function CafeDetailContent() {
               {!isAdminView && (
                 <Link
                   href={`/cafes/${id}/reviews`} // Đường dẫn tới trang review mới của bạn
+                  onClick={handleWriteReview}
                   style={{
                     background: 'linear-gradient(135deg, #14422D 0%, #2D5A43 100%)',
                     color: 'white',

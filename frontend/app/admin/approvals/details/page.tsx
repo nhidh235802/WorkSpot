@@ -204,6 +204,7 @@ export default function ApprovalDetailPage() {
     const cafeId = searchParams.get('id')
 
     const [cafe, setCafe] = useState<AdminCafeItem | null>(null)
+    const [cafeDetail, setCafeDetail] = useState<any>(null)
     const [images, setImages] = useState<string[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -227,13 +228,14 @@ export default function ApprovalDetailPage() {
             AdminService.getCafesForAdmin({ status: 'pending' }),
             CafeService.getCafeById(cafeId).catch(() => null),  // fallback if not accessible
         ])
-            .then(([adminData, cafeDetail]) => {
+            .then(([adminData, detail]) => {
                 const found = adminData.items.find((c) => c.id === cafeId)
                 if (!found) throw new Error('カフェが見つかりませんでした')
                 setCafe(found)
+                setCafeDetail(detail)
 
                 // Build image list: prefer full cafe images, fallback to avatar
-                const rawImages: string[] = cafeDetail?.images ?? []
+                const rawImages: string[] = detail?.images ?? []
                 const absImages = rawImages
                     .map((p: string) => toAbsUrl(p))
                     .filter((u): u is string => Boolean(u))
@@ -323,6 +325,20 @@ export default function ApprovalDetailPage() {
     const ownerName = cafe.owner?.fullName ?? '不明'
     const appliedAt = formatJpDate(cafe.createdAt)
     const facilities = cafe.facilities ?? []
+
+    const getHourString = (days: string[]) => {
+        if (!cafeDetail?.operatingHours) return null
+        const match = cafeDetail.operatingHours.find((h: any) => days.includes(h.dayOfWeek))
+        if (!match) return null
+        if (match.isDayOff) return '定休日'
+        const open = match.openTime ? match.openTime.substring(0, 5) : ''
+        const close = match.closeTime ? match.closeTime.substring(0, 5) : ''
+        if (!open || !close) return null
+        return `${open} - ${close}`
+    }
+
+    const weekdayStr = cafeDetail ? (getHourString(['monday', 'tuesday', 'wednesday', 'thursday', 'friday']) ?? '08:00 - 21:00') : '08:00 - 21:00'
+    const weekendStr = cafeDetail ? (getHourString(['saturday', 'sunday']) ?? '09:00 - 22:00') : '09:00 - 22:00'
 
     return (
         <>
@@ -575,11 +591,12 @@ export default function ApprovalDetailPage() {
                                 営業時間
                             </h2>
 
-                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                                 <div style={{
-                                    padding: 10,
+                                    width: 48,
+                                    height: 48,
                                     background: '#F8FAFC',
-                                    borderRadius: 10,
+                                    borderRadius: 12,
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
@@ -587,45 +604,41 @@ export default function ApprovalDetailPage() {
                                 }}>
                                     <Clock size={20} color="#475569" />
                                 </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                <div style={{ display: 'flex', gap: 250 }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                         <span style={{
-                                            color: '#94A3B8',
-                                            fontSize: 11,
+                                            color: '#64748B',
+                                            fontSize: 13,
                                             fontFamily: 'Manrope, sans-serif',
-                                            fontWeight: 600,
-                                            textTransform: 'uppercase',
-                                            letterSpacing: 0.8,
+                                            fontWeight: 500,
                                         }}>
                                             平日
                                         </span>
                                         <span style={{
                                             color: '#1E293B',
-                                            fontSize: 15,
+                                            fontSize: 16,
                                             fontFamily: 'Manrope, sans-serif',
                                             fontWeight: 700,
                                         }}>
-                                            08:00 – 21:00
+                                            {weekdayStr}
                                         </span>
                                     </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                         <span style={{
-                                            color: '#94A3B8',
-                                            fontSize: 11,
+                                            color: '#64748B',
+                                            fontSize: 13,
                                             fontFamily: 'Manrope, sans-serif',
-                                            fontWeight: 600,
-                                            textTransform: 'uppercase',
-                                            letterSpacing: 0.8,
+                                            fontWeight: 500,
                                         }}>
                                             土日祝
                                         </span>
                                         <span style={{
                                             color: '#1E293B',
-                                            fontSize: 15,
+                                            fontSize: 16,
                                             fontFamily: 'Manrope, sans-serif',
                                             fontWeight: 700,
                                         }}>
-                                            09:00 – 22:00
+                                            {weekendStr}
                                         </span>
                                     </div>
                                 </div>
