@@ -219,8 +219,13 @@ export default function WorkSpotPage() {
       return;
     }
 
+    const fallbackToHanoi = () => {
+      setIsSearching(false);
+      router.push(`/cafes/search?lat=21.0285&lng=105.8542&radius=5`);
+    };
+
     if (!navigator.geolocation) {
-      alert("お使いのブラウザはGPS位置情報をサポートしていません。");
+      fallbackToHanoi();
       return;
     }
 
@@ -234,8 +239,7 @@ export default function WorkSpotPage() {
         router.push(`/cafes/search?lat=${lat}&lng=${lng}&radius=5`);
       },
       () => {
-        setIsSearching(false);
-        alert("現在地を取得できませんでした。検索ボックスにエリア名を入力してください。");
+        fallbackToHanoi();
       },
       { timeout: 5000 }
     );
