@@ -83,7 +83,8 @@ export default function EditCafePage() {
         const user = userStr ? JSON.parse(userStr) : null
         if (!user) return router.push('/login')
 
-        const res = await fetch(`http://localhost:3001/cafes/${cafeId}`)
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+        const res = await fetch(`${apiUrl}/cafes/${cafeId}`)
         const rawData = await res.json()
         if (rawData.owner?.id !== user.id) return router.push('/dashboard')
 
@@ -217,7 +218,8 @@ export default function EditCafePage() {
       formData.append('data', JSON.stringify(payload));
       newPhotos.forEach(p => formData.append('photos', p.file));
 
-      const res = await fetch(`http://localhost:3001/cafes/${cafeId}`, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+      const res = await fetch(`${apiUrl}/cafes/${cafeId}`, {
         method: 'PATCH',
         headers: { Authorization: `Bearer ${token}` },
         body: formData,

@@ -63,7 +63,8 @@ export default function DashboardOwnerPage() {
       const token = localStorage.getItem('access_token'); // Lấy token để gọi API
 
       try {
-        const response = await fetch(`http://localhost:3001/cafes/owner/me?ownerId=${ownerId}`, {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+        const response = await fetch(`${apiUrl}/cafes/owner/me?ownerId=${ownerId}`, {
           signal: controller.signal,
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -111,7 +112,8 @@ export default function DashboardOwnerPage() {
 
     try {
       const token = localStorage.getItem('access_token');
-      const res = await fetch(`http://localhost:3001/cafes/${cafeId}/realtime-status`, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+      const res = await fetch(`${apiUrl}/cafes/${cafeId}/realtime-status`, {
         method: 'PATCH',
         headers: { 
           'Authorization': `Bearer ${token}`,

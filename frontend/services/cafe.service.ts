@@ -89,8 +89,8 @@ export const CafeService = {
 
   // ── POST /cafes/:id/reviews ───────────────────────────────────────────────
   createReview: async (cafeId: string, params: CreateReviewParams): Promise<ReviewResponse> => {
-      // 1. Viết cứng hoàn toàn URL để Next.js không thể nhận nhầm route nội bộ
-      const hardcodedUrl = `http://localhost:3001/cafes/${cafeId}/reviews`;
+      // 1. Viết URL động dựa trên BACKEND_API_URL
+      const hardcodedUrl = `${BACKEND_API_URL}/cafes/${cafeId}/reviews`;
 
       // 2. Lấy trực tiếp token thủ công để đảm bảo luôn chạy ở Client (Trình duyệt)
       let token = null;
@@ -143,7 +143,7 @@ export const CafeService = {
     const formData = new FormData();
     files.forEach((file) => formData.append('images', file));
 
-    const res = await fetch(`http://localhost:3001/cafes/${cafeId}/reviews/images`, {
+    const res = await fetch(`${BACKEND_API_URL}/cafes/${cafeId}/reviews/images`, {
       method: 'POST',
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: formData,

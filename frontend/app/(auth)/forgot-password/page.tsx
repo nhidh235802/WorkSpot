@@ -37,11 +37,11 @@ export default function ForgotPasswordPage() {
     setServerError('')
     clearErrors()
   }
-
   const onSubmit = async (data: FormData) => {
     setServerError('')
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
     try {
-      await axios.post('http://localhost:3001/auth/forgot-password', { email: data.email })
+      await axios.post(`${apiUrl}/auth/forgot-password`, { email: data.email })
       setSent(true)
     } catch (err: unknown) {
       if (axios.isAxiosError(err) && err.response?.status === 404) {

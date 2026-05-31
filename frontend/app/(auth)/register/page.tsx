@@ -69,11 +69,11 @@ export default function RegisterPage() {
     setSelectedRole(role)
     setValue('role', role)
   }
-
   const onSubmit = async (data: FormData) => {
     setServerError('')
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
     try {
-      await axios.post('http://localhost:3001/auth/register', {
+      await axios.post(`${apiUrl}/auth/register`, {
         fullName: data.fullName,
         email: data.email,
         password: data.password,

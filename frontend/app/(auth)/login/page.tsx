@@ -34,8 +34,9 @@ export default function LoginPage() {
   const onSubmit = async (data: FormData) => {
     setServerError('')
     setBannedReason(null)
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
     try {
-      const res = await axios.post('http://localhost:3001/auth/login', data)
+      const res = await axios.post(`${apiUrl}/auth/login`, data)
       const user = res.data.user
       localStorage.setItem('access_token', res.data.access_token)
       localStorage.setItem('user', JSON.stringify(user))

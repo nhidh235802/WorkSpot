@@ -358,8 +358,8 @@ export default function CreateCafeForm() {
       const formData = new FormData();
       formData.append('data', JSON.stringify(payload));
       photos.forEach(p => formData.append('photos', p.file));
-
-      const res = await fetch('http://localhost:3001/cafes', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+      const res = await fetch(`${apiUrl}/cafes`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData,

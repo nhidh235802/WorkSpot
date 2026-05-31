@@ -43,11 +43,11 @@ function ResetPasswordForm() {
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } =
     useForm<FormData>({ resolver: zodResolver(schema) })
-
   const onSubmit = async (data: FormData) => {
     setServerError('')
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
     try {
-      await axios.post('http://localhost:3001/auth/reset-password', {
+      await axios.post(`${apiUrl}/auth/reset-password`, {
         token,
         newPassword: data.newPassword,
       })
