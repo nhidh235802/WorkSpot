@@ -71,6 +71,18 @@ const REALTIME_CONFIG: Record<string, { label: string; dot: string; bg: string; 
   busy:      { label: '混雑',     dot: '#EF4444', bg: '#FEE2E2', text: '#991B1B' },
 };
 
+const formatRating = (rating: unknown) => {
+  const value = Number(rating);
+  return Number.isFinite(value) ? value.toFixed(1).replace(/\.0$/, '') : '0';
+};
+
+const removeVietnameseTones = (value: string) =>
+  value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\u0111/g, 'd')
+    .replace(/\u0110/g, 'D');
+
 function RealtimeBadge({ status, className = '' }: { status?: string; className?: string }) {
   const rt = REALTIME_CONFIG[status ?? ''] ?? REALTIME_CONFIG['normal'];
   return (
@@ -156,7 +168,7 @@ export default function CafesSearchPage() {
           lat,
           lng,
           radius,
-          keyword,
+          keyword: removeVietnameseTones(keyword),
           filters: activeFilters
         }, controller.signal);
 
@@ -321,7 +333,7 @@ export default function CafesSearchPage() {
                             <div className="flex items-center gap-1">
                               <Star size={18} fill="#904C18" color="#904C18" />
                               <span className="text-[#904C18] text-lg font-bold font-serif">
-                                {cafe.rating || '4.5'}
+                                {formatRating(cafe.rating)}
                               </span>
                             </div>
                             <RealtimeBadge status={cafe.realtimeStatus} />
@@ -447,8 +459,8 @@ export default function CafesSearchPage() {
                       <h2 className="text-[#14422d] font-bold text-xl leading-tight">{cafe.name}</h2>
                       <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                         <Star size={14} fill="#904C18" color="#904C18" />
-                        <span className="text-[#904C18] font-bold text-sm">{cafe.rating || '4.9'}</span>
-                        <span className="text-[#717973] text-xs ml-1">(120+ レビュー)</span>
+                        <span className="text-[#904C18] font-bold text-sm">{formatRating(cafe.rating)}</span>
+                        <span className="text-[#717973] text-xs ml-1">({cafe.reviewCount ?? 0} レビュー)</span>
                         <RealtimeBadge status={cafe.realtimeStatus} /></div>
                     </div>
                   </div>
