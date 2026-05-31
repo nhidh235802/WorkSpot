@@ -1,8 +1,9 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { AdminService, AdminCafeItem } from '@/services/admin.service'
-import { ChevronLeft, ChevronRight, X, CheckCircle2, AlertTriangle, Loader2, Wifi, Plug, Users, Laptop, Coffee, Snowflake } from 'lucide-react'
+import { ChevronLeft, ChevronRight, X, CheckCircle2, AlertTriangle, Loader2, Wifi, Plug, Users, Laptop, Coffee, Snowflake, Eye } from 'lucide-react'
 import { toast, Toaster } from 'sonner'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
@@ -32,7 +33,7 @@ function formatJpDate(iso: string) {
 
 function relativeTime(iso: string) {
   const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
-  if (diff < 3600)  return `${Math.max(1, Math.floor(diff / 60))}分前`
+  if (diff < 3600) return `${Math.max(1, Math.floor(diff / 60))}分前`
   if (diff < 86400) return `${Math.floor(diff / 3600)}時間前`
   if (diff < 172800) return '昨日'
   return `${Math.floor(diff / 86400)}日前`
@@ -44,15 +45,16 @@ interface RejectModal {
 }
 
 export default function AdminApprovalsPage() {
-  const [cafes, setCafes]         = useState<AdminCafeItem[]>([])
-  const [total, setTotal]         = useState(0)
+  const router = useRouter()
+  const [cafes, setCafes] = useState<AdminCafeItem[]>([])
+  const [total, setTotal] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
-  const [page, setPage]           = useState(1)
+  const [page, setPage] = useState(1)
   const [approvedCount, setApprovedCount] = useState<number | null>(null)
-  const [loading, setLoading]     = useState(true)
-  const [error, setError]         = useState<string | null>(null)
-  const [acting, setActing]       = useState<string | null>(null)
-  
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [acting, setActing] = useState<string | null>(null)
+
   const [rejectModal, setRejectModal] = useState<RejectModal | null>(null)
   const [rejectReason, setRejectReason] = useState('')
   const [approveTarget, setApproveTarget] = useState<{ id: string; name: string } | null>(null)
@@ -74,7 +76,7 @@ export default function AdminApprovalsPage() {
   }
 
   const fetchStatsData = () => {
-    AdminService.getStats().then((s) => setApprovedCount(s.activeCafes)).catch(() => {})
+    AdminService.getStats().then((s) => setApprovedCount(s.activeCafes)).catch(() => { })
   }
 
   useEffect(() => {
@@ -88,7 +90,7 @@ export default function AdminApprovalsPage() {
     const config = {
       loading: { bg: 'rgba(255, 255, 255, 0.85)', text: '#414943', border: 'rgba(0,0,0,0.05)', icon: <Loader2 size={18} className="animate-spin" color="#14422D" /> },
       success: { bg: 'rgba(230, 244, 234, 0.90)', text: '#137333', border: 'rgba(16,185,129,0.15)', icon: <CheckCircle2 size={18} color="#10B981" /> },
-      error:   { bg: 'rgba(254, 226, 226, 0.90)', text: '#991B1B', border: 'rgba(239,68,68,0.15)',  icon: <AlertTriangle size={18} color="#EF4444" /> }
+      error: { bg: 'rgba(254, 226, 226, 0.90)', text: '#991B1B', border: 'rgba(239,68,68,0.15)', icon: <AlertTriangle size={18} color="#EF4444" /> }
     }[type]
 
     const toastContent = (
@@ -118,7 +120,7 @@ export default function AdminApprovalsPage() {
   const executeApprove = async () => {
     if (!approveTarget) return
     const { id, name } = approveTarget
-    
+
     setApproveTarget(null)
     const toastId = showCustomToast('loading', `${name} の申請を承認しています...`)
     setActing(id)
@@ -146,7 +148,7 @@ export default function AdminApprovalsPage() {
     if (!rejectModal) return
     const { cafeId, cafeName } = rejectModal
     const finalReason = rejectReason.trim() || '申請内容に不備があります'
-    
+
     setRejectModal(null)
     const toastId = showCustomToast('loading', `${cafeName} の却下処理を実行中...`)
     setActing(cafeId)
@@ -165,13 +167,13 @@ export default function AdminApprovalsPage() {
   }
 
   const startRow = (page - 1) * PAGE_SIZE + 1
-  const endRow   = Math.min(page * PAGE_SIZE, total)
+  const endRow = Math.min(page * PAGE_SIZE, total)
 
   const pageNumbers = (() => {
-    const half  = 2
-    let start   = Math.max(1, page - half)
-    const end   = Math.min(totalPages, start + 4)
-    start       = Math.max(1, end - 4)
+    const half = 2
+    let start = Math.max(1, page - half)
+    const end = Math.min(totalPages, start + 4)
+    start = Math.max(1, end - 4)
     return Array.from({ length: end - start + 1 }, (_, i) => start + i)
   })()
 
@@ -207,10 +209,10 @@ export default function AdminApprovalsPage() {
       {/* ── 統計カード ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, paddingTop: 16 }}>
         {[
-          { label: '承認済み店舗数',   value: approvedCount ?? '—', bg: 'white',   labelColor: '#414943', valueColor: '#14422D',  outline: true },
-          { label: '平均評価',         value: '4.8',                bg: 'white',   labelColor: '#414943', valueColor: '#14422D',  outline: true },
-          { label: '平均承認待ち日数', value: '24日間',             bg: '#FFDBC7', labelColor: '#733600', valueColor: '#311300',  outline: false },
-          { label: '処理効率',         value: '98%',                bg: '#2D5A43', labelColor: 'rgba(188,238,207,0.60)', valueColor: 'white', outline: false },
+          { label: '承認済み店舗数', value: approvedCount ?? '—', bg: 'white', labelColor: '#414943', valueColor: '#14422D', outline: true },
+          { label: '平均評価', value: '4.8', bg: 'white', labelColor: '#414943', valueColor: '#14422D', outline: true },
+          { label: '平均承認待ち日数', value: '24日間', bg: '#FFDBC7', labelColor: '#733600', valueColor: '#311300', outline: false },
+          { label: '処理効率', value: '98%', bg: '#2D5A43', labelColor: 'rgba(188,238,207,0.60)', valueColor: 'white', outline: false },
         ].map((s) => (
           <div key={s.label} style={{
             padding: '32px 32px 34px',
@@ -241,10 +243,10 @@ export default function AdminApprovalsPage() {
           alignItems: 'center',
         }}>
           {([
-            { label: 'カフェ名 & 特徴', align: 'left'   },
-            { label: '所在地 & 設備',   align: 'left'   },
-            { label: '申請日',          align: 'center' },
-            { label: 'アクション',      align: 'right'  },
+            { label: 'カフェ名 & 特徴', align: 'left' },
+            { label: '所在地 & 設備', align: 'left' },
+            { label: '申請日', align: 'center' },
+            { label: 'アクション', align: 'right' },
           ] as const).map((h) => (
             <div key={h.label} style={{
               color: '#A8A29E', fontSize: 10, fontFamily: 'Manrope, sans-serif', fontWeight: 500,
@@ -296,7 +298,16 @@ export default function AdminApprovalsPage() {
                     }
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <div style={{ color: '#14422D', fontSize: 18, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '22.5px' }}>
+                    <div
+                      onClick={() => router.push(`/admin/approvals/details?id=${cafe.id}`)}
+                      style={{
+                        color: '#14422D', fontSize: 18, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '22.5px',
+                        cursor: 'pointer', transition: 'text-decoration 0.15s',
+                        textDecoration: 'none',
+                      }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.textDecoration = 'underline' }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.textDecoration = 'none' }}
+                    >
                       {cafe.name}
                     </div>
                     <div style={{
@@ -338,13 +349,13 @@ export default function AdminApprovalsPage() {
                 </div>
 
                 {/* アクション */}
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, alignItems: 'center' }}>
                   <button
                     type="button"
                     onClick={() => handleReject(cafe.id, cafe.name)}
                     disabled={isActing}
                     style={{
-                      paddingLeft: 24, paddingRight: 24, paddingTop: 10, paddingBottom: 10,
+                      paddingLeft: 20, paddingRight: 20, paddingTop: 10, paddingBottom: 10,
                       background: '#E8E8E3', borderRadius: 9999, border: 'none',
                       cursor: isActing ? 'not-allowed' : 'pointer',
                       color: isActing ? '#A8A29E' : '#1A1C19', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 500, lineHeight: '20px',
@@ -358,7 +369,7 @@ export default function AdminApprovalsPage() {
                     onClick={() => setApproveTarget({ id: cafe.id, name: cafe.name })}
                     disabled={isActing}
                     style={{
-                      paddingLeft: 32, paddingRight: 32, paddingTop: 10, paddingBottom: 10,
+                      paddingLeft: 28, paddingRight: 28, paddingTop: 10, paddingBottom: 10,
                       background: isActing ? '#7F8181' : '#14422D',
                       boxShadow: '0px 4px 6px -4px rgba(20,66,45,0.20), 0px 10px 15px -3px rgba(20,66,45,0.20)',
                       borderRadius: 9999, border: 'none',
@@ -397,7 +408,7 @@ export default function AdminApprovalsPage() {
               display: 'flex', flexDirection: 'column', gap: 24,
             }}
           >
-            <button 
+            <button
               onClick={() => setRejectModal(null)}
               style={{ position: 'absolute', right: 20, top: 20, background: 'none', border: 'none', cursor: 'pointer', color: '#717973' }}
             >
@@ -448,7 +459,7 @@ export default function AdminApprovalsPage() {
                   paddingLeft: 32, paddingRight: 32, paddingTop: 10, paddingBottom: 10,
                   background: rejectReason.trim() ? '#BA1A1A' : '#7F8181',
                   boxShadow: rejectReason.trim() ? '0px 4px 12px rgba(186,26,26,0.20)' : 'none',
-                  borderRadius: 9999, border: 'none', 
+                  borderRadius: 9999, border: 'none',
                   cursor: rejectReason.trim() ? 'pointer' : 'not-allowed',
                   color: 'white', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 700, lineHeight: '20px',
                   whiteSpace: 'nowrap',
@@ -468,61 +479,116 @@ export default function AdminApprovalsPage() {
           onClick={() => setApproveTarget(null)}
           style={{
             position: 'fixed', inset: 0, zIndex: 110,
-            background: 'rgba(26,28,25,0.25)', backdropFilter: 'blur(4px)',
+            background: 'rgba(26,28,25,0.30)', backdropFilter: 'blur(6px)',
             display: 'flex', justifyContent: 'center', alignItems: 'center',
           }}
         >
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              width: 440, maxWidth: '90vw', background: 'white',
-              boxShadow: '0px 24px 60px rgba(0,0,0,0.12)', borderRadius: 16,
-              padding: 32, display: 'flex', flexDirection: 'column', gap: 24,
-              position: 'relative'
+              width: 384, maxWidth: '90vw',
+              background: 'white',
+              boxShadow: '0px 25px 60px rgba(0,0,0,0.18)',
+              borderRadius: 24,
+              overflow: 'hidden',
+              display: 'flex', flexDirection: 'column',
             }}
           >
-            <button 
-              onClick={() => setApproveTarget(null)}
-              style={{ position: 'absolute', right: 20, top: 20, background: 'none', border: 'none', cursor: 'pointer', color: '#717973' }}
-            >
-              <X size={18} />
-            </button>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <div style={{ color: '#14422D', fontSize: 20, fontFamily: 'Manrope, sans-serif', fontWeight: 600, lineHeight: '28px' }}>
-                掲載申請の承認
+            <div style={{
+              padding: 32,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16,
+            }}>
+              {/* Icon */}
+              <div style={{
+                width: 56, height: 56,
+                background: '#EAF2EC',
+                borderRadius: 9999,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
+              }}>
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                  <circle cx="14" cy="14" r="13" stroke="#14422D" strokeWidth="1.5" />
+                  <path d="M8.5 14L12.5 18L19.5 10" stroke="#14422D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </div>
-              <div style={{ color: '#414943', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 400, lineHeight: '22px' }}>
-                「{approveTarget.name}」の掲載申請を承認しますか？承認すると、店舗情報は即座にプラットフォーム上に公開されます。
-              </div>
-            </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
-              <button
-                type="button"
-                onClick={() => setApproveTarget(null)}
-                style={{
-                  paddingLeft: 24, paddingRight: 24, paddingTop: 10, paddingBottom: 10,
-                  background: '#E8E8E3', borderRadius: 9999, border: 'none', cursor: 'pointer',
-                  color: '#1A1C19', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 500,
-                }}
-              >
-                キャンセル
-              </button>
-              <button
-                type="button"
-                onClick={executeApprove}
-                style={{
-                  paddingLeft: 24, paddingRight: 24, paddingTop: 10, paddingBottom: 10,
-                  background: '#14422D', borderRadius: 9999, border: 'none', cursor: 'pointer',
-                  color: 'white', fontSize: 14, fontFamily: 'Manrope, sans-serif', fontWeight: 600,
-                  boxShadow: '0px 4px 12px rgba(20,66,45,0.15)'
-                }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#2D5A43' }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = '#14422D' }}
-              >
-                承認する
-              </button>
+              {/* Title */}
+              <div style={{
+                color: '#1A1C19',
+                fontSize: 20,
+                fontFamily: 'Manrope, sans-serif',
+                fontWeight: 600,
+                lineHeight: '28px',
+                textAlign: 'center',
+              }}>
+                承認の確認
+              </div>
+
+              {/* Description */}
+              <div style={{
+                color: '#414943',
+                fontSize: 14,
+                fontFamily: 'Manrope, sans-serif',
+                fontWeight: 400,
+                lineHeight: '22px',
+                textAlign: 'center',
+              }}>
+                この店舗の情報を承認し、システムに公開してもよろしいですか？
+              </div>
+
+              {/* Buttons */}
+              <div style={{ paddingTop: 8, width: '100%', display: 'flex', flexDirection: 'column', gap: 0 }}>
+                {/* Approve button */}
+                <button
+                  type="button"
+                  onClick={executeApprove}
+                  style={{
+                    width: '100%',
+                    paddingTop: 14, paddingBottom: 14,
+                    background: '#14422D',
+                    borderRadius: 9999,
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'white',
+                    fontSize: 14,
+                    fontFamily: 'Manrope, sans-serif',
+                    fontWeight: 700,
+                    lineHeight: '20px',
+                    boxShadow: '0px 4px 6px -4px rgba(45,90,67,0.20), 0px 10px 15px -3px rgba(45,90,67,0.20)',
+                    transition: 'background 0.15s',
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#1E5C3A' }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = '#14422D' }}
+                >
+                  承認する
+                </button>
+
+                {/* Cancel button */}
+                <div style={{ paddingTop: 8 }}>
+                  <button
+                    type="button"
+                    onClick={() => setApproveTarget(null)}
+                    style={{
+                      width: '100%',
+                      paddingTop: 12, paddingBottom: 12,
+                      background: 'white',
+                      borderRadius: 9999,
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: '#414943',
+                      fontSize: 14,
+                      fontFamily: 'Manrope, sans-serif',
+                      fontWeight: 500,
+                      lineHeight: '20px',
+                      transition: 'background 0.15s',
+                    }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#F8FAFC' }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'white' }}
+                  >
+                    キャンセル
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
