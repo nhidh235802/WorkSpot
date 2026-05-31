@@ -343,7 +343,13 @@ export default function EditCafePage() {
               {/* Ảnh cũ (từ server) */}
               {form.images.map((src, idx) => (
                 <div key={`old-${idx}`} className="relative w-[160px] h-[120px] rounded-[16px] overflow-hidden border border-[#E7E5E4] group shadow-sm">
-                  <img src={src.startsWith('http') ? src : `http://localhost:3001${src}`} alt="Cafe" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                  <img src={src.startsWith('http') ? src : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}${src}`} alt="Cafe" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                  {/* Badge "Ảnh bìa" chỉ hiển thị ở ảnh đầu tiên */}
+                  {idx === 0 && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-[#14422D]/85 text-white text-[9px] text-center py-[3px] font-bold tracking-wide pointer-events-none">
+                      ẢNH BÌA
+                    </div>
+                  )}
                   <button onClick={() => removeExistingImage(idx)} className="absolute top-2 right-2 bg-black/50 text-white p-1.5 rounded-full backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/70">
                     <X size={12} strokeWidth={3} />
                   </button>

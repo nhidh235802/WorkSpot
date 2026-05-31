@@ -629,6 +629,27 @@ export default function CreateCafeForm() {
                       alt={`Photo ${index + 1}`}
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
+                    {/* Badge "Ảnh bìa" cho ảnh đầu tiên */}
+                    {index === 0 && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          background: 'rgba(20, 66, 45, 0.85)',
+                          color: 'white',
+                          fontSize: 9,
+                          fontFamily: 'Be Vietnam Pro, sans-serif',
+                          fontWeight: 700,
+                          textAlign: 'center',
+                          padding: '3px 0',
+                          letterSpacing: 0.5,
+                        }}
+                      >
+                        ẢNH BÌA
+                      </div>
+                    )}
                     <button
                       onClick={() => removePhoto(index)}
                       style={{

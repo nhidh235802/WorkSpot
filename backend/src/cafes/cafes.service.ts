@@ -107,6 +107,8 @@ export class CafesService {
 
     const cafe = this.cafesRepository.create({
       ...cafeData,
+      // Avatar luôn là ảnh đầu tiên trong mảng images (thứ tự do người dùng upload)
+      avatar: cafeData.images?.[0] ?? undefined,
       owner,
       status: CafeStatus.PENDING, // Mới đăng ký → Chờ duyệt
     });
@@ -299,13 +301,17 @@ export class CafesService {
             )
           : null;
 
+      // Ảnh đại diện: ưu tiên images[0] (ảnh đầu tiên theo thứ tự upload)
+      const thumbnail =
+        cafe.images?.[0] ||
+        cafe.avatar ||
+        'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400';
+
       return {
         id: cafe.id,
         name: cafe.name,
         address: cafe.address,
-        image:
-          cafe.avatar ||
-          'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400',
+        image: thumbnail,
         status: cafe.status,
         realtimeStatus: cafe.realtimeStatus,
         rejectionReason: cafe.rejectionReason ?? null,
@@ -355,6 +361,11 @@ export class CafesService {
 
       // Ghi đè các field cơ bản
       Object.assign(cafe, pendingFields);
+
+      // Đồng bộ avatar với ảnh đầu tiên nếu images thay đổi
+      if (pendingFields.images?.length) {
+        cafe.avatar = pendingFields.images[0];
+      }
 
       // Áp dụng giờ hoạt động nếu có
       if (pendingHours?.length) {
