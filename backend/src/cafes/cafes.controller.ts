@@ -16,9 +16,7 @@ import {
 } from '@nestjs/common';
 import { UseInterceptors, UploadedFiles } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
-import * as fs from 'fs';
+import { memoryStorage } from 'multer';
 import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import { BadRequestException } from '@nestjs/common';
@@ -39,10 +37,21 @@ import { CreateReviewDto } from './dto/create-review.dto';
 
 import { AdminQueryCafeDto } from './dto/admin-query-cafe.dto';
 import { RejectCafeDto } from './dto/reject-cafe.dto';
+import { SupabaseService } from '../supabase/supabase.service';
+
+// Hàm sinh tên file duy nhất
+function generateFileName(originalName: string): string {
+  const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+  const ext = originalName.split('.').pop() ?? 'jpg';
+  return `${uniqueSuffix}.${ext}`;
+}
 
 @Controller('cafes')
 export class CafesController {
-  constructor(private readonly cafesService: CafesService) {}
+  constructor(
+    private readonly cafesService: CafesService,
+    private readonly supabaseService: SupabaseService,
+  ) {}
 
   // API Route: GET http://localhost:3001/cafes/recommended?lat=...&lng=...
   @Get('recommended')
@@ -112,14 +121,7 @@ export class CafesController {
   @HttpCode(HttpStatus.CREATED)
   @UseInterceptors(
     FilesInterceptor('photos', 5, {
-      storage: diskStorage({
-        destination: './uploads/cafe-images',
-        filename: (req, file, cb) => {
-          const uniqueSuffix =
-            Date.now() + '-' + Math.round(Math.random() * 1e9);
-          cb(null, `${uniqueSuffix}${extname(file.originalname)}`);
-        },
-      }),
+      storage: memoryStorage(),
       fileFilter: (req, file, cb) => {
         if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.mimetype)) {
           return cb(
@@ -137,22 +139,21 @@ export class CafesController {
     @UploadedFiles() files: Express.Multer.File[],
     @Req() req: { user: { id: string } },
   ) {
-    // 1. Dịch chuỗi văn bản thành Object thông thường
+    // 1. Parse JSON payload
     const rawData = JSON.parse(dataString);
 
-    // 2. BIẾN HÌNH: Ép Object thông thường đó vào khuôn mẫu của CreateCafeDto
+    // 2. Ép kiểu vào DTO
     const createCafeDto = plainToInstance(CreateCafeDto, rawData);
 
-    // 3. KÍCH HOẠT DTO: Chạy các luật kiểm tra (@IsNotEmpty, @MaxLength...)
+    // 3. Validate DTO
     const errors = await validate(createCafeDto);
     if (errors.length > 0) {
-      // Nếu có lỗi (ví dụ: tên quá 50 ký tự), lập tức ném lỗi 400 đá văng request
       throw new BadRequestException(
         'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại!',
       );
     }
 
-    // 4. Kiểm tra số lượng ảnh bắt buộc (1-5)
+    // 4. Kiểm tra số lượng ảnh (1-5)
     if (!files || files.length === 0) {
       throw new BadRequestException(
         'Vui lòng tải lên ít nhất 1 hình ảnh của quán.',
@@ -162,10 +163,20 @@ export class CafesController {
       throw new BadRequestException('Chỉ được tải lên tối đa 5 ảnh.');
     }
 
-    // 5. Mọi thứ đã an toàn, gán link ảnh và gọi Service
-    createCafeDto.images = files.map(
-      (f) => `/uploads/cafe-images/${f.filename}`,
+    // 5. Upload từng ảnh lên Supabase bucket 'cafe-images'
+    const imageUrls = await Promise.all(
+      files.map((file) => {
+        const fileName = generateFileName(file.originalname);
+        return this.supabaseService.uploadFile(
+          'cafe-images',
+          fileName,
+          file.buffer,
+          file.mimetype,
+        );
+      }),
     );
+
+    createCafeDto.images = imageUrls;
 
     return this.cafesService.create(createCafeDto, req.user.id);
   }
@@ -208,18 +219,7 @@ export class CafesController {
   @HttpCode(HttpStatus.OK)
   @UseInterceptors(
     FilesInterceptor('images', 10, {
-      storage: diskStorage({
-        destination: (_req, _file, cb) => {
-          const dir = './uploads/review-images';
-          fs.mkdirSync(dir, { recursive: true });
-          cb(null, dir);
-        },
-        filename: (req, file, cb) => {
-          const uniqueSuffix =
-            Date.now() + '-' + Math.round(Math.random() * 1e9);
-          cb(null, `${uniqueSuffix}${extname(file.originalname)}`);
-        },
-      }),
+      storage: memoryStorage(),
       fileFilter: (req, file, cb) => {
         if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.mimetype)) {
           return cb(
@@ -232,11 +232,25 @@ export class CafesController {
       limits: { fileSize: 10 * 1024 * 1024 },
     }),
   )
-  uploadReviewImages(@UploadedFiles() files: Express.Multer.File[]) {
+  async uploadReviewImages(
+    @UploadedFiles() files: Express.Multer.File[],
+  ): Promise<{ urls: string[] }> {
     if (!files || files.length === 0) return { urls: [] };
-    return {
-      urls: files.map((f) => `/uploads/review-images/${f.filename}`),
-    };
+
+    // Upload tất cả ảnh review lên Supabase bucket 'review-images'
+    const urls = await Promise.all(
+      files.map((file) => {
+        const fileName = generateFileName(file.originalname);
+        return this.supabaseService.uploadFile(
+          'review-images',
+          fileName,
+          file.buffer,
+          file.mimetype,
+        );
+      }),
+    );
+
+    return { urls };
   }
 
   // POST /cafes/:id/reviews  →  Đăng đánh giá (chỉ WORKER/CUSTOMER đã đăng nhập)
@@ -286,14 +300,7 @@ export class CafesController {
   @Patch(':id')
   @UseInterceptors(
     FilesInterceptor('photos', 5, {
-      storage: diskStorage({
-        destination: './uploads/cafe-images',
-        filename: (req, file, cb) => {
-          const uniqueSuffix =
-            Date.now() + '-' + Math.round(Math.random() * 1e9);
-          cb(null, `${uniqueSuffix}${extname(file.originalname)}`);
-        },
-      }),
+      storage: memoryStorage(),
       fileFilter: (req, file, cb) => {
         if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.mimetype)) {
           return cb(
@@ -324,10 +331,18 @@ export class CafesController {
       );
     }
 
-    // Gộp ảnh mới (nếu có) vào danh sách ảnh cũ được giữ lại
+    // Upload ảnh mới (nếu có) lên Supabase bucket 'cafe-images'
     if (newFiles && newFiles.length > 0) {
-      const newImageUrls = newFiles.map(
-        (f) => `/uploads/cafe-images/${f.filename}`,
+      const newImageUrls = await Promise.all(
+        newFiles.map((file) => {
+          const fileName = generateFileName(file.originalname);
+          return this.supabaseService.uploadFile(
+            'cafe-images',
+            fileName,
+            file.buffer,
+            file.mimetype,
+          );
+        }),
       );
       // existingImages là mảng URL cũ mà frontend muốn giữ lại
       const existingImages: string[] = updateCafeDto.images || [];

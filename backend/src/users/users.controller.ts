@@ -12,11 +12,10 @@ import {
   UseInterceptors,
   UploadedFile,
   Query,
-  Param, // <--- BỔ SUNG THÊM DECORATOR NÀY ĐỂ LẤY ID TỪ URL
+  Param,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { memoryStorage } from 'multer';
 import { Request as ExpressRequest } from 'express';
 import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
@@ -27,7 +26,9 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from './entities/user.entity';
-import { UpdateUserStatusDto } from './dto/update-status.dto';  
+import { UpdateUserStatusDto } from './dto/update-status.dto';
+import { SupabaseService } from '../supabase/supabase.service';
+import { BadRequestException } from '@nestjs/common';
 
 interface AuthenticatedRequest extends ExpressRequest {
   user?: {
@@ -36,9 +37,12 @@ interface AuthenticatedRequest extends ExpressRequest {
 }
 
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Controller('users') 
+@Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly supabaseService: SupabaseService,
+  ) {}
 
   // =====================================================================
   // ─── ADMIN ENDPOINTS ─────────────────────────────────────────────────
@@ -60,7 +64,7 @@ export class UsersController {
     return await this.usersService.findAllForAdmin(query);
   }
 
-  // PATCH /users/admin/:id/status (BỔ SUNG ROUTE THAY ĐỔI TRẠNG THÁI CHO NÚT BẤM)
+  // PATCH /users/admin/:id/status
   @Patch('admin/:id/status')
   @Roles(UserRole.ADMIN)
   @HttpCode(HttpStatus.OK)
@@ -112,20 +116,11 @@ export class UsersController {
   @Roles(UserRole.CUSTOMER, UserRole.OWNER)
   @UseInterceptors(
     FileInterceptor('avatar', {
-      storage: diskStorage({
-        destination: './uploads/avatars',
-        filename: (req, file, callback) => {
-          const uniqueSuffix =
-            Date.now() + '-' + Math.round(Math.random() * 1e9);
-          const ext = extname(file.originalname);
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          callback(null, `${(req as any).user.id}-${uniqueSuffix}${ext}`);
-        },
-      }),
+      storage: memoryStorage(),
       fileFilter: (req, file, callback) => {
         if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
           return callback(
-            new Error('Chỉ chấp nhận file ảnh (jpg, jpeg, png, gif)'),
+            new BadRequestException('Chỉ chấp nhận file ảnh (jpg, jpeg, png, gif)'),
             false,
           );
         }
@@ -141,7 +136,19 @@ export class UsersController {
     @Request() req: AuthenticatedRequest,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<ProfileResponseDto> {
-    const avatarUrl = `/uploads/avatars/${file.filename}`;
+    // Tên file: userId + timestamp để tránh trùng
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    const ext = file.originalname.split('.').pop() ?? 'jpg';
+    const fileName = `${req.user!.id}-${uniqueSuffix}.${ext}`;
+
+    // Upload lên Supabase bucket 'avatars'
+    const avatarUrl = await this.supabaseService.uploadFile(
+      'avatars',
+      fileName,
+      file.buffer,
+      file.mimetype,
+    );
+
     return await this.usersService.updateProfile(req.user!.id, {
       avatar: avatarUrl,
     });
