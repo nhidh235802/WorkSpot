@@ -1,122 +1,190 @@
-# WorkSpot
+# WorkSpot ☕
 
-**Hệ thống tìm kiếm không gian làm việc cho người Nhật tại Hà Nội.**
+**A platform for Japanese people to find working-friendly cafes in Hanoi, Vietnam.**
 
-Dự án WorkSpot cung cấp nền tảng giúp người Nhật Bản dễ dàng tìm kiếm và lựa chọn các không gian làm việc (quán cafe, coworking space,...) phù hợp tại khu vực Hà Nội.
+🌐 **Live Demo:** [work-spot-alpha.vercel.app](https://work-spot-alpha.vercel.app) &nbsp;|&nbsp; 🇻🇳 [Tiếng Việt](./README.vi.md) &nbsp;|&nbsp; 🇯🇵 [日本語](./README.ja.md)
 
-## 🚀 Tech Stack
+---
 
-- **Frontend:** Next.js, Tailwind CSS
-- **Backend:** NestJS, TypeORM
-- **Database:** PostgreSQL
+## Overview
 
-## 📋 Yêu cầu phần mềm (Prerequisites)
+WorkSpot connects Japanese users living in Hanoi with cafes that suit their work and study needs. The platform supports three roles:
 
-Trước khi bắt đầu, hãy đảm bảo máy tính của bạn đã cài đặt các phần mềm sau:
+- **Customer** — Search cafes, view details, write reviews
+- **Owner** — Register and manage their cafe listings
+- **Admin** — Approve cafes, manage accounts, view analytics
 
-- **Node.js:** v18.x trở lên (LTS)
-- **PostgreSQL:** v14.x trở lên
-- **Git:** Phiên bản mới nhất
-- **VS Code Extensions (Khuyên dùng):**
-  - ESLint, Prettier (Format và check code)
-  - Tailwind CSS IntelliSense (Hỗ trợ class CSS)
-  - TypeORM (Hỗ trợ làm việc với database)
+---
 
-## 🛠 Hướng dẫn cài đặt (Getting Started)
+## Features
 
-### 1. Clone dự án
+### Customer
+- Search cafes by keyword, distance (GPS), and facility filters (WiFi, power outlets, desks, snacks…)
+- View cafe recommendations scored by distance + average rating
+- View cafe details: description, photo gallery, operating hours, map, and reviews
+- Write and delete reviews (rating + comment + photos)
+- Register / Login with email and password
+- Forgot password via email (reset link valid for 15 minutes)
+- Manage profile: update info, change password, upload avatar
 
-Mở Terminal và chạy lệnh sau để tải source code về máy:
+### Owner
+- Register a new cafe with address, description, facilities, operating hours, and photos (up to 5)
+- Edit cafe info — changes are held for Admin approval before going public
+- Update real-time status: Available / Normal / Busy
+- View approval status: Pending / Approved / Rejected / Hidden
+- View rejection reason and resubmit
+
+### Admin
+- Dashboard: total accounts, total cafes, pending cafes count, monthly growth charts
+- Review and approve or reject cafe submissions (with reason)
+- Manage cafes: search, filter by status, hide/show, delete
+- Manage accounts: search, filter by role & status, disable/suspend accounts, auto-hide owner's cafes
+
+---
+
+## Tech Stack
+
+**Frontend**
+
+| | |
+|---|---|
+| Framework | Next.js 16 (App Router) |
+| Language | TypeScript |
+| Styling | Tailwind CSS 4 |
+| Forms | React Hook Form + Zod |
+| Maps | React Leaflet (OpenStreetMap + Nominatim geocoding) |
+| HTTP | Axios |
+| UI | Lucide React, Sonner (toasts) |
+
+**Backend**
+
+| | |
+|---|---|
+| Framework | NestJS 11 |
+| Language | TypeScript |
+| ORM | TypeORM 0.3 |
+| Database | PostgreSQL (Supabase hosted) |
+| Storage | Supabase Storage (cafe-images, review-images, avatars) |
+| Auth | JWT + Passport + Bcrypt |
+| Email | Nodemailer (Gmail SMTP) |
+| Upload | Multer (memory storage) |
+| Validation | class-validator + class-transformer |
+
+---
+
+## Installation
+
+**Requirements:** Node.js v18+, npm v9+, a Supabase project
 
 ```bash
+# 1. Clone the repository
 git clone https://github.com/nhidh235802/WorkSpot.git
 cd WorkSpot
+
+# 2. Install dependencies
+cd backend && npm install
+cd ../frontend && npm install
+
+# 3. Configure environment variables (see section below)
+
+# 4. Run database migrations (creates tables + seeds mock data)
+cd backend && npm run m:run
+
+# 5. Start servers
+# Terminal 1 — Backend (port 3001)
+cd backend && npm run start:dev
+
+# Terminal 2 — Frontend (port 3000)
+cd frontend && npm run dev
 ```
 
-### 2. Cài đặt thư viện (Dependencies)
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-Bạn cần cài đặt các gói thư viện cho cả Backend và Frontend. Khuyến nghị mở 2 tab Terminal:
+**Demo accounts (after seeding)**
 
-**Tab 1 - Backend:**
-```bash
-cd backend
-npm install
+| Role | Email | Password |
+|---|---|---|
+| Admin | `admin@workspot.com` | `Admin@123` |
+| Owner | `owner01@workspot.com` | `Owner@123` |
+| Customer | `customer01@workspot.com` | `Customer@123` |
+
+**Migration commands**
+
+| Command | Description |
+|---|---|
+| `npm run m:run` | Apply all pending migrations |
+| `npm run m:revert` | Undo the last migration |
+| `npm run m:drop` | Drop entire schema ⚠️ |
+| `npm run m:gen` | Generate migration from entity changes |
+
+---
+
+## Environment Variables
+
+**`backend/.env`**
+
+```env
+# Database — Supabase Transaction Pooler (port 6543)
+DATABASE_URL="postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres?pgbouncer=true"
+
+# Supabase Storage (use service_role key)
+SUPABASE_URL=https://[ref].supabase.co
+SUPABASE_KEY=[service_role_key]
+
+# JWT
+JWT_SECRET=your_jwt_secret
+
+# Gmail SMTP (use App Password)
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USER=your_email@gmail.com
+MAIL_PASS=your_app_password
+
+# Frontend URL (used in password reset emails)
+FRONTEND_URL=https://work-spot-alpha.vercel.app
 ```
 
-**Tab 2 - Frontend:**
-```bash
-cd frontend
-npm install
+**`frontend/.env.local`**
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:3001
 ```
 
-## 🗄 Cấu hình Database & Biến môi trường
+> **Supabase Storage:** Create 3 **public** buckets: `cafe-images`, `review-images`, `avatars`.
 
-1. Mở **pgAdmin** hoặc công cụ quản lý PostgreSQL của bạn.
-2. Tạo một Database trống với tên: `workspot_db` *(Không cần tạo bảng hay chạy file SQL)*.
-3. Chạy câu lệnh Query sau để cài đặt extension tạo UUID (giúp tăng cường bảo mật):
-   ```sql
-   CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-   ```
-4. Di chuyển vào thư mục `backend`, copy file `dev.env.example` và đổi tên thành `.env` (đặt cùng cấp với thư mục `src`).
-5. Mở file `.env` và cập nhật `DB_USERNAME` cùng `DB_PASSWORD` cho khớp với tài khoản PostgreSQL trên máy của bạn.
+---
 
-## 🔄 Đồng bộ cấu trúc Database (Migration)
+## Project Structure
 
-Hệ thống sử dụng TypeORM để tự động tạo bảng. Trong Terminal, chuyển vào thư mục `backend` và chạy:
-
-```bash
-cd backend
-npm run m:run
+```
+WorkSpot/
+├── backend/
+│   └── src/
+│       ├── admin/        # Dashboard stats, user & cafe management
+│       ├── auth/         # Register, login, JWT, password reset
+│       ├── cafes/        # Cafe CRUD, search, reviews
+│       ├── mail/         # Email notifications (Gmail SMTP)
+│       ├── migrations/   # TypeORM schema migrations + seed data
+│       ├── supabase/     # Storage wrapper (upload / delete)
+│       └── users/        # User profile management
+│
+└── frontend/
+    └── app/
+        ├── (auth)/       # Login, register, forgot/reset password
+        ├── (main)/       # Customer pages (home, search, cafe detail)
+        ├── (owner)/      # Owner pages (dashboard, create/edit cafe)
+        └── admin/        # Admin pages (dashboard, approvals, management)
 ```
 
-## 🚀 Khởi động Server
+---
 
-Để chạy dự án, bạn cần khởi động cả 2 server chạy song song.
+## Deployment
 
-**1. Khởi động Backend (NestJS):**
-```bash
-cd backend
-npm run start:dev
-```
-*(Chờ đến khi Terminal hiển thị: "Application is running")*
+| Layer | Platform | Notes |
+|---|---|---|
+| Frontend | **Vercel** | Auto-deploy from `main` branch |
+| Backend | **Render / Railway** | Set all env vars in platform settings |
+| Database | **Supabase** | PostgreSQL, Transaction Pooler (port 6543) |
+| Storage | **Supabase Storage** | 3 public buckets |
 
-**2. Khởi động Frontend (Next.js):**
-```bash
-cd frontend
-npm run dev
-```
-*(Mở trình duyệt và truy cập [http://localhost:3000](http://localhost:3000) để xem giao diện)*
-
-## ⚠️ LƯU Ý QUAN TRỌNG KHI PULL CODE
-
-Ngay sau khi pull code mới nhất từ repository về (`git pull`), **BẮT BUỘC** thực hiện 2 bước sau trước khi tiếp tục code:
-
-1. **Cập nhật thư viện:**
-   Mở Terminal ở cả thư mục `frontend` và `backend`, chạy lại lệnh:
-   ```bash
-   npm install
-   ```
-   *(Để đảm bảo cập nhật các package mới nếu có người khác vừa thêm vào).*
-
-2. **Đồng bộ lại Database:**
-   Tại thư mục `backend`, chạy lần lượt:
-   ```bash
-   npm run m:drop  # Xóa database hiện tại
-   npm run m:run   # Tạo lại và chạy các migration mới nhất
-   ```
-   *(Thao tác này giúp cấu trúc database trên máy bạn khớp hoàn toàn với bản mới nhất trên git).*
-
-## 🌿 Quy trình làm việc với Git & Tiêu chuẩn Code
-
-### Git Workflow
-- **Nhánh `main`:** Chỉ chứa code đã chạy ổn định và hoàn thiện.
-- **Nhánh tính năng (Feature branch):** Luôn tạo nhánh mới từ `main` khi bắt đầu code một tính năng.
-  ```bash
-  git checkout -b feature/ten-tinh-nang
-  ```
-  *(Lưu ý: Nếu không quen dùng branch, bạn có thể push thẳng lên `main` NHƯNG phải test thật kỹ và tự xử lý conflict nếu có).*
-- **Commit Messages:** Ghi rõ ràng, ngắn gọn nội dung thay đổi để các thành viên dễ theo dõi.
-
-### Tiêu chuẩn Code
-- **Backend:** Tuân thủ chặt chẽ kiến trúc **Controller -> Service -> Entity**.
-- **Validation:** Luôn kiểm tra tính hợp lệ của dữ liệu đầu vào bằng **DTO** và `class-validator`.
+Set `NEXT_PUBLIC_API_URL` to your deployed backend URL in Vercel's environment settings.
