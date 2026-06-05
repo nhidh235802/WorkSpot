@@ -103,6 +103,12 @@ export default function CafesSearchPage() {
   const initialKeyword = searchParams.get("q") || "";
   const [keyword, setKeyword] = useState<string>(initialKeyword);
 
+  // Sync keyword from URL when navigating from homepage with ?q=
+  useEffect(() => {
+    const qParam = searchParams.get("q") || "";
+    setKeyword(qParam);
+  }, [searchParams]);
+
   const [cafes, setCafes] = useState<any[]>([]);
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [radius, setRadius] = useState<number>(5);
@@ -112,6 +118,9 @@ export default function CafesSearchPage() {
   const [selectedCafeId, setSelectedCafeId] = useState<string | number | null>(initialSelectedId);
   const [fitRouteTrigger, setFitRouteTrigger] = useState(0);
   const [showRoute, setShowRoute] = useState(searchParams.get("showRoute") === "1");
+
+  // Determine if we have a keyword (either from state or URL param)
+  const hasKeyword = keyword.trim().length > 0;
 
   const centerLat = parseFloat(searchParams.get("lat") || String(DEFAULT_LAT));
   const centerLng = parseFloat(searchParams.get("lng") || String(DEFAULT_LNG));
@@ -390,7 +399,7 @@ export default function CafesSearchPage() {
             cafes={mapCafes}
             center={mapCenter}
             userPosition={userPosition}
-            radius={keyword ? 0 : radius} // <-- SỬA: Ẩn vòng tròn trên map khi có từ khóa
+            radius={hasKeyword ? 0 : radius} // Ẩn vòng tròn trên map khi có từ khóa
             onSelectCafe={handleSelectCafe}
             selectedId={selectedCafeId}
             onLocate={(pos) => setUserPosition(pos)}
@@ -406,8 +415,8 @@ export default function CafesSearchPage() {
             </span>
           </div>
 
-          {/* Radius selector – top right (SỬA: Ẩn đi khi có keyword) */}
-          {!keyword && (
+          {/* Radius selector – top right (Ẩn đi khi có keyword) */}
+          {!hasKeyword && (
             <div className="absolute top-4 right-4 z-[1000] px-4 py-2.5 bg-white/95 backdrop-blur-md rounded-2xl shadow-lg border border-[#e3e3de] flex items-center gap-3">
               <MapPin className="w-4 h-4 text-[#14422d] shrink-0" />
               <span className="text-[#14422d] text-sm font-medium whitespace-nowrap">検索範囲</span>

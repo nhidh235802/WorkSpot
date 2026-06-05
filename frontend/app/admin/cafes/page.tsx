@@ -140,7 +140,7 @@ export default function AdminCafesPage() {
   const handleHideSubmit = async () => {
     setHasSubmittedHide(true)
     if (!hideReason.trim()) {
-      setHideError('理由の入力 là 必須です。')
+      setHideError('理由の入力は必須です。')
       return
     }
     if (hideReason.length > 500) {
@@ -414,11 +414,14 @@ export default function AdminCafesPage() {
                     <button type="button" onClick={() => router.push(`/admin/cafes/${cafe.id}`)} style={{ border: 'none', paddingLeft: 20, paddingRight: 20, paddingTop: 6, paddingBottom: 6, background: '#14422D', boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)', borderRadius: 9999, flexDirection: 'column', justifyContent: 'center', alignItems: 'center', display: 'inline-flex', cursor: 'pointer' }}>
                       <div style={{ width: 60.28, height: 16, textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'white', fontSize: 12, fontFamily: 'Manrope', fontWeight: '500', lineHeight: '16px', wordWrap: 'break-word' }}>詳細を表示</div>
                     </button>
-                    <button onClick={() => handleToggleVisibility(cafe.id, cafe.name, cafe.status)} type="button" style={{ border: 'none', paddingLeft: 20, paddingRight: 20, paddingTop: 6, paddingBottom: 6, background: '#7F8181', boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)', borderRadius: 9999, flexDirection: 'column', justifyContent: 'center', alignItems: 'center', display: 'inline-flex', cursor: 'pointer' }}>
-                      <div style={{ width: 60.28, height: 16, textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'white', fontSize: 12, fontFamily: 'Manrope', fontWeight: '500', lineHeight: '16px', wordWrap: 'break-word' }}>
-                        {cafe.status === 'hidden' ? '再表示' : '非表示'}
-                      </div>
-                    </button>
+                    {/* リジェクトされた店舗には非表示/再表示ボタンを表示しない */}
+                    {cafe.status !== 'rejected' && (
+                      <button onClick={() => handleToggleVisibility(cafe.id, cafe.name, cafe.status)} type="button" style={{ border: 'none', paddingLeft: 20, paddingRight: 20, paddingTop: 6, paddingBottom: 6, background: '#7F8181', boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)', borderRadius: 9999, flexDirection: 'column', justifyContent: 'center', alignItems: 'center', display: 'inline-flex', cursor: 'pointer' }}>
+                        <div style={{ width: 60.28, height: 16, textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'white', fontSize: 12, fontFamily: 'Manrope', fontWeight: '500', lineHeight: '16px', wordWrap: 'break-word' }}>
+                          {cafe.status === 'hidden' ? '再表示' : '非表示'}
+                        </div>
+                      </button>
+                    )}
                   </div>
                 )}
                 

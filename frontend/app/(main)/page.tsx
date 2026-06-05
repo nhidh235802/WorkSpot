@@ -127,15 +127,7 @@ export default function WorkSpotPage() {
   const [recommendedCafes, setRecommendedCafes] = useState<CafeType[]>([]);
   const [isLoadingRecommend, setIsLoadingRecommend] = useState(true);
   const [recommendError, setRecommendError] = useState<string | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  const scroll = (direction: 'left' | 'right') => {
-    if (scrollRef.current) {
-      const { scrollLeft, clientWidth } = scrollRef.current;
-      const scrollTo = direction === 'left' ? scrollLeft - clientWidth / 2 : scrollLeft + clientWidth / 2;
-      scrollRef.current.scrollTo({ left: scrollTo, behavior: 'smooth' });
-    }
-  };
+  const carouselRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -370,78 +362,28 @@ export default function WorkSpotPage() {
               近くにカフェが見つかりませんでした。
             </div>
           ) : (
-            <div style={{ position: "relative" }}>
-              <div
-                ref={scrollRef}
-                style={{
-                  display: "flex",
-                  gap: 24,
-                  overflowX: "auto",
-                  paddingBottom: 32,
-                  scrollbarWidth: "none",
-                  paddingLeft: 32,
-                  paddingRight: 32,
-                }}
-              >
-                {recommendedCafes.map((cafe) => (
-                  <CafeCard key={cafe.id} cafe={cafe} />
+            <div style={{ position: "relative", overflow: "hidden", paddingBottom: 32 }}>
+              <style>{`
+                @keyframes carouselScroll {
+                  0% { transform: translateX(0); }
+                  100% { transform: translateX(-50%); }
+                }
+                .carousel-track {
+                  display: flex;
+                  gap: 24px;
+                  width: max-content;
+                  animation: carouselScroll ${Math.max(20, recommendedCafes.length * 6)}s linear infinite;
+                  padding-left: 32px;
+                }
+                .carousel-track:hover {
+                  animation-play-state: paused;
+                }
+              `}</style>
+              <div className="carousel-track" ref={carouselRef}>
+                {[...recommendedCafes, ...recommendedCafes].map((cafe, idx) => (
+                  <CafeCard key={`${cafe.id}-${idx}`} cafe={cafe} />
                 ))}
               </div>
-
-              {recommendedCafes.length > 0 && (
-                <>
-                  <button
-                    onClick={() => scroll('left')}
-                    style={{
-                      position: "absolute",
-                      left: 16,
-                      top: 177.5,
-                      transform: "translateY(-50%)",
-                      width: 56,
-                      height: 56,
-                      borderRadius: "50%",
-                      background: "rgba(0, 0, 0, 0.4)",
-                      border: "3px solid #fff",
-                      boxShadow: "0 0 0 5px rgba(0, 0, 0, 0.4)",
-                      color: "#fff",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      cursor: "pointer",
-                      zIndex: 10,
-                      backgroundClip: "padding-box",
-                    }}
-                    aria-label="Scroll left"
-                  >
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
-                  </button>
-                  <button
-                    onClick={() => scroll('right')}
-                    style={{
-                      position: "absolute",
-                      right: 16,
-                      top: 177.5,
-                      transform: "translateY(-50%)",
-                      width: 56,
-                      height: 56,
-                      borderRadius: "50%",
-                      background: "rgba(0, 0, 0, 0.4)",
-                      border: "3px solid #fff",
-                      boxShadow: "0 0 0 5px rgba(0, 0, 0, 0.4)",
-                      color: "#fff",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      cursor: "pointer",
-                      zIndex: 10,
-                      backgroundClip: "padding-box",
-                    }}
-                    aria-label="Scroll right"
-                  >
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-                  </button>
-                </>
-              )}
             </div>
           )}
         </div>

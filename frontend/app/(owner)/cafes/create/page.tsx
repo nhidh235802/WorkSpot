@@ -590,38 +590,6 @@ export default function CreateCafeForm() {
                   marginTop: 8,
                 }}
               >
-                {/* Add photo button */}
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  style={{
-                    width: 160,
-                    height: 120,
-                    background: '#FAFAF5',
-                    border: '2px dashed #E7E5E4',
-                    borderRadius: 12,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 6,
-                    cursor: 'pointer',
-                  }}
-                >
-                  <Plus size={18} color="#A8A29E" />
-                  <span
-                    style={{
-                      fontSize: 10,
-                      fontFamily: 'Be Vietnam Pro, sans-serif',
-                      fontWeight: 700,
-                      color: '#78716C',
-                      textTransform: 'uppercase' as const,
-                      letterSpacing: 0.5,
-                    }}
-                  >
-                    Thêm ảnh
-                  </span>
-                </button>
-
                 {/* Photo previews */}
                 {photos.map((photo, index) => (
                   <div
@@ -676,6 +644,40 @@ export default function CreateCafeForm() {
                     </button>
                   </div>
                 ))}
+
+                {/* Add photo button – only shown when fewer than 5 photos */}
+                {photos.length < 5 && (
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    style={{
+                      width: 100,
+                      height: 90,
+                      background: '#FAFAF5',
+                      border: '2px dashed #E7E5E4',
+                      borderRadius: 12,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <Plus size={18} color="#A8A29E" />
+                    <span
+                      style={{
+                        fontSize: 10,
+                        fontFamily: 'Be Vietnam Pro, sans-serif',
+                        fontWeight: 700,
+                        color: '#78716C',
+                        textTransform: 'uppercase' as const,
+                        letterSpacing: 0.5,
+                      }}
+                    >
+                      Thêm ảnh
+                    </span>
+                  </button>
+                )}
               </div>
 
               <input
