@@ -130,34 +130,34 @@ export default function WorkSpotPage() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
   const isPausedRef = useRef(false);
+  const scrollPosRef = useRef(0);
 
   useEffect(() => {
     const step = () => {
       const el = scrollRef.current;
       if (el && !isPausedRef.current && el.scrollWidth > 0) {
-        el.scrollLeft += 0.3;
-        if (el.scrollLeft >= el.scrollWidth / 2) {
-          el.scrollLeft = 0;
+        scrollPosRef.current += 0.3;
+        const halfWidth = el.scrollWidth / 2;
+        if (scrollPosRef.current >= halfWidth) {
+          scrollPosRef.current -= halfWidth;
         }
+        el.scrollLeft = scrollPosRef.current;
       }
       rafRef.current = requestAnimationFrame(step);
     };
     rafRef.current = requestAnimationFrame(step);
-    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
   }, []);
 
-  useEffect(() => {
+  const handleScroll = () => {
     const el = scrollRef.current;
     if (!el) return;
-    const pause  = () => { isPausedRef.current = true; };
-    const resume = () => { isPausedRef.current = false; };
-    el.addEventListener('mouseenter', pause);
-    el.addEventListener('mouseleave', resume);
-    return () => {
-      el.removeEventListener('mouseenter', pause);
-      el.removeEventListener('mouseleave', resume);
-    };
-  }, [recommendedCafes]);
+    if (Math.abs(el.scrollLeft - scrollPosRef.current) > 1.5) {
+      scrollPosRef.current = el.scrollLeft;
+    }
+  };
 
   const scrollBy = (direction: 'left' | 'right') => {
     const el = scrollRef.current;
@@ -166,6 +166,7 @@ export default function WorkSpotPage() {
     el.scrollLeft += delta;
     if (el.scrollLeft < 0) el.scrollLeft += el.scrollWidth / 2;
     if (el.scrollLeft >= el.scrollWidth / 2) el.scrollLeft -= el.scrollWidth / 2;
+    scrollPosRef.current = el.scrollLeft;
   };
 
   useEffect(() => {
@@ -374,7 +375,11 @@ export default function WorkSpotPage() {
       </section>
 
       {/* ── Recommended Cafes ── */}
-      <section style={{ background: "#F4F4EF", padding: "48px 0" }}>
+      <section
+        onMouseEnter={() => { isPausedRef.current = true; }}
+        onMouseLeave={() => { isPausedRef.current = false; }}
+        style={{ background: "#F4F4EF", padding: "48px 0" }}
+      >
         <div style={{ maxWidth: 1536, margin: "0 auto" }}>
           {/* Header */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32, padding: "0 32px" }}>
@@ -406,6 +411,7 @@ export default function WorkSpotPage() {
               <div
                 ref={scrollRef}
                 className="carousel-scroll"
+                onScroll={handleScroll}
                 style={{
                   display: "flex",
                   gap: 24,
