@@ -131,51 +131,39 @@ export default function WorkSpotPage() {
   const rafRef = useRef<number | null>(null);
   const isPausedRef = useRef(false);
 
-  // ── RAF loop: chạy liên tục từ khi mount, tự check scrollRef mỗi frame
-  // → Không phụ thuộc vào timing render của React
   useEffect(() => {
-    const SPEED = 0.3; // px per frame
-
     const step = () => {
       const el = scrollRef.current;
-      if (el && !isPausedRef.current) {
-        el.scrollLeft += SPEED;
+      if (el && !isPausedRef.current && el.scrollWidth > 0) {
+        el.scrollLeft += 0.3;
         if (el.scrollLeft >= el.scrollWidth / 2) {
           el.scrollLeft = 0;
         }
       }
       rafRef.current = requestAnimationFrame(step);
     };
-
     rafRef.current = requestAnimationFrame(step);
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    };
-  }, []); // chỉ chạy 1 lần khi mount
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, []);
 
-  // ── Hover pause: gắn listener khi carousel element xuất hiện trong DOM
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
-
     const pause  = () => { isPausedRef.current = true; };
     const resume = () => { isPausedRef.current = false; };
-
     el.addEventListener('mouseenter', pause);
     el.addEventListener('mouseleave', resume);
     return () => {
       el.removeEventListener('mouseenter', pause);
       el.removeEventListener('mouseleave', resume);
     };
-  }, [recommendedCafes]); // chạy lại khi data load xong và DOM carousel render
+  }, [recommendedCafes]);
 
-  const CARD_WIDTH = 320 + 24; // card width + gap
   const scrollBy = (direction: 'left' | 'right') => {
     const el = scrollRef.current;
     if (!el) return;
-    const delta = direction === 'left' ? -CARD_WIDTH : CARD_WIDTH;
+    const delta = direction === 'left' ? -(320 + 24) : (320 + 24);
     el.scrollLeft += delta;
-    // Wrap around
     if (el.scrollLeft < 0) el.scrollLeft += el.scrollWidth / 2;
     if (el.scrollLeft >= el.scrollWidth / 2) el.scrollLeft -= el.scrollWidth / 2;
   };

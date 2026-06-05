@@ -1,4 +1,4 @@
-# WorkSpot ☕
+# WorkSpot
 
 **Nền tảng tìm kiếm không gian làm việc dành cho người Nhật tại Hà Nội.**
 

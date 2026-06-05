@@ -1,4 +1,4 @@
-# WorkSpot ☕
+# WorkSpot
 
 **A platform for Japanese people to find working-friendly cafes in Hanoi, Vietnam.**
 
