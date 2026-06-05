@@ -127,7 +127,41 @@ export default function WorkSpotPage() {
   const [recommendedCafes, setRecommendedCafes] = useState<CafeType[]>([]);
   const [isLoadingRecommend, setIsLoadingRecommend] = useState(true);
   const [recommendError, setRecommendError] = useState<string | null>(null);
-  const carouselRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number | null>(null);
+  const SCROLL_SPEED = 0.6; // px per frame
+
+  // Auto-scroll: move right slowly; when reaching halfway (duplicate copy), reset silently
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const step = () => {
+      if (!el) return;
+      el.scrollLeft += SCROLL_SPEED;
+      // When we've scrolled past the first copy, jump back to start seamlessly
+      if (el.scrollLeft >= el.scrollWidth / 2) {
+        el.scrollLeft = 0;
+      }
+      rafRef.current = requestAnimationFrame(step);
+    };
+
+    rafRef.current = requestAnimationFrame(step);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [recommendedCafes]);
+
+  const CARD_WIDTH = 320 + 24; // card width + gap
+  const scrollBy = (direction: 'left' | 'right') => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const delta = direction === 'left' ? -CARD_WIDTH : CARD_WIDTH;
+    el.scrollLeft += delta;
+    // Wrap around
+    if (el.scrollLeft < 0) el.scrollLeft += el.scrollWidth / 2;
+    if (el.scrollLeft >= el.scrollWidth / 2) el.scrollLeft -= el.scrollWidth / 2;
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -362,28 +396,80 @@ export default function WorkSpotPage() {
               近くにカフェが見つかりませんでした。
             </div>
           ) : (
-            <div style={{ position: "relative", overflow: "hidden", paddingBottom: 32 }}>
-              <style>{`
-                @keyframes carouselScroll {
-                  0% { transform: translateX(0); }
-                  100% { transform: translateX(-50%); }
-                }
-                .carousel-track {
-                  display: flex;
-                  gap: 24px;
-                  width: max-content;
-                  animation: carouselScroll ${Math.max(20, recommendedCafes.length * 6)}s linear infinite;
-                  padding-left: 32px;
-                }
-                .carousel-track:hover {
-                  animation-play-state: paused;
-                }
-              `}</style>
-              <div className="carousel-track" ref={carouselRef}>
+            <div style={{ position: "relative" }}>
+              {/* Scrollable track — driven by JS auto-scroll */}
+              <div
+                ref={scrollRef}
+                className="carousel-scroll"
+                style={{
+                  display: "flex",
+                  gap: 24,
+                  overflowX: "auto",
+                  paddingBottom: 32,
+                  paddingLeft: 32,
+                  paddingRight: 32,
+                  scrollbarWidth: "none",
+                  msOverflowStyle: "none",
+                } as React.CSSProperties}
+              >
                 {[...recommendedCafes, ...recommendedCafes].map((cafe, idx) => (
                   <CafeCard key={`${cafe.id}-${idx}`} cafe={cafe} />
                 ))}
               </div>
+
+              {/* Left arrow */}
+              <button
+                onClick={() => scrollBy('left')}
+                style={{
+                  position: "absolute",
+                  left: 16,
+                  top: 177.5,
+                  transform: "translateY(-50%)",
+                  width: 56,
+                  height: 56,
+                  borderRadius: "50%",
+                  background: "rgba(0, 0, 0, 0.4)",
+                  border: "3px solid #fff",
+                  boxShadow: "0 0 0 5px rgba(0, 0, 0, 0.4)",
+                  color: "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  zIndex: 10,
+                  backgroundClip: "padding-box",
+                }}
+                aria-label="Scroll left"
+              >
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
+              </button>
+
+              {/* Right arrow */}
+              <button
+                onClick={() => scrollBy('right')}
+                style={{
+                  position: "absolute",
+                  right: 16,
+                  top: 177.5,
+                  transform: "translateY(-50%)",
+                  width: 56,
+                  height: 56,
+                  borderRadius: "50%",
+                  background: "rgba(0, 0, 0, 0.4)",
+                  border: "3px solid #fff",
+                  boxShadow: "0 0 0 5px rgba(0, 0, 0, 0.4)",
+                  color: "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  zIndex: 10,
+                  backgroundClip: "padding-box",
+                }}
+                aria-label="Scroll right"
+              >
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+              </button>
             </div>
           )}
         </div>
