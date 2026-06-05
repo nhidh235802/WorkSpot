@@ -65,6 +65,7 @@ export default function EditCafePage() {
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [isTranslating, setIsTranslating] = useState(false)
   const [toast, setToast] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [showCancelDialog, setShowCancelDialog] = useState(false)
@@ -74,6 +75,24 @@ export default function EditCafePage() {
   const showToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(''), 4000);
+  };
+
+  // Dịch mô tả sang tiếng Nhật qua MyMemory API (miễn phí)
+  const translateToJapanese = async (text: string): Promise<string> => {
+    try {
+      const res = await fetch(
+        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=vi|ja`,
+        { signal: AbortSignal.timeout(8000) }
+      );
+      const data = await res.json();
+      const translated = data?.responseData?.translatedText;
+      if (translated && translated !== text && !/[\u0100-\u024F]/.test(translated)) {
+        return translated;
+      }
+      return text; // fallback
+    } catch {
+      return text; // fallback nếu mạng lỗi
+    }
   };
 
   useEffect(() => {
@@ -196,7 +215,12 @@ export default function EditCafePage() {
     try {
       const token = localStorage.getItem('access_token');
 
-      // 1. Geocode
+      // 1. Dịch mô tả sang tiếng Nhật
+      setIsTranslating(true);
+      const translatedDescription = await translateToJapanese(form.description.trim());
+      setIsTranslating(false);
+
+      // 2. Geocode
       const geocodeRes = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(form.address.trim() + ', Việt Nam')}`,
         { headers: { 'Accept-Language': 'vi' } }
@@ -220,7 +244,7 @@ export default function EditCafePage() {
       const payload = {
         name: form.name.trim(),
         address: form.address.trim(),
-        description: form.description.trim(),
+        description: translatedDescription,
         latitude: lat,
         longitude: lng,
         facilities: form.facilities,
@@ -336,6 +360,11 @@ export default function EditCafePage() {
                   className={`w-full bg-white border rounded-[8px] px-4 py-3 text-[15px] text-[#1A1C19] focus:outline-none transition-colors resize-none leading-relaxed ${fieldErrors.description ? 'border-red-400' : 'border-[#E7E5E4] focus:border-[#14422D]'}`}
                 />
                 {fieldErrors.description && <p className="text-red-600 text-[12px] mt-1">{fieldErrors.description}</p>}
+                {/* Hint dịch tự động */}
+                <div className="flex items-center gap-1.5 mt-1">
+                  <span className="text-[13px]">🌐</span>
+                  <span className="text-[12px] text-[#78716C] font-['Be_Vietnam_Pro']">Mô tả sẽ được tự động dịch sang tiếng Nhật khi lưu</span>
+                </div>
               </div>
             </div>
           </Section>
@@ -495,7 +524,12 @@ export default function EditCafePage() {
             onClick={handleSave} disabled={saving}
             className="flex items-center justify-center gap-2 px-10 py-3 rounded-full font-bold text-white bg-[#14422D] hover:bg-[#0d2e1f] transition-all disabled:opacity-70 disabled:cursor-not-allowed text-[15px] min-w-[180px]"
           >
-            {saving ? <><Loader2 size={18} className="animate-spin" /> Đang lưu...</> : 'Lưu thay đổi'}
+            {isTranslating
+              ? <><Loader2 size={18} className="animate-spin" /> Đang dịch sang tiếng Nhật...</>
+              : saving
+              ? <><Loader2 size={18} className="animate-spin" /> Đang lưu...</>
+              : 'Lưu thay đổi'
+            }
           </button>
         </div>
 

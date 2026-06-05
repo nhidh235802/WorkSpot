@@ -7,6 +7,9 @@ import { toast } from 'sonner'
 
 const PAGE_SIZE = 10
 
+const removeAccents = (str: string) =>
+  str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\u0111/g, 'd').replace(/\u0110/g, 'D');
+
 const ROLE_CONFIG: Record<string, { label: string; avatarBg: string; avatarText: string }> = {
   admin:    { label: '管理者',       avatarBg: '#BCEECF', avatarText: '#14422D' },
   owner:    { label: 'オーナー',     avatarBg: '#FFDBC7', avatarText: '#904C18' },
@@ -104,7 +107,7 @@ export default function AdminAccountPage() {
   }, [appliedName, appliedEmail, appliedRole, appliedStatus, page])
 
   const handleSearch = () => {
-    setAppliedName(nameInput)
+    setAppliedName(removeAccents(nameInput))
     setAppliedEmail(emailInput)
     setAppliedRole(roleInput)
     setAppliedStatus(statusInput)

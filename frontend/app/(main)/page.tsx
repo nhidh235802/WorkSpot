@@ -129,26 +129,36 @@ export default function WorkSpotPage() {
   const [recommendError, setRecommendError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
-  const SCROLL_SPEED = 0.6; // px per frame
+  const isPausedRef = useRef(false);
+  const SCROLL_SPEED = 0.3; // px per frame (chậm hơn trước 50%)
 
-  // Auto-scroll: move right slowly; when reaching halfway (duplicate copy), reset silently
+  // Auto-scroll: move right slowly; pause on hover; loop seamlessly
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
 
     const step = () => {
-      if (!el) return;
-      el.scrollLeft += SCROLL_SPEED;
-      // When we've scrolled past the first copy, jump back to start seamlessly
-      if (el.scrollLeft >= el.scrollWidth / 2) {
-        el.scrollLeft = 0;
+      if (!isPausedRef.current && el) {
+        el.scrollLeft += SCROLL_SPEED;
+        // When we've scrolled past the first copy, jump back to start seamlessly
+        if (el.scrollLeft >= el.scrollWidth / 2) {
+          el.scrollLeft = 0;
+        }
       }
       rafRef.current = requestAnimationFrame(step);
     };
 
+    const pause  = () => { isPausedRef.current = true; };
+    const resume = () => { isPausedRef.current = false; };
+
+    el.addEventListener('mouseenter', pause);
+    el.addEventListener('mouseleave', resume);
+
     rafRef.current = requestAnimationFrame(step);
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      el.removeEventListener('mouseenter', pause);
+      el.removeEventListener('mouseleave', resume);
     };
   }, [recommendedCafes]);
 

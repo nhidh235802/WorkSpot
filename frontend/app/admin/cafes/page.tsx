@@ -8,6 +8,9 @@ import { toast, Toaster } from 'sonner'
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 const PAGE_SIZE = 5
 
+const removeAccents = (str: string) =>
+  str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\u0111/g, 'd').replace(/\u0110/g, 'D');
+
 const STATUS_CONFIG: Record<string, { label: string; dot: string; bg: string; text: string }> = {
   approved: { label: '営業中',   dot: '#10B981', bg: '#D1FAE5', text: '#065F46' },
   hidden:   { label: '非表示',   dot: '#F97316', bg: '#FFEDD5', text: '#9A3412' },
@@ -42,15 +45,15 @@ const STATUS_FILTER_OPTIONS = [
   { value: 'rejected', label: '却下済み' },
 ]
 
-// Bổ sung danh sách khu vực thực tế tại Hà Nội phục vụ bộ lọc công công
+// Danh sách quận Hà Nội với giá trị tìm kiếm là tiếng Việt không dấu
 const HANOI_AREAS = [
-  { value: 'Cầu Giấy', label: 'Cầu Giấy' },
-  { value: 'Hoàn Kiếm', label: 'Hoàn Kiếm' },
-  { value: 'Đống Đa', label: 'Đống Đa' },
-  { value: 'Hai Bà Trưng', label: 'Hai Bà Trưng' },
-  { value: 'Ba Đình', label: 'Ba Đình' },
-  { value: 'Thanh Xuân', label: 'Thanh Xuân' },
-  { value: 'Long Biên', label: 'Long Biên' },
+  { value: 'Cau Giay', label: 'Cầu Giấy' },
+  { value: 'Hoan Kiem', label: 'Hoàn Kiếm' },
+  { value: 'Dong Da', label: 'Đống Đa' },
+  { value: 'Hai Ba Trung', label: 'Hai Bà Trưng' },
+  { value: 'Ba Dinh', label: 'Ba Đình' },
+  { value: 'Thanh Xuan', label: 'Thanh Xuân' },
+  { value: 'Long Bien', label: 'Long Biên' },
 ]
 
 export default function AdminCafesPage() {
@@ -87,17 +90,17 @@ export default function AdminCafesPage() {
     setLoading(true)
     setError(null)
     AdminService.getCafesForAdmin({
-      search:  search || undefined,
+      search:  search ? removeAccents(search) : undefined,
       status:  statusFilter || undefined,
-      // Bổ sung truyền trường vùng miền nếu hàm getCafesForAdmin có hỗ trợ filter tổng quát
       page,
       limit:   PAGE_SIZE,
     })
       .then((data) => {
-        // Hỗ trợ xử lý lọc client-side cho thuộc tính khu vực nếu API chưa kịp cập nhật trường area
+        // Filter client-side by area, normalizing both sides
         let items = data.items
         if (areaFilter) {
-          items = items.filter((c: any) => c.address?.includes(areaFilter))
+          const normalizedFilter = removeAccents(areaFilter).toLowerCase()
+          items = items.filter((c: any) => removeAccents(c.address || '').toLowerCase().includes(normalizedFilter))
         }
         setCafes(items)
         setTotal(areaFilter ? items.length : data.total)

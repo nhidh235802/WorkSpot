@@ -203,6 +203,7 @@ export default function CreateCafeForm() {
 
   // ── Submit state
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isTranslating, setIsTranslating] = useState(false);
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
   const [showCancelDialog, setShowCancelDialog] = useState(false);
@@ -211,6 +212,25 @@ export default function CreateCafeForm() {
   const showToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(''), 4000);
+  };
+
+  // Dịch mô tả sang tiếng Nhật qua MyMemory API (miễn phí)
+  const translateToJapanese = async (text: string): Promise<string> => {
+    try {
+      const res = await fetch(
+        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=vi|ja`,
+        { signal: AbortSignal.timeout(8000) }
+      );
+      const data = await res.json();
+      const translated = data?.responseData?.translatedText;
+      // Kiểm tra kết quả hợp lệ
+      if (translated && translated !== text && !/[\u0100-\u024F]/.test(translated)) {
+        return translated;
+      }
+      return text; // fallback nếu dịch thất bại
+    } catch {
+      return text; // fallback nếu mạng lỗi
+    }
   };
 
   // ─── Handlers ────────────────────────────────────────────────────────────
@@ -314,7 +334,12 @@ export default function CreateCafeForm() {
     setIsSubmitting(true);
 
     try {
-      // 1. Geocode
+      // 1. Dịch mô tả sang tiếng Nhật
+      setIsTranslating(true);
+      const translatedDescription = await translateToJapanese(description.trim());
+      setIsTranslating(false);
+
+      // 2. Geocode
       const geocodeRes = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(address.trim() + ', Việt Nam')}`,
         { headers: { 'Accept-Language': 'vi' } }
@@ -351,7 +376,7 @@ export default function CreateCafeForm() {
       const payload = {
         name: name.trim(),
         address: address.trim(),
-        description: description.trim(),
+        description: translatedDescription,
         ...(lat !== undefined && { latitude: lat }),
         ...(lng !== undefined && { longitude: lng }),
         facilities: Array.from(selectedAmenities),
@@ -503,6 +528,13 @@ export default function CreateCafeForm() {
                       {fieldErrors.description}
                     </span>
                   )}
+                  {/* Gợi ý dịch tự động */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                    <span style={{ fontSize: 14 }}>🌐</span>
+                    <span style={{ fontSize: 12, color: '#717973', fontFamily: 'Be Vietnam Pro, sans-serif' }}>
+                      Mô tả sẽ được tự động dịch sang tiếng Nhật khi lưu
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -938,7 +970,7 @@ export default function CreateCafeForm() {
               transition: 'background 0.15s ease',
             }}
           >
-            {isSubmitting ? 'Đang xử lý...' : 'Lưu thay đổi'}
+            {isTranslating ? '🌐 Đang dịch sang tiếng Nhật...' : isSubmitting ? 'Đang xử lý...' : 'Lưu thay đổi'}
           </button>
         </div>
       </div>
