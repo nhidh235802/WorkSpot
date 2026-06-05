@@ -130,17 +130,16 @@ export default function WorkSpotPage() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
   const isPausedRef = useRef(false);
-  const SCROLL_SPEED = 0.3; // px per frame (chậm hơn trước 50%)
 
-  // Auto-scroll: move right slowly; pause on hover; loop seamlessly
+  // ── RAF loop: chạy liên tục từ khi mount, tự check scrollRef mỗi frame
+  // → Không phụ thuộc vào timing render của React
   useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
+    const SPEED = 0.3; // px per frame
 
     const step = () => {
-      if (!isPausedRef.current && el) {
-        el.scrollLeft += SCROLL_SPEED;
-        // When we've scrolled past the first copy, jump back to start seamlessly
+      const el = scrollRef.current;
+      if (el && !isPausedRef.current) {
+        el.scrollLeft += SPEED;
         if (el.scrollLeft >= el.scrollWidth / 2) {
           el.scrollLeft = 0;
         }
@@ -148,19 +147,27 @@ export default function WorkSpotPage() {
       rafRef.current = requestAnimationFrame(step);
     };
 
+    rafRef.current = requestAnimationFrame(step);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, []); // chỉ chạy 1 lần khi mount
+
+  // ── Hover pause: gắn listener khi carousel element xuất hiện trong DOM
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
     const pause  = () => { isPausedRef.current = true; };
     const resume = () => { isPausedRef.current = false; };
 
     el.addEventListener('mouseenter', pause);
     el.addEventListener('mouseleave', resume);
-
-    rafRef.current = requestAnimationFrame(step);
     return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
       el.removeEventListener('mouseenter', pause);
       el.removeEventListener('mouseleave', resume);
     };
-  }, [recommendedCafes]);
+  }, [recommendedCafes]); // chạy lại khi data load xong và DOM carousel render
 
   const CARD_WIDTH = 320 + 24; // card width + gap
   const scrollBy = (direction: 'left' | 'right') => {
