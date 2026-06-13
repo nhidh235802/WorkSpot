@@ -678,7 +678,11 @@ export default function CafesSearchPage() {
                       詳細を見る <span className="opacity-60 text-lg">ⓘ</span>
                     </Link>
                     <button
-                      onClick={() => { setShowRoute(true); setFitRouteTrigger((n) => n + 1); }}
+                      onClick={() => {
+                        setIsExpanded(false);
+                        setShowRoute(true);
+                        setFitRouteTrigger((n) => n + 1);
+                      }}
                       className="flex-1 flex items-center justify-center gap-2 py-4 rounded-2xl bg-[#14422D] text-white font-bold text-lg shadow-lg hover:bg-[#0d2e1f] transition-all"
                     >
                       経路 <Navigation size={20} />
