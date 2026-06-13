@@ -41,9 +41,9 @@ const AMENITIES: Amenity[] = [
   { id: 'socket', label: 'Ổ cắm điện', icon: <Zap size={16} /> },
   { id: 'desk', label: 'Bàn làm việc', icon: <Monitor size={16} /> },
   { id: 'snack', label: 'Đồ ăn nhẹ', icon: <UtensilsCrossed size={16} /> },
-  { id: 'cleanliness', label: 'Độ sạch sẽ', icon: <Sparkles size={16} /> },
+  { id: 'cleanliness', label: 'Không gian sạch sẽ', icon: <Sparkles size={16} /> },
   { id: 'workspace', label: 'Không gian làm việc', icon: <Laptop size={16} /> },
-  { id: 'smoking_rule', label: 'Quy định hút thuốc', icon: <Cigarette size={16} /> },
+  { id: 'smoking_rule', label: 'Không hút thuốc', icon: <Cigarette size={16} /> },
 ];
 
 const DAY_GROUPS = [
@@ -158,14 +158,15 @@ function TimeInput({
       }}
       style={{
         flex: 1,
-        padding: '10px',
+        minHeight: 44,
+        padding: '10px 12px',
         background: disabled ? '#F5F5F4' : '#FAFAF5',
-        borderRadius: 8,
+        borderRadius: 10,
         border: '1px solid #F5F5F4',
         outline: 'none',
-        fontSize: 12,
+        fontSize: 14,
         fontFamily: 'Be Vietnam Pro, sans-serif',
-        fontWeight: 500,
+        fontWeight: 600,
         color: disabled ? '#A8A29E' : '#1A1C19',
         cursor: disabled ? 'not-allowed' : 'pointer',
         opacity: disabled ? 0.6 : 1,
@@ -618,7 +619,7 @@ export default function CreateCafeForm() {
                 style={{
                   display: 'flex',
                   flexWrap: 'wrap' as const,
-                  gap: 8,
+                  gap: 12,
                   marginTop: 8,
                 }}
               >
@@ -626,7 +627,7 @@ export default function CreateCafeForm() {
                 {photos.map((photo, index) => (
                   <div
                     key={index}
-                    style={{ position: 'relative', width: 100, height: 90, borderRadius: 12, overflow: 'hidden' }}
+                    style={{ position: 'relative', width: 120, height: 108, borderRadius: 14, overflow: 'hidden' }}
                   >
                     <img
                       src={photo.preview}
@@ -643,11 +644,11 @@ export default function CreateCafeForm() {
                           right: 0,
                           background: 'rgba(20, 66, 45, 0.85)',
                           color: 'white',
-                          fontSize: 9,
+                          fontSize: 12,
                           fontFamily: 'Be Vietnam Pro, sans-serif',
                           fontWeight: 700,
                           textAlign: 'center',
-                          padding: '3px 0',
+                          padding: '5px 0',
                           letterSpacing: 0.5,
                         }}
                       >
@@ -660,8 +661,8 @@ export default function CreateCafeForm() {
                         position: 'absolute',
                         top: 4,
                         right: 4,
-                        width: 20,
-                        height: 20,
+                        width: 28,
+                        height: 28,
                         borderRadius: 9999,
                         background: 'rgba(0,0,0,0.5)',
                         border: 'none',
@@ -672,7 +673,7 @@ export default function CreateCafeForm() {
                         padding: 0,
                       }}
                     >
-                      <X size={10} color="white" />
+                      <X size={15} color="white" />
                     </button>
                   </div>
                 ))}
@@ -682,8 +683,8 @@ export default function CreateCafeForm() {
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     style={{
-                      width: 100,
-                      height: 90,
+                      width: 120,
+                      height: 108,
                       background: '#FAFAF5',
                       border: '2px dashed #E7E5E4',
                       borderRadius: 12,
@@ -691,14 +692,14 @@ export default function CreateCafeForm() {
                       flexDirection: 'column',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: 6,
+                      gap: 8,
                       cursor: 'pointer',
                     }}
                   >
-                    <Plus size={18} color="#A8A29E" />
+                    <Plus size={24} color="#78716C" />
                     <span
                       style={{
-                        fontSize: 10,
+                        fontSize: 14,
                         fontFamily: 'Be Vietnam Pro, sans-serif',
                         fontWeight: 700,
                         color: '#78716C',
@@ -731,12 +732,12 @@ export default function CreateCafeForm() {
                 style={{
                   margin: 0,
                   marginTop: 8,
-                  fontSize: 10,
+                  fontSize: 13,
                   fontFamily: 'Be Vietnam Pro, sans-serif',
                   fontStyle: 'italic',
                   fontWeight: 400,
                   color: '#A8A29E',
-                  lineHeight: '16px',
+                  lineHeight: '20px',
                 }}
               >
                 * Hình ảnh đẹp và rõ nét về không gian làm việc sẽ thu hút nhiều khách hàng hơn.
@@ -762,11 +763,11 @@ export default function CreateCafeForm() {
                       >
                         <span
                           style={{
-                            fontSize: 12,
+                            fontSize: 16,
                             fontFamily: 'Be Vietnam Pro, sans-serif',
                             fontWeight: 700,
                             color: '#292524',
-                            lineHeight: '16px',
+                            lineHeight: '22px',
                           }}
                         >
                           {day.label}
@@ -787,8 +788,8 @@ export default function CreateCafeForm() {
                           />
                           <div
                             style={{
-                              width: 14,
-                              height: 14,
+                              width: 18,
+                              height: 18,
                               borderRadius: 4,
                               border: s.isClosed ? 'none' : '1px solid #D6D3D1',
                               background: s.isClosed ? '#14422D' : 'white',
@@ -806,11 +807,11 @@ export default function CreateCafeForm() {
                           </div>
                           <span
                             style={{
-                              fontSize: 11,
+                              fontSize: 14,
                               fontFamily: 'Be Vietnam Pro, sans-serif',
                               fontWeight: 400,
                               color: '#78716C',
-                              lineHeight: '16.5px',
+                              lineHeight: '20px',
                             }}
                           >
                             Nghỉ
@@ -838,7 +839,7 @@ export default function CreateCafeForm() {
                           onChange={(v) => updateSchedule(day.key, 'open', v)}
                           disabled={s.isClosed}
                         />
-                        <span style={{ color: '#D6D3D1', fontSize: 16 }}>~</span>
+                        <span style={{ color: '#A8A29E', fontSize: 18, fontWeight: 600 }}>~</span>
                         <TimeInput
                           value={s.close}
                           onChange={(v) => updateSchedule(day.key, 'close', v)}

@@ -346,7 +346,7 @@ export default function CafeMap({
       {/* User location dot — moves when "locate me" is pressed */}
       <Marker position={dotPosition} icon={makeUserDotIcon(false)}>
         <Popup>
-          <span style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 600, color: '#1350E0' }}>
+          <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 15, fontWeight: 600, color: '#1350E0' }}>
             現在地
           </span>
         </Popup>
@@ -365,12 +365,12 @@ export default function CafeMap({
           >
             {!isSelected && (
               <Popup>
-                <div style={{ fontFamily: 'Manrope, sans-serif', minWidth: 140 }}>
-                  <div style={{ fontWeight: 700, fontSize: 13, color: '#14422D', marginBottom: 2 }}>
+                <div style={{ fontFamily: 'Manrope, sans-serif', minWidth: 160 }}>
+                  <div style={{ fontWeight: 700, fontSize: 16, color: '#14422D', marginBottom: 4 }}>
                     {cafe.name}
                   </div>
                   {cafe.rating !== undefined && (
-                    <div style={{ fontSize: 11, color: '#904C18', fontWeight: 600 }}>
+                    <div style={{ fontSize: 14, color: '#904C18', fontWeight: 600 }}>
                       ★ {cafe.rating}
                     </div>
                   )}

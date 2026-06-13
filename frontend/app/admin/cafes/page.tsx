@@ -26,7 +26,7 @@ const FACILITY_LABEL: Record<string, string> = {
   snack:          '軽食・飲料',
   flexible_hours: '時間柔軟',
   cleanliness:    '清潔感',
-  smoking_rule:   '禁煙・分煙',
+  smoking_rule:   '禁煙',
 }
 
 const FACILITY_ICONS: Record<string, React.ComponentType<any>> = {
