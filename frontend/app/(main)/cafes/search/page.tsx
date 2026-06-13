@@ -45,7 +45,7 @@ const translateFacility = (facility: string) => {
     'desk': '広いデスク',
     'snack': '軽食メニュー',
     'cleanliness': '清潔感',
-    'smoking_rule': '禁煙・喫煙',
+    'smoking_rule': '禁煙',
     'flexible_hours': '営業時間',
   };
   return mapping[facility] || facility;
@@ -59,7 +59,7 @@ const FILTERS = [
   { id: 'hasFlexibleHours', label: '営業時間', icon: Clock },
   { id: 'isClean', label: '清潔さ', icon: Sparkles },
   { id: 'isFocusFriendly', label: '作業環境', icon: Headphones },
-  { id: 'allowsSmoking', label: '禁煙・喫煙', icon: Cigarette },
+  { id: 'allowsSmoking', label: '禁煙', icon: Cigarette },
 ];
 
 const DEFAULT_LAT = 21.0285;
@@ -76,6 +76,115 @@ const formatRating = (rating: unknown) => {
   return Number.isFinite(value) ? value.toFixed(1).replace(/\.0$/, '') : '0';
 };
 
+function PhotoGalleryModal({
+  images,
+  initialIndex,
+  onClose,
+}: {
+  images: string[];
+  initialIndex: number;
+  onClose: () => void;
+}) {
+  const [activeIndex, setActiveIndex] = useState(initialIndex);
+  const goToPrev = () => setActiveIndex((index) => index === 0 ? images.length - 1 : index - 1);
+  const goToNext = () => setActiveIndex((index) => index === images.length - 1 ? 0 : index + 1);
+
+  useEffect(() => {
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === 'ArrowLeft') goToPrev();
+      if (event.key === 'ArrowRight') goToNext();
+      if (event.key === 'Escape') onClose();
+    };
+
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleKey);
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', handleKey);
+    };
+  }, [images.length, onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[10000] flex flex-col items-center justify-center bg-[#1a1a1a]"
+      onClick={onClose}
+    >
+      <button
+        type="button"
+        aria-label="閉じる"
+        onClick={(event) => {
+          event.stopPropagation();
+          onClose();
+        }}
+        className="absolute right-5 top-5 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/10 text-2xl text-white"
+      >
+        ×
+      </button>
+
+      <div className="absolute left-1/2 top-7 -translate-x-1/2 text-sm text-white/70">
+        {activeIndex + 1} / {images.length}
+      </div>
+
+      <div className="relative flex min-h-0 flex-1 items-center justify-center w-full px-20 pt-16 pb-5">
+        {images.length > 1 && (
+          <button
+            type="button"
+            aria-label="前の画像"
+            onClick={(event) => {
+              event.stopPropagation();
+              goToPrev();
+            }}
+            className="absolute left-6 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-white/10 text-3xl text-white"
+          >
+            ‹
+          </button>
+        )}
+
+        <img
+          src={images[activeIndex]}
+          alt={`Photo ${activeIndex + 1}`}
+          onClick={(event) => event.stopPropagation()}
+          className="max-h-full max-w-full rounded-xl object-contain shadow-2xl"
+        />
+
+        {images.length > 1 && (
+          <button
+            type="button"
+            aria-label="次の画像"
+            onClick={(event) => {
+              event.stopPropagation();
+              goToNext();
+            }}
+            className="absolute right-6 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-white/10 text-3xl text-white"
+          >
+            ›
+          </button>
+        )}
+      </div>
+
+      {images.length > 1 && (
+        <div className="flex w-full justify-center gap-2.5 overflow-x-auto px-6 pb-7 pt-3">
+          {images.map((image, index) => (
+            <button
+              type="button"
+              key={`${image}-${index}`}
+              onClick={(event) => {
+                event.stopPropagation();
+                setActiveIndex(index);
+              }}
+              className={`h-[50px] w-[70px] shrink-0 overflow-hidden rounded-md border-2 p-0 ${
+                index === activeIndex ? 'border-white opacity-100' : 'border-transparent opacity-50'
+              }`}
+            >
+              <img src={image} alt="" className="h-full w-full object-cover" />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const removeVietnameseTones = (value: string) =>
   value
     .normalize('NFD')
@@ -87,10 +196,10 @@ function RealtimeBadge({ status, className = '' }: { status?: string; className?
   const rt = REALTIME_CONFIG[status ?? ''] ?? REALTIME_CONFIG['normal'];
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold whitespace-nowrap ${className}`}
+      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-bold whitespace-nowrap ${className}`}
       style={{ background: rt.bg, color: rt.text, border: `1px solid ${rt.dot}33` }}
     >
-      <span style={{ width: 6, height: 6, borderRadius: '50%', background: rt.dot, display: 'inline-block', flexShrink: 0 }} />
+      <span style={{ width: 7, height: 7, borderRadius: '50%', background: rt.dot, display: 'inline-block', flexShrink: 0 }} />
       {rt.label}
     </span>
   );
@@ -118,6 +227,13 @@ export default function CafesSearchPage() {
   const [selectedCafeId, setSelectedCafeId] = useState<string | number | null>(initialSelectedId);
   const [fitRouteTrigger, setFitRouteTrigger] = useState(0);
   const [showRoute, setShowRoute] = useState(searchParams.get("showRoute") === "1");
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [galleryStartIndex, setGalleryStartIndex] = useState(0);
+
+  const openGallery = (images: string[], index: number) => {
+    setGalleryImages(images);
+    setGalleryStartIndex(index);
+  };
 
   // Determine if we have a keyword (either from state or URL param)
   const hasKeyword = keyword.trim().length > 0;
@@ -244,6 +360,13 @@ export default function CafesSearchPage() {
 
   return (
     <main className="relative flex flex-col h-screen w-full bg-[#fafaf5] overflow-hidden">
+      {galleryImages.length > 0 && (
+        <PhotoGalleryModal
+          images={galleryImages}
+          initialIndex={galleryStartIndex}
+          onClose={() => setGalleryImages([])}
+        />
+      )}
 
       <Navbar />
 
@@ -274,13 +397,13 @@ export default function CafesSearchPage() {
                    <button
                      key={filter.id}
                      onClick={(e) => toggleFilter(e, filter.id)}
-                     className={`px-4 py-2 flex items-center gap-2 rounded-full text-sm font-medium transition-all duration-200 border ${
+                     className={`px-4 py-2.5 flex items-center gap-2 rounded-full text-base font-medium transition-all duration-200 border ${
                        isActive
                          ? 'bg-[#ffdbc7] text-[#311300] border-[#ffdbc7] shadow-sm'
                          : 'bg-[#e8e8e3] text-[#1a1c19] border-transparent hover:bg-gray-300'
                      }`}
                    >
-                     <IconComponent className={`w-4 h-4 ${isActive ? 'text-[#904c18]' : 'text-gray-600'}`} />
+                     <IconComponent className={`w-[18px] h-[18px] ${isActive ? 'text-[#904c18]' : 'text-gray-600'}`} />
                      <span>{filter.label}</span>
                    </button>
                  )
@@ -348,7 +471,7 @@ export default function CafesSearchPage() {
                             <RealtimeBadge status={cafe.realtimeStatus} />
                           </div>
                         </div>
-                        <p className="text-[#414943] text-sm leading-relaxed line-clamp-2">
+                        <p className="text-[#414943] text-base leading-relaxed line-clamp-2">
                           {cafe.description || "説明はありません。"}
                         </p>
                         <div className="flex gap-2 mt-3 flex-wrap">
@@ -369,7 +492,7 @@ export default function CafesSearchPage() {
                             return (
                               <span
                                 key={index}
-                                className={`px-2 py-1 text-[10px] font-medium rounded transition-colors duration-200 ${
+                                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors duration-200 ${
                                   isMatched
                                     ? 'bg-[#ffdbc7] text-[#311300]'
                                     : 'bg-[#e8e8e3] text-[#414943]'
@@ -381,8 +504,8 @@ export default function CafesSearchPage() {
                           })}
                         </div>
                       </div>
-                      <div className="pt-4 mt-4 border-t border-[#c0c9c1]/20 text-[#14422d] text-sm flex items-center gap-1">
-                        <MapPin className="w-3.5 h-3.5 shrink-0" />
+                      <div className="pt-4 mt-4 border-t border-[#c0c9c1]/20 text-[#14422d] text-base flex items-center gap-1.5">
+                        <MapPin className="w-4 h-4 shrink-0" />
                         {cafe.address}
                       </div>
                     </div>
@@ -436,13 +559,23 @@ export default function CafesSearchPage() {
           {selectedCafeId && (() => {
             const cafe = cafes.find((c: any) => c.id === selectedCafeId);
             if (!cafe) return null;
+            const fallbackImage = 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=1200';
+            const cafeGalleryImages = Array.from(new Set([
+              resolveCafeImage(cafe.name, cafe.avatar),
+              ...((cafe.images as string[] | undefined) ?? []),
+            ].filter(Boolean)));
+            const displayedImages = [
+              cafeGalleryImages[0],
+              cafeGalleryImages[1] ?? fallbackImage,
+            ];
+            const remainingImageCount = Math.max(cafeGalleryImages.length - displayedImages.length, 0);
 
             return (
               <div
                 className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] bg-white rounded-[32px] shadow-2xl border border-[#e3e3de] transition-all duration-500 ease-in-out flex flex-col overflow-hidden`}
                 style={{ 
                   width: 400, 
-                  height: isExpanded ? '600px' : '240px', 
+                  height: isExpanded ? '600px' : '290px',
                   maxWidth: 'calc(100% - 32px)',
                 }}
               >
@@ -462,50 +595,74 @@ export default function CafesSearchPage() {
                     onClick={() => !isExpanded && setIsExpanded(true)}
                   >
                     <div className="w-16 h-16 rounded-2xl overflow-hidden shrink-0">
-                      <img src={resolveCafeImage(cafe.name, cafe.avatar)} className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        aria-label="画像を拡大"
+                        className="h-full w-full cursor-zoom-in"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          openGallery(cafeGalleryImages, 0);
+                        }}
+                      >
+                        <img src={cafeGalleryImages[0]} alt={cafe.name} className="w-full h-full object-cover" />
+                      </button>
                     </div>
                     <div className="flex-1">
                       <h2 className="text-[#14422d] font-bold text-xl leading-tight">{cafe.name}</h2>
                       <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                         <Star size={14} fill="#904C18" color="#904C18" />
                         <span className="text-[#904C18] font-bold text-sm">{formatRating(cafe.rating)}</span>
-                        <span className="text-[#717973] text-xs ml-1">({cafe.reviewCount ?? 0} レビュー)</span>
+                        <span className="text-[#717973] text-sm ml-1">({cafe.reviewCount ?? 0} レビュー)</span>
                         <RealtimeBadge status={cafe.realtimeStatus} /></div>
                     </div>
                   </div>
 
                   {/* Tags nhỏ luôn hiện */}
-                  <div className="flex gap-2 mb-3 overflow-hidden">
-                    <span className="px-3 py-1 bg-[#FDF2F0] text-[#904C18] text-[10px] font-bold rounded-md whitespace-nowrap">サイレントゾーン</span>
-                    <span className="px-3 py-1 bg-[#F4F4F1] text-[#717973] text-[10px] font-bold rounded-md whitespace-nowrap">ガーデンビュー</span>
-                    <span className="px-3 py-1 bg-[#F4F4F1] text-[#717973] text-[10px] font-bold rounded-md whitespace-nowrap">居心地が良い</span>
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    <span className="px-3 py-1.5 bg-[#FDF2F0] text-[#904C18] text-sm font-bold rounded-md whitespace-nowrap">サイレントゾーン</span>
+                    <span className="px-3 py-1.5 bg-[#F4F4F1] text-[#717973] text-sm font-bold rounded-md whitespace-nowrap">ガーデンビュー</span>
+                    <span className="px-3 py-1.5 bg-[#F4F4F1] text-[#717973] text-sm font-bold rounded-md whitespace-nowrap">居心地が良い</span>
                   </div>
 
                   {/* PHẦN CHI TIẾT (Ẩn khi thu nhỏ, Hiện khi mở rộng) */}
                   <div className={`transition-all duration-500 origin-top ${isExpanded ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0 h-0'}`}>
-                    <p className="text-[#414943] text-sm leading-relaxed mb-4">
+                    <p className="text-[#414943] text-base leading-relaxed mb-4">
                       {cafe.description || "静かな路地裏に位置し, 図書館のような静寂が守られているスポット. 読書や執筆に理想的です."}
                     </p>
 
                     {/* Grid ảnh */}
                     <div className="grid grid-cols-2 gap-2 mb-4">
-                      <img src={resolveCafeImage(cafe.name, cafe.avatar)} className="rounded-2xl h-36 w-full object-cover shadow-sm" />
-                      <img src={cafe.images?.[0] || "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400"} className="rounded-2xl h-36 w-full object-cover shadow-sm" />
+                      {displayedImages.map((image, index) => (
+                        <button
+                          type="button"
+                          key={`${image}-${index}`}
+                          aria-label={`画像 ${index + 1} を拡大`}
+                          className="relative h-36 w-full cursor-zoom-in overflow-hidden rounded-2xl shadow-sm"
+                          onClick={() => openGallery(cafeGalleryImages.length > 1 ? cafeGalleryImages : displayedImages, index)}
+                        >
+                          <img src={image} alt={`${cafe.name} ${index + 1}`} className="h-full w-full object-cover transition-transform hover:scale-105" />
+                          {index === 1 && remainingImageCount > 0 && (
+                            <span className="absolute inset-0 flex items-center justify-center bg-black/45 text-3xl font-bold text-white">
+                              +{remainingImageCount}
+                            </span>
+                          )}
+                        </button>
+                      ))}
                     </div>
 
                     {/* Thông tin liên hệ */}
                     <div className="space-y-2 mb-6">
                       <div className="flex items-center gap-4 p-3 bg-[#F4F4F1] rounded-2xl">
                         <Clock className="w-5 h-5 text-[#14422d]" />
-                        <span className="text-[#14422d] text-sm font-medium">営業時間 10:00-22:30</span>
+                        <span className="text-[#14422d] text-base font-medium">営業時間 10:00-22:30</span>
                       </div>
                       <div className="flex items-center gap-4 p-3 bg-[#F4F4F1] rounded-2xl">
                         <MapPin className="w-5 h-5 text-[#14422d]" />
-                        <span className="text-[#14422d] text-sm font-medium truncate">{cafe.address}</span>
+                        <span className="text-[#14422d] text-base font-medium truncate">{cafe.address}</span>
                       </div>
                       <div className="flex items-center gap-4 p-3 bg-[#F4F4F1] rounded-2xl">
                         <Phone className="w-5 h-5 text-[#14422d]" />
-                        <span className="text-[#14422d] text-sm font-medium">1900 8888</span>
+                        <span className="text-[#14422d] text-base font-medium">1900 8888</span>
                       </div>
                     </div>
                   </div>
@@ -516,15 +673,15 @@ export default function CafesSearchPage() {
                   <div className="flex gap-3">
                     <Link
                       href={`/cafes/${cafe.id}`}
-                      className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl border-2 border-[#14422d] text-[#14422d] font-bold text-sm hover:bg-gray-50 transition-all"
+                      className="flex-1 flex items-center justify-center gap-2 py-4 rounded-2xl border-2 border-[#14422d] text-[#14422d] font-bold text-lg hover:bg-gray-50 transition-all"
                     >
                       詳細を見る <span className="opacity-60 text-lg">ⓘ</span>
                     </Link>
                     <button
                       onClick={() => { setShowRoute(true); setFitRouteTrigger((n) => n + 1); }}
-                      className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-[#14422D] text-white font-bold text-sm shadow-lg hover:bg-[#0d2e1f] transition-all"
+                      className="flex-1 flex items-center justify-center gap-2 py-4 rounded-2xl bg-[#14422D] text-white font-bold text-lg shadow-lg hover:bg-[#0d2e1f] transition-all"
                     >
-                      経路 <Navigation size={16} />
+                      経路 <Navigation size={20} />
                     </button>
                   </div>
                 </div>

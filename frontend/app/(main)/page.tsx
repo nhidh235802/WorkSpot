@@ -9,7 +9,7 @@ import { resolveCafeImage } from '@/lib/cafeImages';
 
 function StarIcon() {
   return (
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+    <svg width="16" height="16" viewBox="0 0 12 12" fill="none">
       <path d="M2.23125 11.0833L3.17917 6.98542L0 4.22917L4.2 3.86458L5.83333 0L7.46667 3.86458L11.6667 4.22917L8.4875 6.98542L9.43542 11.0833L5.83333 8.91042L2.23125 11.0833Z" fill="#EAB308" />
     </svg>
   );
@@ -17,7 +17,7 @@ function StarIcon() {
 
 function LocationIcon() {
   return (
-    <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+    <svg width="14" height="14" viewBox="0 0 11 11" fill="none">
       <path d="M5.775 10.5L4.1125 6.3875L0 4.725V3.90833L10.5 0L6.59167 10.5H5.775ZM6.15417 8.34167L8.51667 1.98333L2.15833 4.34583L5.01667 5.48333L6.15417 8.34167Z" fill="#414943" />
     </svg>
   );
@@ -67,7 +67,7 @@ function CafeCard({ cafe }: { cafe: CafeType }) {
             backdropFilter: "blur(4px)",
           }}>
             <StarIcon />
-            <span style={{ fontSize: 12, fontWeight: 500, color: "#1A1C19" }}>{cafe.rating}</span>
+            <span style={{ fontSize: 16, fontWeight: 700, color: "#1A1C19" }}>{cafe.rating}</span>
           </div>
         </div>
 
@@ -90,7 +90,8 @@ function CafeCard({ cafe }: { cafe: CafeType }) {
               <LocationIcon />
             </div>
             <span style={{
-              fontSize: 14,
+              fontSize: 16,
+              fontWeight: 500,
               color: "#414943",
               whiteSpace: "nowrap",
               overflow: "hidden",
@@ -99,15 +100,24 @@ function CafeCard({ cafe }: { cafe: CafeType }) {
               {cafe.distance} • {cafe.area}
             </span>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, paddingTop: 12 }}>
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            paddingTop: 12,
+            overflow: "hidden",
+            whiteSpace: "nowrap",
+          }}>
             {cafe.tags.map((tag) => (
               <span key={tag.label} style={{
-                padding: "4px 12px",
+                padding: "5px 12px",
                 borderRadius: 9999,
-                fontSize: 10,
-                fontWeight: 500,
+                fontSize: 13,
+                fontWeight: 600,
+                flexShrink: 0,
+                whiteSpace: "nowrap",
                 textTransform: "uppercase",
-                letterSpacing: "-0.5px",
+                letterSpacing: "-0.2px",
                 ...tag.style,
               }}>
                 {tag.label}
@@ -325,9 +335,9 @@ export default function WorkSpotPage() {
                   type="submit"
                   disabled={isSearching}
                   style={{
-                    flexShrink: 0, padding: "16px 32px", borderRadius: 9999, border: "none",
+                    flexShrink: 0, padding: "16px 34px", borderRadius: 9999, border: "none",
                     background: isSearching ? "#9FCFB2" : "linear-gradient(135deg, #14422D 0%, #2D5A43 100%)",
-                    color: "#fff", fontSize: 14, fontWeight: 500,
+                    color: "#fff", fontSize: 17, fontWeight: 600,
                     cursor: isSearching ? "not-allowed" : "pointer",
                     whiteSpace: "nowrap"
                   }}
@@ -375,11 +385,7 @@ export default function WorkSpotPage() {
       </section>
 
       {/* ── Recommended Cafes ── */}
-      <section
-        onMouseEnter={() => { isPausedRef.current = true; }}
-        onMouseLeave={() => { isPausedRef.current = false; }}
-        style={{ background: "#F4F4EF", padding: "48px 0" }}
-      >
+      <section style={{ background: "#F4F4EF", padding: "48px 0" }}>
         <div style={{ maxWidth: 1536, margin: "0 auto" }}>
           {/* Header */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32, padding: "0 32px" }}>
@@ -406,7 +412,12 @@ export default function WorkSpotPage() {
               近くにカフェが見つかりませんでした。
             </div>
           ) : (
-            <div style={{ position: "relative" }}>
+            <>
+            <div
+              onMouseEnter={() => { isPausedRef.current = true; }}
+              onMouseLeave={() => { isPausedRef.current = false; }}
+              style={{ position: "relative" }}
+            >
               {/* Scrollable track — driven by JS auto-scroll */}
               <div
                 ref={scrollRef}
@@ -416,7 +427,6 @@ export default function WorkSpotPage() {
                   display: "flex",
                   gap: 24,
                   overflowX: "auto",
-                  paddingBottom: 32,
                   paddingLeft: 32,
                   paddingRight: 32,
                   scrollbarWidth: "none",
@@ -482,6 +492,8 @@ export default function WorkSpotPage() {
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
               </button>
             </div>
+            <div style={{ height: 32 }} aria-hidden="true" />
+            </>
           )}
         </div>
       </section>

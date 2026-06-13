@@ -31,7 +31,7 @@ const icons: Record<string, JSX.Element> = {
 // ── Star rating display ────────────────────────────────────────────
 function StarRating({ rating }: { rating: number }) {
   return (
-    <span style={{ color: '#D97706', fontSize: 16, letterSpacing: 2 }}>
+    <span style={{ color: '#D97706', fontSize: 18, letterSpacing: 2 }}>
       {[1, 2, 3, 4, 5].map(i => (
         <span key={i} style={{ opacity: i <= Math.round(rating) ? 1 : 0.25 }}>★</span>
       ))}
@@ -74,7 +74,7 @@ function PhotoGalleryModal({ images, initialIndex, onClose }: {
       >×</button>
 
       {/* Counter */}
-      <div style={{ position: 'absolute', top: 28, left: '50%', transform: 'translateX(-50%)', color: 'rgba(255,255,255,0.6)', fontSize: 13, fontFamily: 'Manrope, sans-serif' }}>
+      <div style={{ position: 'absolute', top: 28, left: '50%', transform: 'translateX(-50%)', color: 'rgba(255,255,255,0.75)', fontSize: 16, fontFamily: 'Manrope, sans-serif' }}>
         {activeIndex + 1} / {images.length}
       </div>
 
@@ -268,7 +268,7 @@ function CafeDetailContent() {
                     background: 'rgba(255,255,255,0.18)',
                     border: '1px solid rgba(255,255,255,0.35)',
                     backdropFilter: 'blur(8px)',
-                    color: 'white', fontSize: 14, fontWeight: 500,
+                    color: 'white', fontSize: 16, fontWeight: 600,
                     padding: '10px 22px', borderRadius: 9999,
                     cursor: 'pointer', whiteSpace: 'nowrap',
                     fontFamily: 'Manrope, sans-serif',
@@ -300,7 +300,7 @@ function CafeDetailContent() {
                     border: `1px solid ${rt.dot}33`,
                     borderRadius: 9999,
                     padding: '5px 14px',
-                    fontSize: 11, fontWeight: 600,
+                    fontSize: 14, fontWeight: 700,
                     letterSpacing: 0.8, color: rt.text,
                     display: 'flex', alignItems: 'center', gap: 6,
                     flexShrink: 0,
@@ -316,9 +316,9 @@ function CafeDetailContent() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 32, flexWrap: 'wrap' }}>
               {/* Rating */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ color: '#D97706', fontSize: 18 }}>★</span>
-                <span style={{ fontSize: 18, fontWeight: 500, color: '#1a1c19' }}>{metadata.averageRating}</span>
-                <span style={{ fontSize: 14, color: '#737770' }}>({metadata.reviewCount}件のレビュー)</span>
+                <span style={{ color: '#D97706', fontSize: 20 }}>★</span>
+                <span style={{ fontSize: 20, fontWeight: 600, color: '#1a1c19' }}>{metadata.averageRating}</span>
+                <span style={{ fontSize: 16, color: '#737770' }}>({metadata.reviewCount}件のレビュー)</span>
               </div>
 
               {/* Địa chỉ */}
@@ -326,7 +326,7 @@ function CafeDetailContent() {
                 <svg width="16" height="20" viewBox="0 0 24 24" fill="none" stroke="#737770" strokeWidth="2">
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
                 </svg>
-                <span style={{ fontSize: 15, color: '#737770' }}>{cafe.address}</span>
+                <span style={{ fontSize: 17, fontWeight: 500, color: '#737770' }}>{cafe.address}</span>
               </div>
 
               {/* Giờ mở cửa */}
@@ -334,7 +334,7 @@ function CafeDetailContent() {
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#737770" strokeWidth="2">
                   <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
                 </svg>
-                <span style={{ fontSize: 15, color: '#737770' }}>{closingLabel}</span>
+                <span style={{ fontSize: 17, fontWeight: 500, color: '#737770' }}>{closingLabel}</span>
               </div>
             </div>
 
@@ -349,7 +349,7 @@ function CafeDetailContent() {
                     background: 'white',
                     border: '1.5px solid #C0C9C1',
                     borderRadius: 9999,
-                    fontSize: 14, fontWeight: 600, color: '#14422D',
+                    fontSize: 16, fontWeight: 700, color: '#14422D',
                     textDecoration: 'none',
                     boxShadow: '0 1px 4px rgba(0,0,0,0.07)',
                     transition: 'box-shadow 0.15s',
@@ -375,12 +375,12 @@ function CafeDetailContent() {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
               <div style={{ width: 32, height: 2, background: '#14422D', borderRadius: 2 }} />
-              <h2 style={{ fontSize: 22, fontWeight: 500, color: '#14422D', margin: 0, fontFamily: 'Manrope, sans-serif' }}>
+              <h2 style={{ fontSize: 26, fontWeight: 600, color: '#14422D', margin: 0, fontFamily: 'Manrope, sans-serif' }}>
                 カフェ詳細
               </h2>
             </div>
             <p style={{
-              fontSize: 17, lineHeight: 1.75, color: '#57736A',
+              fontSize: 19, lineHeight: 1.75, color: '#57736A',
               margin: 0, maxWidth: 680,
               fontFamily: 'Manrope, sans-serif',
             }}>
@@ -393,7 +393,7 @@ function CafeDetailContent() {
           ════════════════════════════════════ */}
           <section style={{ marginBottom: 80 }}>
             <h2 style={{
-              fontSize: 22, fontWeight: 500, color: '#14422D',
+              fontSize: 26, fontWeight: 600, color: '#14422D',
               marginBottom: 28, fontFamily: 'Manrope, sans-serif',
             }}>
               提供サービス・設備
@@ -430,15 +430,15 @@ function CafeDetailContent() {
                     {/* Text */}
                     <div>
                       <h3 style={{
-                        fontSize: 14, fontWeight: 700,
+                        fontSize: 17, fontWeight: 700,
                         color: '#1a1c19', margin: '0 0 4px',
                         fontFamily: 'Manrope, sans-serif',
                       }}>
                         {cfg.label}
                       </h3>
                       <p style={{
-                        fontSize: 12, color: '#737770',
-                        margin: 0, lineHeight: 1.5,
+                        fontSize: 15, color: '#737770',
+                        margin: 0, lineHeight: 1.6,
                         fontFamily: 'Manrope, sans-serif',
                       }}>
                         {cfg.description}
@@ -478,8 +478,8 @@ function CafeDetailContent() {
                     border: 'none',
                     borderRadius: 9999,
                     padding: '12px 28px',
-                    fontSize: 14,
-                    fontWeight: 500,
+                    fontSize: 17,
+                    fontWeight: 600,
                     cursor: 'pointer',
                     fontFamily: 'Manrope, sans-serif',
                     boxShadow: '0 4px 12px rgba(20,66,45,0.25)',
@@ -526,10 +526,10 @@ function CafeDetailContent() {
                       )}
                       {/* Name & job */}
                       <div>
-                        <p style={{ margin: '0 0 3px', fontSize: 17, fontWeight: 500, color: '#1a1c19', fontFamily: 'Manrope, sans-serif' }}>
+                        <p style={{ margin: '0 0 3px', fontSize: 18, fontWeight: 600, color: '#1a1c19', fontFamily: 'Manrope, sans-serif' }}>
                           {review.user?.fullName ?? '匿名'}
                         </p>
-                        <p style={{ margin: 0, fontSize: 12, color: '#9CA3A0', fontFamily: 'Manrope, sans-serif' }}>
+                        <p style={{ margin: 0, fontSize: 15, color: '#7A817E', fontFamily: 'Manrope, sans-serif' }}>
                           {review.user?.jobTitle ?? 'ユーザー'} · {new Date(review.createdAt).toLocaleDateString('ja-JP')}
                         </p>
                       </div>
@@ -541,7 +541,7 @@ function CafeDetailContent() {
                   {/* Comment */}
                   {review.comment && (
                     <p style={{
-                      fontSize: 17, color: '#57736A', lineHeight: 1.75,
+                      fontSize: 19, color: '#57736A', lineHeight: 1.75,
                       margin: '0 0 20px', fontFamily: 'Manrope, sans-serif',
                     }}>
                       {review.comment}
@@ -578,7 +578,7 @@ function CafeDetailContent() {
             <button style={{
               width: '100%', padding: '20px 0',
               background: '#E8E8E3', border: 'none', borderRadius: 14,
-              fontSize: 16, fontWeight: 500, color: '#14422D',
+              fontSize: 18, fontWeight: 600, color: '#14422D',
               cursor: 'pointer', fontFamily: 'Manrope, sans-serif',
               boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
             }}>
