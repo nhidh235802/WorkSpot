@@ -17,7 +17,7 @@ import {
   Clock,
   Sparkles,
   Headphones,
-  Cigarette,
+  CigaretteOff,
   Star,
   Phone,
   Navigation,
@@ -39,27 +39,27 @@ const CafeMap = dynamic(() => import('@/components/CafeMap'), {
 
 const translateFacility = (facility: string) => {
   const mapping: Record<string, string> = {
-    'wifi': 'Wi-Fiあり',
-    'socket': '電源・コンセント',
+    'wifi': 'Wi-Fi完備',
+    'socket': '電源コンセントあり',
     'workspace': '作業スペース',
-    'desk': '広いデスク',
-    'snack': '軽食メニュー',
-    'cleanliness': '清潔感',
+    'desk': '作業用デスク',
+    'snack': '軽食あり',
+    'cleanliness': '清潔な空間',
     'smoking_rule': '禁煙',
-    'flexible_hours': '営業時間',
+    'flexible_hours': '営業時間が柔軟',
   };
   return mapping[facility] || facility;
 };
 
 const FILTERS = [
-  { id: 'hasWifi', label: 'Wi-Fi', icon: Wifi },
-  { id: 'hasPower', label: '電源・コンセント', icon: Plug },
-  { id: 'hasDesk', label: 'ワークデスク', icon: Monitor },
-  { id: 'hasSnacks', label: '軽食', icon: Coffee },
-  { id: 'hasFlexibleHours', label: '営業時間', icon: Clock },
-  { id: 'isClean', label: '清潔さ', icon: Sparkles },
-  { id: 'isFocusFriendly', label: '作業環境', icon: Headphones },
-  { id: 'allowsSmoking', label: '禁煙', icon: Cigarette },
+  { id: 'hasWifi', label: 'Wi-Fi完備', icon: Wifi },
+  { id: 'hasPower', label: '電源コンセントあり', icon: Plug },
+  { id: 'hasDesk', label: '作業用デスク', icon: Monitor },
+  { id: 'hasSnacks', label: '軽食あり', icon: Coffee },
+  { id: 'hasFlexibleHours', label: '営業時間が柔軟', icon: Clock },
+  { id: 'isClean', label: '清潔な空間', icon: Sparkles },
+  { id: 'isFocusFriendly', label: '作業スペース', icon: Headphones },
+  { id: 'allowsSmoking', label: '禁煙', icon: CigaretteOff },
 ];
 
 const DEFAULT_LAT = 21.0285;

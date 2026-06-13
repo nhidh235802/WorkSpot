@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { AdminService, AdminCafeItem } from '@/services/admin.service'
-import { Search, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2, X, Wifi, Plug, Users, Coffee, Snowflake, Laptop } from 'lucide-react'
+import { Search, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2, X, Wifi, Plug, Users, Coffee, Snowflake, Laptop, CigaretteOff, Clock } from 'lucide-react'
 import { toast, Toaster } from 'sonner'
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 const PAGE_SIZE = 5
@@ -19,13 +19,13 @@ const STATUS_CONFIG: Record<string, { label: string; dot: string; bg: string; te
 }
 
 const FACILITY_LABEL: Record<string, string> = {
-  wifi:           'Wi-Fi',
-  socket:         '電源',
-  workspace:      'ワークスペース',
-  desk:           'デスク席',
-  snack:          '軽食・飲料',
-  flexible_hours: '時間柔軟',
-  cleanliness:    '清潔感',
+  wifi:           'Wi-Fi完備',
+  socket:         '電源コンセントあり',
+  workspace:      '作業スペース',
+  desk:           '作業用デスク',
+  snack:          '軽食あり',
+  flexible_hours: '営業時間が柔軟',
+  cleanliness:    '清潔な空間',
   smoking_rule:   '禁煙',
 }
 
@@ -36,6 +36,8 @@ const FACILITY_ICONS: Record<string, React.ComponentType<any>> = {
   desk: Laptop,
   snack: Coffee,
   cleanliness: Snowflake,
+  smoking_rule: CigaretteOff,
+  flexible_hours: Clock,
 }
 
 const STATUS_FILTER_OPTIONS = [

@@ -188,13 +188,13 @@ export default function WorkSpotPage() {
         const data = await CafeService.getTopRecommended(lat, lng);
 
         const facilityLabelMap: Record<string, string> = {
-          wifi: '高速Wi-Fi',
-          socket: '電源あり',
-          workspace: 'ワークスペース',
-          desk: '専用デスク',
-          snack: '軽食',
-          flexible_hours: '柔軟な時間',
-          cleanliness: '清潔感',
+          wifi: 'Wi-Fi完備',
+          socket: '電源コンセントあり',
+          workspace: '作業スペース',
+          desk: '作業用デスク',
+          snack: '軽食あり',
+          flexible_hours: '営業時間が柔軟',
+          cleanliness: '清潔な空間',
           smoking_rule: '禁煙',
         };
         const tagColors = [
