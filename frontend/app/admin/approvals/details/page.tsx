@@ -18,6 +18,7 @@ import {
     Star,
     User,
     Calendar,
+    CigaretteOff,
 } from 'lucide-react'
 import { AdminService, AdminCafeItem } from '@/services/admin.service'
 import { CafeService } from '@/services/cafe.service'
@@ -41,12 +42,14 @@ function formatJpDate(iso: string) {
 }
 
 const FACILITY_LABELS: Record<string, { label: string; icon: React.ComponentType<any> }> = {
-    wifi: { label: 'Wi-Fi', icon: Wifi },
-    socket: { label: 'コンセント', icon: Plug },
-    workspace: { label: 'ワークスペース', icon: Monitor },
-    desk: { label: 'ワークデスク', icon: Monitor },
-    snack: { label: 'スナック', icon: Monitor },
-    cleanliness: { label: '清潔', icon: Monitor },
+    wifi: { label: 'Wi-Fi完備', icon: Wifi },
+    socket: { label: '電源コンセントあり', icon: Plug },
+    workspace: { label: '作業スペース', icon: Monitor },
+    desk: { label: '作業用デスク', icon: Monitor },
+    snack: { label: '軽食あり', icon: Monitor },
+    cleanliness: { label: '清潔な空間', icon: Monitor },
+    smoking_rule: { label: '禁煙', icon: CigaretteOff },
+    flexible_hours: { label: '営業時間が柔軟', icon: Clock },
 }
 
 // ─────────────────────────────────────────────────

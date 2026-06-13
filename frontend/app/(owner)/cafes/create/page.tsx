@@ -15,7 +15,7 @@ import {
   UtensilsCrossed,
   Sparkles,
   Laptop,
-  Cigarette,
+  CigaretteOff,
   X,
   Plus,
 } from 'lucide-react';
@@ -43,7 +43,8 @@ const AMENITIES: Amenity[] = [
   { id: 'snack', label: 'Đồ ăn nhẹ', icon: <UtensilsCrossed size={16} /> },
   { id: 'cleanliness', label: 'Không gian sạch sẽ', icon: <Sparkles size={16} /> },
   { id: 'workspace', label: 'Không gian làm việc', icon: <Laptop size={16} /> },
-  { id: 'smoking_rule', label: 'Không hút thuốc', icon: <Cigarette size={16} /> },
+  { id: 'smoking_rule', label: 'Không hút thuốc', icon: <CigaretteOff size={16} /> },
+  { id: 'flexible_hours', label: 'Giờ mở cửa linh hoạt', icon: <Clock size={16} /> },
 ];
 
 const DAY_GROUPS = [

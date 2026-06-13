@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { AdminService, AdminCafeItem } from '@/services/admin.service'
-import { ChevronLeft, ChevronRight, X, CheckCircle2, AlertTriangle, Loader2, Wifi, Plug, Users, Laptop, Coffee, Snowflake, Eye } from 'lucide-react'
+import { ChevronLeft, ChevronRight, X, CheckCircle2, AlertTriangle, Loader2, Wifi, Plug, Users, Laptop, Coffee, Snowflake, Eye, CigaretteOff, Clock } from 'lucide-react'
 import { toast, Toaster } from 'sonner'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
@@ -16,6 +16,8 @@ const FACILITY_ICONS: Record<string, React.ComponentType<any>> = {
   desk: Laptop,
   snack: Coffee,
   cleanliness: Snowflake,
+  smoking_rule: CigaretteOff,
+  flexible_hours: Clock,
 }
 
 function toAbsUrl(path: string | null | undefined): string | null {
