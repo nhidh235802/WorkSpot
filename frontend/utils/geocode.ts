@@ -30,6 +30,17 @@ const normalize = (value: string) =>
 const getRequestedHouseNumber = (address: string) =>
   address.trim().match(/^(\d+[a-zA-Z]?(?:[/-]\d+[a-zA-Z]?)?)/)?.[1];
 
+const houseNumberMatches = (returnedValue: string, requestedValue: string) => {
+  const requested = normalize(requestedValue);
+  const returnedNumbers = returnedValue
+    .split(/[,;|]/)
+    .map((value) => normalize(value))
+    .filter(Boolean);
+
+  return returnedNumbers.includes(requested) ||
+    normalize(returnedValue) === requested;
+};
+
 const getRequestedStreet = (address: string) => {
   const firstPart = address.split(',')[0]?.trim() ?? '';
   return firstPart
@@ -106,7 +117,7 @@ export async function getCoordinatesFromAddress(
         ? results.find((result) => {
             const returnedHouseNumber = result.address?.house_number;
             if (returnedHouseNumber) {
-              return normalize(returnedHouseNumber) === normalize(requestedHouseNumber);
+              return houseNumberMatches(returnedHouseNumber, requestedHouseNumber);
             }
 
             if (!searchPlaceName || !requestedStreet) return false;
