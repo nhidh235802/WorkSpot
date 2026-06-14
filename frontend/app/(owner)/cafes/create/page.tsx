@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { getCoordinatesFromAddress } from '@/utils/geocode';
 import React from 'react';
 import CancelConfirmDialog from '@/components/CancelCreateDialog';
 import {
@@ -342,16 +343,12 @@ export default function CreateCafeForm() {
       setIsTranslating(false);
 
       // 2. Geocode
-      const geocodeRes = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(address.trim() + ', Việt Nam')}`,
-        { headers: { 'Accept-Language': 'vi' } }
-      );
-      const geocodeData = await geocodeRes.json();
-      const lat = geocodeData?.[0] ? parseFloat(geocodeData[0].lat) : undefined;
-      const lng = geocodeData?.[0] ? parseFloat(geocodeData[0].lon) : undefined;
+      const coordinates = await getCoordinatesFromAddress(address.trim(), name.trim());
+      const lat = coordinates?.lat;
+      const lng = coordinates?.lng;
 
-      if (lat === undefined || lng === undefined) {
-        throw new Error('Địa chỉ này không thể định vị trên bản đồ. Vui lòng nhập địa chỉ chính xác và chi tiết hơn (ví dụ: số nhà, tên đường, phường, quận, Hà Nội).');
+      if (!coordinates) {
+        throw new Error('OpenStreetMap không tìm thấy đúng số nhà của địa chỉ này. Hệ thống sẽ không lưu vị trí gần đúng để tránh đặt ghim sai. Vui lòng kiểm tra lại địa chỉ.');
       }
 
       // 2. Chuyển schedule → mảng OperatingHours cho backend
