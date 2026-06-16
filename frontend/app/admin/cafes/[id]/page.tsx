@@ -157,8 +157,11 @@ function AdminCafeDetailContent() {
   );
 
   const { metadata, reviews = [], operatingHours = [], facilities = [], images = [] } = cafe;
-  const visibleReviews = showAllReviews ? reviews : reviews.slice(0, 3);
-  const hasHiddenReviews = reviews.length > visibleReviews.length;
+  const sortedReviews = [...reviews].sort(
+    (a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
+  const visibleReviews = showAllReviews ? sortedReviews : sortedReviews.slice(0, 3);
+  const hasHiddenReviews = sortedReviews.length > visibleReviews.length;
 
   const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
   const todayName = dayNames[new Date().getDay()];

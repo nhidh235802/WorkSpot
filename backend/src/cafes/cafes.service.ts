@@ -188,7 +188,9 @@ export class CafesService {
       throw new NotFoundException(`Quán cà phê ${id} không tìm thấy`);
     }
 
-    const reviews = cafe.reviews || [];
+    const reviews = [...(cafe.reviews || [])].sort(
+      (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+    );
     const operatingHours = cafe.operatingHours || [];
 
     const reviewCount = reviews.length;

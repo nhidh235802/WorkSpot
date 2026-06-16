@@ -183,8 +183,11 @@ function CafeDetailContent() {
   );
 
   const { metadata, reviews = [], operatingHours = [], facilities = [], images = [] } = cafe;
-  const visibleReviews = showAllReviews ? reviews : reviews.slice(0, 3);
-  const hasHiddenReviews = reviews.length > visibleReviews.length;
+  const sortedReviews = [...reviews].sort(
+    (a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
+  const visibleReviews = showAllReviews ? sortedReviews : sortedReviews.slice(0, 3);
+  const hasHiddenReviews = sortedReviews.length > visibleReviews.length;
 
   // Tính giờ đóng cửa hôm nay (0=Sun, 1=Mon, ...)
   const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
