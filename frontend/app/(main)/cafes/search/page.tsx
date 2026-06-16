@@ -450,11 +450,11 @@ export default function CafesSearchPage() {
                         : 'border-[#e3e3de]/30 hover:shadow-md hover:border-[#c0c9c1]'
                     }`}
                   >
-                    <div className="w-56 h-48 bg-gray-200 shrink-0">
+                    <div className="w-56 min-h-48 self-stretch bg-gray-200 shrink-0 overflow-hidden">
                       <img
                         src={resolveCafeImage(cafe.name, cafe.avatar)}
                         alt={cafe.name}
-                        className="w-full h-full object-cover"
+                        className="h-full w-full object-cover"
                       />
                     </div>
                     <div className="flex-1 p-6 flex flex-col justify-between">
