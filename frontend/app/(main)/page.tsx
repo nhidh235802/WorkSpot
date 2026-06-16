@@ -370,7 +370,7 @@ export default function WorkSpotPage() {
               aspectRatio: "4/5",
             }}>
               <img
-                src="./images/hero-cafe.png"
+                src="./images/herocafe.jpg"
                 alt="Professional Cafe"
                 style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
               />
@@ -633,7 +633,7 @@ export default function WorkSpotPage() {
               background: "#E3E3DE",
             }}>
               <img
-                src="./images/hero-cafe.png"
+                src="./images/caphevalap.jpg"
                 alt="Hero Cafe"
                 style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
               />
