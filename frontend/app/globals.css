@@ -26,3 +26,33 @@ body {
 .carousel-scroll::-webkit-scrollbar {
   display: none;
 }
+
+.recommended-tag-track {
+  flex-shrink: 0;
+  min-width: max-content;
+  width: max-content;
+  will-change: transform;
+}
+
+.recommended-tag-track.is-scrolling {
+  animation: recommended-tag-marquee 18s linear infinite;
+}
+
+.recommended-cafe-card:hover .recommended-tag-track.is-scrolling {
+  animation-play-state: paused;
+}
+
+@keyframes recommended-tag-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(-50% - 4px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .recommended-tag-track.is-scrolling {
+    animation: none;
+  }
+}

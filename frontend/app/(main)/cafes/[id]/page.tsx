@@ -134,6 +134,7 @@ function CafeDetailContent() {
   const [error, setError] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalStartIndex, setModalStartIndex] = useState(0);
+  const [showAllReviews, setShowAllReviews] = useState(false);
 
   const [reviewModalImages, setReviewModalImages] = useState<string[]>([]);
   const [reviewModalIndex, setReviewModalIndex] = useState(0);
@@ -182,6 +183,8 @@ function CafeDetailContent() {
   );
 
   const { metadata, reviews = [], operatingHours = [], facilities = [], images = [] } = cafe;
+  const visibleReviews = showAllReviews ? reviews : reviews.slice(0, 3);
+  const hasHiddenReviews = reviews.length > visibleReviews.length;
 
   // Tính giờ đóng cửa hôm nay (0=Sun, 1=Mon, ...)
   const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
@@ -496,7 +499,7 @@ function CafeDetailContent() {
 
             {/* Review list */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-              {reviews.map((review: any) => (
+              {visibleReviews.map((review: any) => (
                 <article key={review.id} style={{
                   paddingBottom: 48, marginBottom: 48,
                   borderBottom: '1px solid rgba(192,201,193,0.1)',
@@ -576,16 +579,20 @@ function CafeDetailContent() {
               ))}
             </div>
 
-            {/* Load more button */}
-            <button style={{
-              width: '100%', padding: '20px 0',
-              background: '#E8E8E3', border: 'none', borderRadius: 14,
-              fontSize: 18, fontWeight: 600, color: '#14422D',
-              cursor: 'pointer', fontFamily: 'Manrope, sans-serif',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-            }}>
-              すべてのレビューを見る ({metadata.reviewCount}件)
-            </button>
+            {hasHiddenReviews && (
+              <button
+                onClick={() => setShowAllReviews(true)}
+                style={{
+                  width: '100%', padding: '20px 0',
+                  background: '#E8E8E3', border: 'none', borderRadius: 14,
+                  fontSize: 18, fontWeight: 600, color: '#14422D',
+                  cursor: 'pointer', fontFamily: 'Manrope, sans-serif',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                }}
+              >
+                すべてのレビューを見る ({metadata.reviewCount}件)
+              </button>
+            )}
           </section>
 
         </main>
