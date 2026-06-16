@@ -34,9 +34,12 @@ export interface CafeType {
 }
 
 function CafeCard({ cafe }: { cafe: CafeType }) {
+  const shouldScrollTags = cafe.tags.length > 2;
+  const visibleTags = shouldScrollTags ? [...cafe.tags, ...cafe.tags] : cafe.tags;
+
   return (
     <Link href={`/cafes/${cafe.id}`} style={{ textDecoration: 'none', color: 'inherit', flexShrink: 0 }}>
-      <div style={{
+      <div className="recommended-cafe-card" style={{
         display: "flex",
         flexDirection: "column",
         width: 320,
@@ -102,27 +105,37 @@ function CafeCard({ cafe }: { cafe: CafeType }) {
           </div>
           <div style={{
             display: "flex",
-            alignItems: "center",
-            gap: 8,
+            width: "100%",
             paddingTop: 12,
             overflow: "hidden",
-            whiteSpace: "nowrap",
+            WebkitMaskImage: shouldScrollTags ? "linear-gradient(90deg, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%)" : undefined,
+            maskImage: shouldScrollTags ? "linear-gradient(90deg, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%)" : undefined,
           }}>
-            {cafe.tags.map((tag) => (
-              <span key={tag.label} style={{
-                padding: "5px 12px",
-                borderRadius: 9999,
-                fontSize: 13,
-                fontWeight: 600,
-                flexShrink: 0,
-                whiteSpace: "nowrap",
-                textTransform: "uppercase",
-                letterSpacing: "-0.2px",
-                ...tag.style,
-              }}>
-                {tag.label}
-              </span>
-            ))}
+            <div
+              className={shouldScrollTags ? "recommended-tag-track is-scrolling" : "recommended-tag-track"}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                animationDuration: shouldScrollTags ? `${Math.max(12, cafe.tags.length * 5)}s` : undefined,
+              }}
+            >
+              {visibleTags.map((tag, index) => (
+                <span key={`${tag.label}-${index}`} style={{
+                  padding: "5px 12px",
+                  borderRadius: 9999,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  flexShrink: 0,
+                  whiteSpace: "nowrap",
+                  textTransform: "uppercase",
+                  letterSpacing: 0,
+                  ...tag.style,
+                }}>
+                  {tag.label}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -223,7 +236,7 @@ export default function WorkSpotPage() {
           rating: item.rating ?? 0,
           distance: `${item.distance ?? '?'} km`,
           area: formatAddress(item.address ?? ''),
-          tags: (item.facilities as string[] ?? []).slice(0, 3).map((f, i) => ({
+          tags: (item.facilities as string[] ?? []).map((f, i) => ({
             label: facilityLabelMap[f] ?? f,
             style: tagColors[i % tagColors.length],
           })),

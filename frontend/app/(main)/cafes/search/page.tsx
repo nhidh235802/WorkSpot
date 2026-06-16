@@ -76,6 +76,27 @@ const formatRating = (rating: unknown) => {
   return Number.isFinite(value) ? value.toFixed(1).replace(/\.0$/, '') : '0';
 };
 
+const formatDistanceKm = (distanceKm: number | null | undefined) => {
+  if (distanceKm == null || !Number.isFinite(distanceKm)) return null;
+  return distanceKm < 10 ? distanceKm.toFixed(1) : Math.round(distanceKm).toString();
+};
+
+const getHaversineDistanceKm = (
+  from: [number, number],
+  to: [number, number],
+) => {
+  const earthRadiusKm = 6371;
+  const toRad = (degree: number) => (degree * Math.PI) / 180;
+  const dLat = toRad(to[0] - from[0]);
+  const dLng = toRad(to[1] - from[1]);
+  const lat1 = toRad(from[0]);
+  const lat2 = toRad(to[0]);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
+
 function PhotoGalleryModal({
   images,
   initialIndex,
@@ -229,6 +250,7 @@ export default function CafesSearchPage() {
   const [showRoute, setShowRoute] = useState(searchParams.get("showRoute") === "1");
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [galleryStartIndex, setGalleryStartIndex] = useState(0);
+  const [drivingDistancesKm, setDrivingDistancesKm] = useState<Record<string, number>>({});
 
   const openGallery = (images: string[], index: number) => {
     setGalleryImages(images);
@@ -261,6 +283,70 @@ export default function CafesSearchPage() {
       { timeout: 6000, maximumAge: 10000 },
     );
   }, []);
+
+  useEffect(() => {
+    const cafesWithCoordinates = cafes.filter((c) => c.latitude != null && c.longitude != null);
+    if (cafesWithCoordinates.length === 0) {
+      setDrivingDistancesKm({});
+      return;
+    }
+
+    let cancelled = false;
+    const timeoutId = window.setTimeout(() => {
+      cancelled = true;
+    }, 7000);
+
+    const fallbackDistances = Object.fromEntries(
+      cafesWithCoordinates.map((c) => [
+        String(c.id),
+        getHaversineDistanceKm(userPosition, [Number(c.latitude), Number(c.longitude)]),
+      ]),
+    );
+
+    const fetchDrivingDistances = async () => {
+      const bases = [
+        'https://router.project-osrm.org',
+        'https://routing.openstreetmap.de/routed-car',
+      ];
+      const coordinateString = [
+        `${userPosition[1]},${userPosition[0]}`,
+        ...cafesWithCoordinates.map((c) => `${c.longitude},${c.latitude}`),
+      ].join(';');
+      const destinations = cafesWithCoordinates.map((_, index) => index + 1).join(';');
+
+      for (const base of bases) {
+        try {
+          const response = await fetch(
+            `${base}/table/v1/driving/${coordinateString}?sources=0&destinations=${destinations}&annotations=distance`,
+          );
+          const data = await response.json();
+          const distances = data.distances?.[0] as Array<number | null> | undefined;
+          if (!response.ok || !distances?.length) continue;
+
+          const nextDistances = Object.fromEntries(
+            cafesWithCoordinates.map((c, index) => [
+              String(c.id),
+              distances[index] == null ? fallbackDistances[String(c.id)] : distances[index]! / 1000,
+            ]),
+          );
+          if (!cancelled) setDrivingDistancesKm(nextDistances);
+          return;
+        } catch {
+          // Try the next routing backend, then fall back to straight-line distance.
+        }
+      }
+
+      if (!cancelled) setDrivingDistancesKm(fallbackDistances);
+    };
+
+    setDrivingDistancesKm(fallbackDistances);
+    fetchDrivingDistances();
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [cafes, userPosition]);
 
   const toggleFilter = (e: React.MouseEvent, id: string) => {
     e.preventDefault();
@@ -439,6 +525,13 @@ export default function CafesSearchPage() {
             ) : (
               cafes.map((cafe: any) => {
                 const isSelected = selectedCafeId === cafe.id;
+                const fallbackDistanceKm =
+                  cafe.latitude != null && cafe.longitude != null
+                    ? getHaversineDistanceKm(userPosition, [Number(cafe.latitude), Number(cafe.longitude)])
+                    : Number(cafe.distance);
+                const distanceLabel = formatDistanceKm(
+                  drivingDistancesKm[String(cafe.id)] ?? fallbackDistanceKm,
+                );
                 return (
                   <article
                     id={`cafe-card-${cafe.id}`}
@@ -460,7 +553,15 @@ export default function CafesSearchPage() {
                     <div className="flex-1 p-6 flex flex-col justify-between">
                       <div>
                         <div className="flex justify-between items-start mb-2">
-                          <h2 className="text-[#14422d] text-xl font-bold leading-tight">{cafe.name}</h2>
+                          <div className="min-w-0 pr-4">
+                            <h2 className="text-[#14422d] text-xl font-bold leading-tight">{cafe.name}</h2>
+                            {distanceLabel && (
+                              <div className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-[#717973]">
+                                <Navigation className="h-4 w-4 text-[#14422d]" />
+                                <span>現在地から {distanceLabel} km</span>
+                              </div>
+                            )}
+                          </div>
                           <div className="flex flex-col items-end gap-1.5">
                             <div className="flex items-center gap-1">
                               <Star size={18} fill="#904C18" color="#904C18" />
@@ -559,6 +660,13 @@ export default function CafesSearchPage() {
           {selectedCafeId && (() => {
             const cafe = cafes.find((c: any) => c.id === selectedCafeId);
             if (!cafe) return null;
+            const fallbackDistanceKm =
+              cafe.latitude != null && cafe.longitude != null
+                ? getHaversineDistanceKm(userPosition, [Number(cafe.latitude), Number(cafe.longitude)])
+                : Number(cafe.distance);
+            const distanceLabel = formatDistanceKm(
+              drivingDistancesKm[String(cafe.id)] ?? fallbackDistanceKm,
+            );
             const fallbackImage = 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=1200';
             const cafeGalleryImages = Array.from(new Set([
               resolveCafeImage(cafe.name, cafe.avatar),
@@ -609,6 +717,12 @@ export default function CafesSearchPage() {
                     </div>
                     <div className="flex-1">
                       <h2 className="text-[#14422d] font-bold text-xl leading-tight">{cafe.name}</h2>
+                      {distanceLabel && (
+                        <div className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-[#717973]">
+                          <Navigation className="h-4 w-4 text-[#14422d]" />
+                          <span>現在地から {distanceLabel} km</span>
+                        </div>
+                      )}
                       <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                         <Star size={14} fill="#904C18" color="#904C18" />
                         <span className="text-[#904C18] font-bold text-sm">{formatRating(cafe.rating)}</span>
