@@ -322,7 +322,7 @@ export default function WorkSpotPage() {
                 <span style={{ color: "#904C18" }}>働こう。</span>
               </h1>
 
-              <p style={{ margin: 0, fontSize: 20, fontWeight: 500, color: "#414943", lineHeight: "28px", maxWidth: 448 }}>
+              <p style={{ margin: 0, fontSize: 20, fontWeight: 500, color: "#414943", lineHeight: "28px", maxWidth: 460 }}>
                 リモートワークに最適な、ハノイで最も静かで集中できるカフェを厳選しました。
               </p>
 
