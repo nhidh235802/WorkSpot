@@ -408,86 +408,86 @@ export default function WorkSpotPage() {
             </div>
           ) : (
             <>
-            <div
-              onMouseEnter={() => { isPausedRef.current = true; }}
-              onMouseLeave={() => { isPausedRef.current = false; }}
-              style={{ position: "relative" }}
-            >
-              {/* Scrollable track — driven by JS auto-scroll */}
               <div
-                ref={scrollRef}
-                className="carousel-scroll"
-                onScroll={handleScroll}
-                style={{
-                  display: "flex",
-                  gap: 24,
-                  overflowX: "auto",
-                  paddingLeft: 32,
-                  paddingRight: 32,
-                  scrollbarWidth: "none",
-                  msOverflowStyle: "none",
-                } as React.CSSProperties}
+                onMouseEnter={() => { isPausedRef.current = true; }}
+                onMouseLeave={() => { isPausedRef.current = false; }}
+                style={{ position: "relative" }}
               >
-                {[...recommendedCafes, ...recommendedCafes].map((cafe, idx) => (
-                  <CafeCard key={`${cafe.id}-${idx}`} cafe={cafe} />
-                ))}
+                {/* Scrollable track — driven by JS auto-scroll */}
+                <div
+                  ref={scrollRef}
+                  className="carousel-scroll"
+                  onScroll={handleScroll}
+                  style={{
+                    display: "flex",
+                    gap: 24,
+                    overflowX: "auto",
+                    paddingLeft: 32,
+                    paddingRight: 32,
+                    scrollbarWidth: "none",
+                    msOverflowStyle: "none",
+                  } as React.CSSProperties}
+                >
+                  {[...recommendedCafes, ...recommendedCafes].map((cafe, idx) => (
+                    <CafeCard key={`${cafe.id}-${idx}`} cafe={cafe} />
+                  ))}
+                </div>
+
+                {/* Left arrow */}
+                <button
+                  onClick={() => scrollBy('left')}
+                  style={{
+                    position: "absolute",
+                    left: 16,
+                    top: 177.5,
+                    transform: "translateY(-50%)",
+                    width: 56,
+                    height: 56,
+                    borderRadius: "50%",
+                    background: "rgba(0, 0, 0, 0.4)",
+                    border: "3px solid #fff",
+                    boxShadow: "0 0 0 5px rgba(0, 0, 0, 0.4)",
+                    color: "#fff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    zIndex: 10,
+                    backgroundClip: "padding-box",
+                  }}
+                  aria-label="Scroll left"
+                >
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
+                </button>
+
+                {/* Right arrow */}
+                <button
+                  onClick={() => scrollBy('right')}
+                  style={{
+                    position: "absolute",
+                    right: 16,
+                    top: 177.5,
+                    transform: "translateY(-50%)",
+                    width: 56,
+                    height: 56,
+                    borderRadius: "50%",
+                    background: "rgba(0, 0, 0, 0.4)",
+                    border: "3px solid #fff",
+                    boxShadow: "0 0 0 5px rgba(0, 0, 0, 0.4)",
+                    color: "#fff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    zIndex: 10,
+                    backgroundClip: "padding-box",
+                  }}
+                  aria-label="Scroll right"
+                >
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+                </button>
               </div>
-
-              {/* Left arrow */}
-              <button
-                onClick={() => scrollBy('left')}
-                style={{
-                  position: "absolute",
-                  left: 16,
-                  top: 177.5,
-                  transform: "translateY(-50%)",
-                  width: 56,
-                  height: 56,
-                  borderRadius: "50%",
-                  background: "rgba(0, 0, 0, 0.4)",
-                  border: "3px solid #fff",
-                  boxShadow: "0 0 0 5px rgba(0, 0, 0, 0.4)",
-                  color: "#fff",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                  zIndex: 10,
-                  backgroundClip: "padding-box",
-                }}
-                aria-label="Scroll left"
-              >
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
-              </button>
-
-              {/* Right arrow */}
-              <button
-                onClick={() => scrollBy('right')}
-                style={{
-                  position: "absolute",
-                  right: 16,
-                  top: 177.5,
-                  transform: "translateY(-50%)",
-                  width: 56,
-                  height: 56,
-                  borderRadius: "50%",
-                  background: "rgba(0, 0, 0, 0.4)",
-                  border: "3px solid #fff",
-                  boxShadow: "0 0 0 5px rgba(0, 0, 0, 0.4)",
-                  color: "#fff",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                  zIndex: 10,
-                  backgroundClip: "padding-box",
-                }}
-                aria-label="Scroll right"
-              >
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-              </button>
-            </div>
-            <div style={{ height: 32 }} aria-hidden="true" />
+              <div style={{ height: 32 }} aria-hidden="true" />
             </>
           )}
         </div>
@@ -531,11 +531,12 @@ export default function WorkSpotPage() {
                 <path d="M36 104V80H100V104H92V88H44V104H36ZM38 76C36.3333 76 34.9167 75.4167 33.75 74.25C32.5833 73.0833 32 71.6667 32 70C32 68.3333 32.5833 66.9167 33.75 65.75C34.9167 64.5833 36.3333 64 38 64C39.6667 64 41.0833 64.5833 42.25 65.75C43.4167 66.9167 44 68.3333 44 70C44 71.6667 43.4167 73.0833 42.25 74.25C41.0833 75.4167 39.6667 76 38 76ZM48 76V40C48 37.8 48.7833 35.9167 50.35 34.35C51.9167 32.7833 53.8 32 56 32H80C82.2 32 84.0833 32.7833 85.65 34.35C87.2167 35.9167 88 37.8 88 40V76H48ZM98 76C96.3333 76 94.9167 75.4167 93.75 74.25C92.5833 73.0833 92 71.6667 92 70C92 68.3333 92.5833 66.9167 93.75 65.75C94.9167 64.5833 96.3333 64 98 64C99.6667 64 101.083 64.5833 102.25 65.75C103.417 66.9167 104 68.3333 104 70C104 71.6667 103.417 73.0833 102.25 74.25C101.083 75.4167 99.6667 76 98 76ZM56 68H80V40H56V68Z" fill="#904C18" />
               </svg>
             </div>
-            <h3 style={{ margin: "0 0 16px", fontSize: 30, fontWeight: 400, color: "#14422D", lineHeight: "36px" }}>
+            <h3 style={{ margin: "0 0 16px", fontSize: 30, fontWeight: 500, color: "#14422D", lineHeight: "36px" }}>
               空席確認
             </h3>
-            <p style={{ margin: 0, fontSize: 16, color: "#414943", lineHeight: "24px", maxWidth: 384 }}>
-              満席のカフェに足を運ぶ必要はもうありません。出発前に空き状況を確認できます。
+            <p style={{ margin: 0, fontSize: 18, color: "#414943", lineHeight: "28px", maxWidth: 480 }}>
+              満席のカフェに足を運ぶ必要はもうありません。<br />
+              出発前に空き状況を確認できます。
             </p>
           </div>
 
@@ -554,10 +555,10 @@ export default function WorkSpotPage() {
               <path d="M13.1 32.4L23.45 20H15.45L16.9 8.65L7.65 22H14.6L13.1 32.4ZM8 40L10 26H0L18 0H22L20 16H32L12 40H8Z" fill="white" />
             </svg>
             <div>
-              <h3 style={{ margin: "0 0 8px", fontSize: 24, fontWeight: 500, color: "#fff", lineHeight: "32px" }}>
+              <h3 style={{ margin: "0 0 16px", fontSize: 30, fontWeight: 500, color: "#fff", lineHeight: "36px" }}>
                 検証済みの速度
               </h3>
-              <p style={{ margin: 0, fontSize: 14, color: "#9FCFB2", lineHeight: "20px" }}>
+              <p style={{ margin: 0, fontSize: 18, color: "#9FCFB2", lineHeight: "28px" }}>
                 掲載されているすべてのスポットで50Mbps以上の速度をテスト済みです。
               </p>
             </div>
@@ -578,10 +579,10 @@ export default function WorkSpotPage() {
               <path d="M20 26C20.5667 26 21.0417 25.8083 21.425 25.425C21.8083 25.0417 22 24.5667 22 24C22 23.4333 21.8083 22.9583 21.425 22.575C21.0417 22.1917 20.5667 22 20 22C19.4333 22 18.9583 22.1917 18.575 22.575C18.1917 22.9583 18 23.4333 18 24C18 24.5667 18.1917 25.0417 18.575 25.425C18.9583 25.8083 19.4333 26 20 26ZM20 18C20.5667 18 21.0417 17.8083 21.425 17.425C21.8083 17.0417 22 16.5667 22 16C22 15.4333 21.8083 14.9583 21.425 14.575C21.0417 14.1917 20.5667 14 20 14C19.4333 14 18.9583 14.1917 18.575 14.575C18.1917 14.9583 18 15.4333 18 16C18 16.5667 18.1917 17.0417 18.575 17.425C18.9583 17.8083 19.4333 18 20 18ZM20 10C20.5667 10 21.0417 9.80833 21.425 9.425C21.8083 9.04167 22 8.56667 22 8C22 7.43333 21.8083 6.95833 21.425 6.575C21.0417 6.19167 20.5667 6 20 6C19.4333 6 18.9583 6.19167 18.575 6.575C18.1917 6.95833 18 7.43333 18 8C18 8.56667 18.1917 9.04167 18.575 9.425C18.9583 9.80833 19.4333 10 20 10ZM36 32H4C2.9 32 1.95833 31.6083 1.175 30.825C0.391667 30.0417 0 29.1 0 28V20C1.1 20 2.04167 19.6083 2.825 18.825C3.60833 18.0417 4 17.1 4 16C4 14.9 3.60833 13.9583 2.825 13.175C2.04167 12.3917 1.1 12 0 12V4C0 2.9 0.391667 1.95833 1.175 1.175C1.95833 0.391667 2.9 0 4 0H36C37.1 0 38.0417 0.391667 38.825 1.175C39.6083 1.95833 40 2.9 40 4V12C38.9 12 37.9583 12.3917 37.175 13.175C36.3917 13.9583 36 14.9 36 16C36 17.1 36.3917 18.0417 37.175 18.825C37.9583 19.6083 38.9 20 40 20V28C40 29.1 39.6083 30.0417 38.825 30.825C38.0417 31.6083 37.1 32 36 32Z" fill="#783A04" />
             </svg>
             <div>
-              <h3 style={{ margin: "0 0 8px", fontSize: 24, fontWeight: 500, color: "#783A04", lineHeight: "32px" }}>
+              <h3 style={{ margin: "0 0 16px", fontSize: 30, fontWeight: 500, color: "#783A04", lineHeight: "36px" }}>
                 限定クーポン
               </h3>
-              <p style={{ margin: 0, fontSize: 14, color: "rgba(120,58,4,0.80)", lineHeight: "20px" }}>
+              <p style={{ margin: 0, fontSize: 18, color: "rgba(120,58,4,0.80)", lineHeight: "28px" }}>
                 WorkSpotユーザー限定のお得な割引やドリンクサービスを利用しましょう。
               </p>
             </div>
@@ -602,7 +603,7 @@ export default function WorkSpotPage() {
               <h3 style={{ margin: 0, fontSize: 30, fontWeight: 500, color: "#14422D", lineHeight: "36px" }}>
                 特別オファーでお得にワーク
               </h3>
-              <p style={{ margin: 0, fontSize: 16, fontWeight: 500, color: "#414943", lineHeight: "24px" }}>
+              <p style={{ margin: 0, fontSize: 18, color: "#414943", lineHeight: "28px" }}>
                 提携カフェで使えるデジタルクーポンを多数ご用意。集中して作業をしながら、お気に入りの一杯をお得に楽しめます。最新のセール情報をチェックしてください。
               </p>
             </div>

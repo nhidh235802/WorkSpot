@@ -104,7 +104,7 @@ export default function Navbar({ center }: NavbarProps) {
               color: '#14422D',
               fontSize: 24,
               fontFamily: 'Acme',
-              fontWeight: '400',
+              fontWeight: 'bold',
               textDecoration: 'none',
               lineHeight: '32px'
             }}
