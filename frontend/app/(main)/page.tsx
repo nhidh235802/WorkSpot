@@ -375,24 +375,6 @@ export default function WorkSpotPage() {
                 style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
               />
             </div>
-            {/* Floating badge */}
-            <div style={{
-              position: "absolute",
-              bottom: -24,
-              left: -24,
-              background: "#FFDBC7",
-              borderRadius: 16,
-              padding: 24,
-              boxShadow: "0 20px 25px -5px rgba(0,0,0,0.10), 0 8px 10px -6px rgba(0,0,0,0.10)",
-              maxWidth: 200,
-            }}>
-              <p style={{ margin: 0, fontSize: 18, fontWeight: 500, color: "#311300", lineHeight: "28px" }}>
-                アップデート
-              </p>
-              <p style={{ margin: "4px 0 0", fontSize: 12, fontWeight: 500, color: "rgba(49,19,0,0.80)", lineHeight: "16px" }}>
-                安定したWiFiと快適さを実地確認済み
-              </p>
-            </div>
           </div>
         </div>
       </section>
